@@ -6,7 +6,7 @@ on:
       drive_file_id:
         description: "Publicly accessible Drive ZIP file ID (output.zip)"
         required: true
-        default: "1e0cN8dgP3J7ONuub_wMk5FFi2rGRo_go"
+        default: "1_4-H9L10rs1BJkH77zLIZmRZfnlKBKBX"
   push:
     branches:
       - feature/science-analysis-runs
@@ -34,7 +34,7 @@ jobs:
         run: python3 -m pip install --upgrade "Pillow>=10" "astropy>=6" "gdown>=5"
       - name: Download real analysis archive from shared Google Drive
         env:
-          DRIVE_FILE_ID: ${{ inputs.drive_file_id || '1e0cN8dgP3J7ONuub_wMk5FFi2rGRo_go' }}
+          DRIVE_FILE_ID: ${{ inputs.drive_file_id || '1_4-H9L10rs1BJkH77zLIZmRZfnlKBKBX' }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/spherex-science

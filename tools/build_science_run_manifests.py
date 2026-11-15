@@ -326,9 +326,12 @@ def build(input_root, output_root, extract_gif):
                                  target_id, band_id, parsed, extract_gif)
                 run["manifest_url"] = f"{slug}/{run['manifest_url']}"
                 runs.append(run)
+        status = ("ready" if runs else
+                  "photometry_under_revision" if target_id == "R_Draconis" else
+                  "awaiting_export")
         index["targets"].append({
             "target_id": target_id, "name": name, "slug": slug,
-            "runs": runs
+            "runs": runs, "publication_status": status
         })
         print(f"{name}: {len(runs)} analysis runs")
     write_json(output_root / "index.json", index)

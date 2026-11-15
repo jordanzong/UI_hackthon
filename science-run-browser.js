@@ -113,8 +113,14 @@ async function refreshRun(){
  repaintOptions();
  const run=runsFor(state.target,state.band).find(x=>x.run_id===state.run);
  if(!run){
-  drawMissing(tr('此 Target / Bandpass 尚未匯出 Analysis Run，等待後端提供。',
-                 'This target/bandpass has no published Analysis Run yet.'));
+  const targetInfo=state.index?.targets?.find(x=>x.target_id===state.target);
+  const revision=targetInfo?.publication_status==='photometry_under_revision'||
+                 state.target==='R_Draconis';
+  drawMissing(revision
+   ?tr('R Draconis 測光結果正在修正，目前不提供分析影像或 SED。',
+       'R Draconis photometry is under revision; analysis images and SED are withheld.')
+   :tr('此 Target / Bandpass 尚未匯出 Analysis Run，等待後端提供。',
+       'This target/bandpass has no published Analysis Run yet.'));
   return;
  }
  state.loading=true;status(tr('正在載入 ','Loading ')+state.run+'…');$('srb-media').hidden=true;clearCatalog();

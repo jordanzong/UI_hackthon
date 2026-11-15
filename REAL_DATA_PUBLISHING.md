@@ -2,14 +2,14 @@
 
 This feature branch integrates real `analysis_runs` from the team's Google Drive ZIP without claiming that detector/photometric sources are confirmed astronomical movers or variables.
 
-Source archive: https://drive.google.com/drive/folders/1l3bbGPJDf73ew28OsqaV8e7qQuWVw1AI (`output.zip`).
+Source archive: https://drive.google.com/drive/folders/1l3bbGPJDf73ew28OsqaV8e7qQuWVw1AI (`output.zip`, latest Drive ID `1_4-H9L10rs1BJkH77zLIZmRZfnlKBKBX`).
 
 ## Data state
 - Expected: 5 targets × 9 standard bandpass selections = 45 planned combinations.
-- Provided in this archive: 3 targets × 9 runs = **27 runs**:
-  WISE_0855, Barnards_Star and Epsilon_Indi_B.
-- RW_Aurigae and R_Draconis are still processing.
-- All 27 runs include a source-annotated GIF, ECSV catalogs, FITS stacks and SED PNG plots. The `markers.json` classifier output and specifically candidate-marked GIFs are **not yet available**.
+- Updated 2026-11-15 archive: 4 targets × 9 runs = **36 runs**:
+  WISE_0855, Barnards_Star, Epsilon_Indi_B and RW_Aurigae.
+- R_Draconis has **photometry under revision**, so its runs are intentionally withheld.
+- All 36 runs include a source-annotated GIF, ECSV catalogs, FITS stacks and SED PNG plots. The `markers.json` classifier output and specifically candidate-marked GIFs are **not yet available**.
 - Bandpass `D1` etc selects the **time grouping/stacking analysis**; `allbands_epsf_photometry.ecsv` can still carry **D1–D6 photometry** for its SED. Source IDs remain scoped to individual runs.
 - WISE 0855 download manifest shows seven HTTP 503 failures; do not infer complete coverage or claim no detections from gaps.
 
