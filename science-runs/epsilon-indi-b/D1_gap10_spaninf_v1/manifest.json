@@ -50,8 +50,8 @@
           "stack_inputs": 20
         }
       ],
-      "blink_url": "media/group_stacks_sources_epsf.gif",
-      "gif_annotation": "source-numbers",
+      "blink_url": "media/group_stacks_marked.gif",
+      "gif_annotation": "marked-unclassified",
       "sed_photometry_scope": "all-six-bands",
       "seds": [
         {
@@ -183,7 +183,7 @@
       ],
       "source_count": 18,
       "candidate_count": 0,
-      "notice": "Marked GIF frames and SED plots are from this exact analysis run. Candidate mover/variable classes are algorithm flags, not verified astrophysical identifications. Image overlays are baked into GIF; no pixel-accurate clickable source boxes are assumed."
+      "notice": "Updated real marked GIF for this exact target/run. Algorithm labels are unverified candidates; source/photometry coordinates unchanged."
     }
   },
   "sources": [
