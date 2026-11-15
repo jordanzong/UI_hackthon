@@ -10,6 +10,12 @@ on:
       - 'tools/test_science_run_exporter.py'
       - 'science-run-browser.js'
       - 'science-run-browser.css'
+      - 'index.html'
+      - 'sky-map-tools.js'
+      - 'sky-map-tools.css'
+      - 'spherex-viewer.js'
+      - 'spherex-viewer.css'
+      - 'tools/test_ui_consolidation.py'
       - 'science-runs/index.json'
       - '.github/workflows/test-science-runs.yml'
 
@@ -29,7 +35,10 @@ jobs:
       - name: Validate front-end JavaScript syntax
         run: |
           node --check science-run-browser.js
-          node --check notebook-results.js
+          node --check spherex-viewer.js
+          node --check sky-map-tools.js
+      - name: Audit published real science products and removed legacy assets
+        run: python3 tools/test_ui_consolidation.py
       - name: Check all five targets and nine expected bandpasses
         run: |
           node -e "const s=require('./science-runs/index.json');if(s.targets.length!==5||s.bands.length!==9)process.exit(1);if(s.targets.some(t=>!Array.isArray(t.runs)))process.exit(2);"

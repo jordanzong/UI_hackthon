@@ -71,3 +71,26 @@
  #science-run-browser{padding:12px 8px}
  #science-run-browser .srb-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+/* One Science Results interface, replacing Notebook Results + newer Run panel. */
+#nr-explorer{min-width:0}
+#nr-explorer #nr-details{min-width:0}
+#nr-explorer #nr-details>summary{color:var(--muted)}
+#nr-explorer .nr-body{min-width:0}
+#nr-explorer #science-run-browser{margin:0}
+#science-run-browser .srb-search{display:flex;gap:6px;min-width:0}
+#science-run-browser .srb-search input{
+ min-width:0;flex:1;background:var(--surface);border:1px solid var(--line);color:var(--fg);
+ font:11px/1.4 var(--mono);padding:8px 7px
+}
+#science-run-browser .srb-search button{flex:0 0 64px;font-size:10px;min-width:0;padding:8px 3px;letter-spacing:0;text-indent:0}
+#science-run-browser .srb-target-where{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#science-run-browser .srb-target-where label{display:flex;flex-direction:column;gap:4px;color:var(--muted);font:10px/1.3 var(--mono)}
+#science-run-browser .srb-target-where input{min-width:0;width:100%;padding:8px 6px;color:var(--fg);background:var(--surface);border:1px solid var(--line);font:11px/1.3 var(--mono)}
+#science-run-browser .srb-go,#science-run-browser #srb-locate{text-indent:0;letter-spacing:0;white-space:normal;font-size:10px;line-height:1.4}
+#science-run-browser #srb-lookup:empty{display:none}
+#science-run-browser #srb-lookup:not(:empty){border-left-color:var(--line);color:var(--muted)}
+#science-run-browser #srb-source-info{margin:0}
+#science-run-browser #srb-locate:disabled{opacity:.4;cursor:default}
+#science-run-browser .srb-frame{min-height:180px;max-height:500px}
+#science-run-browser .srb-frame img{max-height:500px}
+#science-run-browser .srb-heading strong{letter-spacing:.045em}

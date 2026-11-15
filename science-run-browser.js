@@ -5,8 +5,14 @@
 (() => {
 'use strict';
 const base=new URL('./science-runs/index.json',document.baseURI);
-const root=document.querySelector('#nr-explorer .nr-body');
-if(!root)return;
+const panel=document.getElementById('pbody');
+if(!panel)return;
+// One canonical Science Results section replaces both previous science panels.
+const scienceSection=document.createElement('section');
+scienceSection.className='sec';scienceSection.id='nr-explorer';
+scienceSection.innerHTML='<details id="nr-details" open><summary id="nr-heading">科學分析 / Science Results</summary><div class="nr-body"></div></details>';
+panel.insertBefore(scienceSection,document.getElementById('layers')?.closest('.sec')||null);
+const root=scienceSection.querySelector('.nr-body');
 const BANDS=[
  'D1','D2','D3','D4','D5','D6',
  'D1+D2+D3','D4+D5+D6','D1+D2+D3+D4+D5+D6'
@@ -16,19 +22,30 @@ const TARGETS=[
  ['Epsilon_Indi_B','Epsilon Indi B'],['RW_Aurigae','RW Aurigae'],
  ['R_Draconis','R Draconis']
 ];
+const META=[
+ {id:'WISE_0855',name:'WISE 0855',ra:133.78948309791494,dec:-7.24294039128244,aliases:['WISE 0855','WISE 0855-0714']},
+ {id:'Barnards_Star',name:"Barnard's Star",ra:269.45207696,dec:4.69336497,aliases:["Barnard's Star",'Barnards Star','GJ 699']},
+ {id:'Epsilon_Indi_B',name:'Epsilon Indi B',ra:331.04414659,dec:-56.78284420,aliases:['Epsilon Indi B','eps Ind B']},
+ {id:'RW_Aurigae',name:'RW Aurigae',ra:76.95652603,dec:30.40143817,aliases:['RW Aurigae','RW Aur']},
+ {id:'R_Draconis',name:'R Draconis',ra:248.16761083,dec:66.75497942,aliases:['R Draconis','R Dra']}
+];
 const state={
- target:window.SPHERExNotebookResults?.current?.().target||'Epsilon_Indi_B',
+ target:'WISE_0855',
  band:'D1',run:'',manifest:null,index:null,mode:'gif',source:'',
  group:'gif',plot:'groups',failure:'',loading:false,request:0
 };
 const el=document.createElement('section');
 el.id='science-run-browser';el.setAttribute('aria-label','Analysis Run Browser');
 el.innerHTML=[
- '<div class="srb-heading"><strong>ANALYSIS RUNS <small>NEW BACKEND</small></strong>',
+ '<div class="srb-heading"><strong>VERIFIED ANALYSIS RUNS <small>SCIENCE DATA</small></strong>',
  '<span id="srb-counter">0 / 45</span></div>',
  '<p class="srb-sub">5 Targets × 9 Bandpass · 每組分析獨立載入，不共用 Source ID</p>',
- '<label class="srb-label" for="srb-target">Target</label><select id="srb-target"></select>',
- '<label class="srb-label" for="srb-band">Bandpass</label><select id="srb-band"></select>',
+ '<label class="srb-label" for="srb-target">Target / 研究目標</label><select id="srb-target"></select>',
+ '<div class="srb-search"><input id="srb-query" type="search" placeholder="Name / alias · GJ 699 · RW Aur" aria-label="Search target name"><button id="srb-find" class="btn sm" type="button">搜尋</button></div>',
+ '<div class="srb-target-where"><label>RA (°)<input id="srb-ra" type="number" min="0" max="360" step="any"></label><label>Dec (°)<input id="srb-dec" type="number" min="-90" max="90" step="any"></label></div>',
+ '<button id="srb-go" type="button" class="btn sm srb-go">前往天球座標 / Go to sky</button>',
+ '<p id="srb-lookup" class="srb-status" role="status" aria-live="polite"></p>',
+ '<label class="srb-label" for="srb-band">Bandpass / 時間分組使用波段</label><select id="srb-band"></select>',
  '<label class="srb-label" for="srb-version">Analysis Run (gap / span / version)</label>',
  '<select id="srb-version"></select>',
  '<p id="srb-status" class="srb-status" role="status" aria-live="polite"></p>',
@@ -41,7 +58,8 @@ el.innerHTML=[
  '<div id="srb-sources" hidden><label class="srb-label" for="srb-source">Source ID (within this Run)</label>',
  '<select id="srb-source"></select><label class="srb-label" for="srb-plot">SED figure</label>',
  '<select id="srb-plot"><option value="groups">By time group</option>',
- '<option value="evolution">Epoch-to-epoch evolution</option></select></div>',
+ '<option value="evolution">Epoch-to-epoch evolution</option></select>',
+ '<button id="srb-locate" type="button" class="btn sm">定位此 Run 的 Source / Locate Source</button><p id="srb-source-info" class="srb-caption"></p></div>',
  '<div class="srb-frame"><img id="srb-image" alt="Verified SPHEREx analysis output" loading="lazy">',
  '<p id="srb-empty" hidden></p></div>',
  '<a id="srb-open" href="#" target="_blank" rel="noopener noreferrer">Open original image</a>',
@@ -55,6 +73,23 @@ const $=id=>document.getElementById(id);
 const zh=()=>String(document.documentElement.lang||'zh').startsWith('zh');
 const tr=(zhText,enText)=>zh()?zhText:enText;
 const targetName=id=>TARGETS.find(x=>x[0]===id)?.[1]||id;
+const targetMeta=id=>META.find(x=>x.id===id)||META[0];
+function syncTargetCoordinates(){
+ const t=targetMeta(state.target);
+ $('srb-ra').value=String(t.ra);$('srb-dec').value=String(t.dec);
+}
+function goToSky(ra,dec){
+ const a=Number(ra),d=Number(dec);
+ if(!Number.isFinite(a)||a<0||a>=360||!Number.isFinite(d)||d< -90||d>90){
+  $('srb-lookup').textContent=tr('RA / Dec 不在有效範圍。','Invalid RA / Dec.');
+  return false;
+ }
+ const ok=window.SkyAtlas?.goToCoordinates?.({ra_deg:a,dec_deg:d,fov_deg:2});
+ $('srb-lookup').textContent=ok
+  ?tr('已定位參考座標；不代表偵測證據。','Reference location selected; not a detection.')
+  :tr('目前無法定位。','Sky navigation unavailable.');
+ return !!ok;
+}
 for(const [id,name] of TARGETS){
  const op=document.createElement('option');op.value=id;op.textContent=name;$('srb-target').append(op);
 }
@@ -62,6 +97,7 @@ for(const id of BANDS){
  const op=document.createElement('option');op.value=id;op.textContent=id.replaceAll('+',' + ');$('srb-band').append(op);
 }
 $('srb-target').value=state.target;
+syncTargetCoordinates();
 const resolved=(path,origin)=>{
  if(typeof path!=='string'||!path)return null;
  const url=new URL(path,origin);
@@ -105,7 +141,10 @@ function clearCatalog(){
  if(window.SPHERExCatalog?.clear)window.SPHERExCatalog.clear({target_id:state.target,origin:'analysis-run'});
 }
 function drawMissing(message){
- $('srb-media').hidden=true;status(message);clearCatalog();
+ $('srb-media').hidden=true;
+ $('srb-image').removeAttribute('src');
+ $('srb-open').hidden=true;
+ status(message);clearCatalog();
 }
 async function refreshRun(){
  const token=++state.request;
@@ -161,9 +200,9 @@ function selectBand(value){if(!BANDS.includes(value))return;state.band=value;sta
 function selectTarget(value){
  if(!TARGETS.some(x=>x[0]===value))return;
  state.target=value;state.run='';
+ syncTargetCoordinates();$('srb-lookup').textContent='';
  const first=state.index?.targets?.find(x=>x.target_id===value)?.runs?.[0];
  if(first?.band_id&&BANDS.includes(first.band_id))state.band=first.band_id;
- window.SPHERExNotebookResults?.selectTarget?.(value);
  refreshRun();
 }
 function sourceIds(p){
@@ -203,6 +242,12 @@ function render(){
  const sel=$('srb-source');sel.replaceChildren();
  for(const id of ids){const o=document.createElement('option');o.value=id;o.textContent='Source '+id;sel.append(o);}
  sel.value=chosen;
+ const source=m.sources.find(s=>String(s.source_id)===chosen);
+ $('srb-locate').disabled=!source||!Number.isFinite(Number(source.ra_deg))||!Number.isFinite(Number(source.dec_deg));
+ $('srb-source-info').textContent=source
+  ?'Source '+chosen+' · RA '+Number(source.ra_deg).toFixed(6)+'° · Dec '+Number(source.dec_deg).toFixed(6)+'°'+
+   (source.best_snr!=null?' · SNR '+Number(source.best_snr).toFixed(2):'')
+  :tr('沒有已驗證的來源座標。','No source coordinates supplied.');
  $('srb-plot').value=state.plot;
  let url=null,caption='',sourceCaption='';
  if(state.mode==='sed'){
@@ -301,17 +346,36 @@ $('srb-image').addEventListener('error',()=>{
  missing.textContent=tr('此圖片尚未成功發布或無法讀取。','This image is not yet published or could not be loaded.');
  status(tr('圖片載入失敗，請檢查 GitHub Pages 檔案位置。','Image failed. Check deployed GitHub Pages paths.'));
 });
-const legacy=$('nr-target');
-legacy?.addEventListener('change',()=>{
- const id=legacy.value;
- if(id===state.target)return;
- state.target=id;state.run='';refreshRun();
-});
+$('srb-go').onclick=()=>goToSky($('srb-ra').value,$('srb-dec').value);
+function searchTarget(){
+ const key=$('srb-query').value.toLowerCase().replace(/[^a-z0-9]/g,'');
+ if(!key)return;
+ const result=META.filter(x=>[x.name,x.id,...x.aliases].some(a=>
+  a.toLowerCase().replace(/[^a-z0-9]/g,'').includes(key)));
+ if(result.length===1){selectTarget(result[0].id);$('srb-lookup').textContent='Target: '+result[0].name;}
+ else $('srb-lookup').textContent=result.length
+  ?tr('多個目標符合，請使用上方選單。','Multiple matching targets; use menu.')
+  :tr('未找到目標，可輸入 RA / Dec 導航。','No matching target; use RA / Dec.');
+}
+$('srb-find').onclick=searchTarget;
+$('srb-query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchTarget();}});
+$('srb-locate').onclick=()=>{
+ const s=state.manifest?.sources?.find(x=>String(x.source_id)===state.source);
+ if(s)goToSky(s.ra_deg,s.dec_deg);
+};
 window.SPHERExScienceRuns={
  reload:loadIndex,
  current:()=>({target:state.target,band:state.band,run:state.run,loaded:!!state.manifest}),
  selectTarget,selectBand,
  getIndex:()=>state.index
+};
+// Metadata compatibility for atlas object search; no old Notebook Results UI or sample products.
+window.SPHERExNotebookResults={
+ targets:META.map(t=>({id:t.id,name:t.name,ra_deg:t.ra,dec_deg:t.dec})),
+ selectTarget,selectBand,
+ goToCoordinates:goToSky,navigate:goToSky,
+ current:()=>({target:state.target,band:state.band,run:state.run,source_id:state.source}),
+ getProducts:id=>[...new Set((state.index?.targets?.find(t=>t.target_id===(id||state.target))?.runs||[]).map(r=>r.band_id))]
 };
 loadIndex();
 })();
