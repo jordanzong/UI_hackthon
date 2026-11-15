@@ -8,6 +8,8 @@ on:
     paths:
       - 'tools/build_science_run_manifests.py'
       - 'tools/test_science_run_exporter.py'
+      - 'tools/update_marked_gifs.py'
+      - 'tools/test_marked_gif_update.py'
       - 'science-run-browser.js'
       - 'science-run-browser.css'
       - 'index.html'
@@ -29,9 +31,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate Python syntax
-        run: python3 -m py_compile tools/build_science_run_manifests.py tools/test_science_run_exporter.py
+        run: python3 -m py_compile tools/build_science_run_manifests.py tools/test_science_run_exporter.py tools/update_marked_gifs.py tools/test_marked_gif_update.py
       - name: Run isolated synthetic-fixture tests (no scientific data is published)
         run: python3 tools/test_science_run_exporter.py
+      - name: Test marked-GIF-only update and rollback protections
+        run: python3 tools/test_marked_gif_update.py
       - name: Validate front-end JavaScript syntax
         run: |
           node --check science-run-browser.js

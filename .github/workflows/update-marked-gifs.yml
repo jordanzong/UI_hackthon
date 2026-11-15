@@ -1,0 +1,79 @@
+name: Publish Updated Four-Target Marked GIFs
+
+on:
+  workflow_dispatch:
+    inputs:
+      drive_file_id:
+        description: "new_output.zip Google Drive file ID"
+        required: true
+        default: "15yFXpqRr6gSqpA7dWFbe_nODoOTQvId0"
+  push:
+    branches:
+      - feature/science-analysis-runs
+    paths:
+      - "tools/update_marked_gifs.py"
+      - ".github/workflows/update-marked-gifs.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-spherex-science
+  cancel-in-progress: false
+
+jobs:
+  publish-markers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Drive downloader
+        run: python3 -m pip install "gdown>=5"
+      - name: Download verified new_output ZIP
+        env:
+          DRIVE_FILE_ID: ${{ inputs.drive_file_id || '15yFXpqRr6gSqpA7dWFbe_nODoOTQvId0' }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/spherex-marked
+          gdown "https://drive.google.com/uc?id=$DRIVE_FILE_ID" -O /tmp/spherex-marked/new_output.zip
+          test -s /tmp/spherex-marked/new_output.zip
+      - name: Update marked GIFs without replacing measured science assets
+        run: |
+          python3 tools/update_marked_gifs.py \
+            --archive /tmp/spherex-marked/new_output.zip \
+            --published-dir ./science-runs
+      - name: Validate media paths and science inventory
+        run: |
+          python3 tools/test_ui_consolidation.py
+          python3 - <<'PY'
+          import json, pathlib
+          root=pathlib.Path('science-runs')
+          index=json.loads((root/'index.json').read_text())
+          n=0
+          for t in index['targets']:
+              if t['target_id']=='R_Draconis':
+                  assert not t['runs']
+                  continue
+              assert len(t['runs'])==9
+              for run in t['runs']:
+                  m=json.loads((root/run['manifest_url']).read_text())
+                  p=m['bands'][run['band_id']]
+                  assert p['blink_url']=='media/group_stacks_marked.gif'
+                  assert p['gif_annotation'] in ('algorithm-candidates','marked-unclassified')
+                  assert ((root/run['manifest_url']).parent/p['blink_url']).is_file()
+                  n+=1
+          assert n==36, n
+          print('PASS: 36 real marked GIFs, R Draconis withheld')
+          PY
+      - name: Commit only marked-GIF assets and verified metadata
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add science-runs/
+          if git diff --cached --quiet; then
+            echo "Marked GIFs already up to date"
+          else
+            git commit -m "data: publish marked GIFs for four scientific targets"
+            git push origin HEAD:feature/science-analysis-runs
+          fi
