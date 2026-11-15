@@ -212,11 +212,14 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
   .brand{gap:5px}
   #top .top-actions{gap:4px}
 }
+/* Coordinate controls and selection details share a single numbered section. */
+#sel.selection-inline{border-top:1px solid var(--line-soft);padding-top:15px;margin-top:2px;min-height:30px}
+#sel.selection-inline h2{color:var(--accent)}
+#preset-staging[hidden]{display:none}
 </style>
-<link rel="stylesheet" href="./spherex-viewer.css">
-<link rel="stylesheet" href="./notebook-results.css?v=2.1">
-<link rel="stylesheet" href="./science-run-browser.css?v=1">
-<link rel="stylesheet" href="./sky-map-tools.css?v=1">
+<link rel="stylesheet" href="./spherex-viewer.css?v=3">
+<link rel="stylesheet" href="./science-run-browser.css?v=3">
+<link rel="stylesheet" href="./sky-map-tools.css?v=3">
 </head>
 <body>
 <div id="app">
@@ -252,9 +255,9 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
             <div class="btns"><button class="btn primary" type="submit" data-i18n="go">前往</button><button type="button" class="btn" id="readc" data-i18n="readc">讀取畫面中心</button></div>
             <p id="msg" role="status"></p>
           </form>
+          <div id="sel" class="selection-inline" aria-live="polite"></div>
         </div>
-        <div class="sec" id="sel" aria-live="polite"></div>
-        <div class="sec"><details><summary data-i18n="presets">預設目標</summary><div class="chips" id="presets"></div></details></div>
+        <div id="preset-staging" hidden><details><summary data-i18n="presets">預設目標</summary><div class="chips" id="presets"></div></details></div>
         <div class="sec"><details open><summary data-i18n="layers">圖層</summary><div class="layers" id="layers"></div></details></div>
         <div class="sec" id="science-catalogs">
           <h2 data-i18n="additionalCatalogs">自動星表 / 科學資料</h2>
@@ -1812,11 +1815,9 @@ resize();
 </script>
 
 <script src="./allsky-stars.js?v=20261115C"></script>
-<script src="./spherex-demo.js"></script>
-<script src="./spherex-viewer.js"></script>
-<script src="./notebook-results.js?v=2.4"></script>
-<script src="./sky-map-tools.js?v=2"></script>
-<script src="./science-run-browser.js?v=1"></script>
+<script src="./spherex-viewer.js?v=3"></script>
+<script src="./science-run-browser.js?v=3"></script>
+<script src="./sky-map-tools.js?v=3"></script>
 
 </body>
 </html>

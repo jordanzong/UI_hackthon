@@ -6,18 +6,14 @@
 const $=id=>document.getElementById(id), num=x=>x!==null&&x!==undefined&&x!==''&&Number.isFinite(Number(x));
 const fmt=(x,n=3)=>num(x)?Number(x).toFixed(n):'—';
 const ja=(tw,en)=>(document.documentElement.lang||'zh').startsWith('zh')?tw:en;
-const app={data:null,index:0,diff:false,playing:false,timer:null,urls:[],selection:null,markers:true,loading:0};
+const app={data:null,index:0,diff:false,playing:false,timer:null,selection:null,markers:true};
 function el(tag,attrs={},text){const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs))n.setAttribute(k,String(v));if(text!==undefined)n.textContent=text;return n;}
 const launch=el('button',{id:'spx-launch',type:'button','aria-expanded':'false','aria-controls':'spx-viewer'},'✦ SPHEREx Viewer');
 const panel=el('aside',{id:'spx-viewer',role:'region','aria-label':'SPHEREx Observation Viewer'});
 panel.innerHTML=[
-'<div class="spx-head"><div><h2>SPHEREx Observation Viewer</h2><p class="spx-sub">DR1 · Wavelength · Time Domain</p></div><button type="button" id="spx-close" aria-label="Close">×</button></div>',
+'<div class="spx-head"><div><h2>SPHEREx Observation Viewer</h2><p class="spx-sub">Published Science Runs · Time Groups · SED companion</p></div><button type="button" id="spx-close" aria-label="Close">×</button></div>',
 '<div class="spx-body">',
-'<div class="spx-controls"><button id="spx-demo" type="button">DR1 Example</button><button id="spx-import-img" type="button">Import Images</button><button id="spx-import-json" type="button">Import JSON</button></div>',
-'<input type="file" id="spx-file-img" accept=".png,.jpg,.jpeg,.webp,.gif,image/*" multiple hidden>',
-'<input type="file" id="spx-file-json" accept=".json,application/json" hidden>',
-'<div class="spx-url"><input id="spx-manifest-url" type="url" placeholder="https://.../field.json" aria-label="JSON manifest URL"><button id="spx-load" type="button">Load URL</button></div>',
-'<div id="spx-imagebox"><img id="spx-image" alt="SPHEREx observation preview" draggable="false"><div id="spx-markers"></div><div id="spx-empty">Load the DR1 example or select your own PNG/GIF.</div></div>',
+'<div id="spx-imagebox"><img id="spx-image" alt="SPHEREx published observation preview" draggable="false"><div id="spx-markers"></div><div id="spx-empty">請在 Science Results 選擇已發布 Run，再按 Open Viewer。</div></div>',
 '<div class="spx-meta"><span id="spx-epoch">Epoch —</span><span id="spx-wave">λ —</span></div>',
 '<div class="spx-controls"><button id="spx-prev" type="button">◀ Prev</button><button id="spx-play" type="button" aria-pressed="false">▶ Blink</button><button id="spx-next" type="button">Next ▶</button><button id="spx-difference" type="button" aria-pressed="false">Difference</button></div>',
 '<input id="spx-slider" type="range" min="0" max="0" value="0" aria-label="Epoch position">',
@@ -63,10 +59,9 @@ function open(yes=true){
  launch.textContent=yes?'✕ Hide Viewer':'✦ SPHEREx Viewer';
  if(!yes)stop();if(yes)requestAnimationFrame(drawMarkers);
 }
-function resetLocalFiles(){for(const url of app.urls)URL.revokeObjectURL(url);app.urls=[];}
 function setData(raw,opts={}){
  const d=normalize(raw,opts.baseURL);
- stop();resetLocalFiles();app.data=d;app.index=0;app.diff=false;app.selection=null;
+ stop();app.data=d;app.index=0;app.diff=false;app.selection=null;
  if(d.sources.length&&window.SPHERExCatalog?.setSources)window.SPHERExCatalog.setSources(d.sources);
  render();if(opts.open!==false)open(true);
  return {frames:d.frames.length,sources:d.sources.length};
@@ -134,7 +129,7 @@ function render(){
  $('spx-caveat').hidden=!note;$('spx-caveat').textContent=note;
  if(!app.selection)$('spx-source-detail').textContent=data?.sources?.length?
     ja('點選影像標記查看來源；需提供每張影像的 frame_positions','Click markers; frame_positions required for each image'):
-    ja('尚無來源標記。可匯入含 frame_positions 的 Manifest','No source positions. Import a manifest with frame_positions.');
+    ja('此資料沒有可投影的 Source 像素座標；不推測標記位置。','No validated per-frame source pixel coordinates; markers are not inferred.');
 }
 function changeFrame(i){
  const n=app.data?.frames?.length||0;if(!n)return;
@@ -147,28 +142,8 @@ function play(){
  $('spx-play').textContent='❚❚ Pause';$('spx-play').setAttribute('aria-pressed','true');
  changeFrame(app.index+1);app.timer=setInterval(()=>changeFrame(app.index+1),800);
 }
-async function loadFromUrl(url){
- const seq=++app.loading;status(ja('正在取得 Manifest…','Loading manifest…'));
- const res=await fetch(url,{cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);
- const d=await res.json();if(seq!==app.loading)return null;
- return setData(d,{baseURL:res.url||url});
-}
-async function importImages(list){
- const files=[...list].filter(f=>/^image\/(png|jpeg|webp|gif)$/.test(f.type)||/\.(png|jpg|jpeg|webp|gif)$/i.test(f.name))
-  .sort((a,b)=>a.name.localeCompare(b.name));
- if(!files.length)throw Error('Select PNG, WebP, JPEG or GIF (not FITS)');
- const urls=files.map(f=>URL.createObjectURL(f)),frames=[];let difference=null;
- files.forEach((f,i)=>{
-   const o={frame_id:f.name,label:f.name,image_url:urls[i]};
-   if(/diff(erence)?/i.test(f.name))difference=o;else frames.push(o);
- });
- const result=setData({field_id:'local_images',status:'ready',frames,difference,
-  notice:ja('本機影像模式：無 WCS、有效遮罩或來源像素位置。','Local preview: no WCS, mask or source pixel positions.')});
- app.urls=urls;return result;
-}
 launch.onclick=()=>open(panel.hidden);
 $('spx-close').onclick=()=>open(false);
-$('spx-demo').onclick=()=>setData(window.SPHEREx_DemoManifest||{frames:[]});
 $('spx-prev').onclick=()=>{stop();changeFrame(app.index-1);};
 $('spx-next').onclick=()=>{stop();changeFrame(app.index+1);};
 $('spx-play').onclick=play;
@@ -176,14 +151,6 @@ $('spx-difference').onclick=()=>{stop();app.diff=!app.diff;render();};
 $('spx-slider').oninput=e=>{stop();changeFrame(Number(e.target.value));};
 $('spx-markers-on').onchange=e=>{app.markers=e.target.checked;drawMarkers();};
 $('spx-brightness').oninput=e=>{image.style.filter='brightness('+Number(e.target.value)+') contrast(1.1)';};
-$('spx-import-img').onclick=()=>$('spx-file-img').click();
-$('spx-import-json').onclick=()=>$('spx-file-json').click();
-$('spx-file-img').onchange=async e=>{try{await importImages(e.target.files);}catch(err){status(String(err.message||err),true);}e.target.value='';};
-$('spx-file-json').onchange=async e=>{const f=e.target.files?.[0];if(f)try{setData(JSON.parse(await f.text()));}catch(err){status(String(err.message||err),true);}e.target.value='';};
-$('spx-load').onclick=async()=>{
- try{const url=$('spx-manifest-url').value.trim();if(!url)throw Error('Enter manifest URL');await loadFromUrl(url);}
- catch(err){status(String(err.message||err),true);}
-};
 window.addEventListener('spherex:select-source',e=>{
  const source=e.detail?.source;if(source){
    const match=app.data?.sources?.find(s=>markerId(s)===markerId(source));
@@ -192,8 +159,7 @@ window.addEventListener('spherex:select-source',e=>{
 });
 window.addEventListener('resize',()=>{if(!panel.hidden)drawMarkers();});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)open(false);});
-window.SPHERExViewer={setData,loadFromUrl,importImages,open:()=>open(true),close:()=>open(false),
+window.SPHERExViewer={setData,open:()=>open(true),close:()=>open(false),
  getState:()=>({frame:app.index,mode:app.diff?'difference':'frame',frames:app.data?.frames?.length||0,open:!panel.hidden})};
-if(window.SPHEREx_DemoManifest)setData(window.SPHEREx_DemoManifest,{open:innerWidth>700});
-else render();
+render();
 })();

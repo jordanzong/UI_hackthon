@@ -22,3 +22,9 @@
 #atlas-tools #atlas-share{font:600 10px/1.4 var(--font);text-indent:0;letter-spacing:.04em;padding:9px 4px;white-space:normal}
 #atlas-link-output{word-break:break-all;border-left:2px solid var(--accent);padding-left:8px}
 @media (max-width:410px){#atlas-tools .atlas-utility-grid{grid-template-columns:1fr}}
+
+/* Search and actual built-in sky presets are one coherent numbered section. */
+#atlas-presets-slot{border-top:1px solid var(--line-soft);padding-top:12px}
+#atlas-presets-slot details>summary{font-size:10.5px}
+#atlas-presets-slot .chips{margin-top:10px;gap:6px}
+#atlas-presets-slot .chips button{font-size:11px;padding:8px 9px}

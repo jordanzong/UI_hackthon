@@ -76,3 +76,18 @@ body.spx-open #zoomkeys{right:calc(min(420px,100vw - var(--rail) - 34px) + 25px)
   #spx-launch::after{content:"SPX";font:600 11px/1 var(--mono);letter-spacing:.02em}
   #spx-launch[aria-expanded="true"]::after{content:"× SPX"}
 }
+
+/* Science-only viewer: no import panel, prioritize a large image viewport. */
+#spx-viewer{width:min(1040px,calc(100vw - var(--rail) - 28px));}
+#spx-viewer .spx-body{gap:12px;padding:13px 18px 18px}
+#spx-viewer #spx-imagebox{aspect-ratio:auto;height:clamp(380px,60dvh,760px);min-height:380px;max-height:none;flex-shrink:0}
+#spx-viewer #spx-image{object-fit:contain}
+#spx-viewer .spx-meta{font-size:12px}
+#spx-viewer #spx-source-detail{padding-bottom:8px}
+body.spx-open #zoomkeys{right:calc(min(1040px,100vw - var(--rail) - 28px) + 24px)}
+@media(max-width:950px){body.spx-open #zoomkeys{right:20px}}
+@media(max-width:720px){
+ #spx-viewer{left:6px;right:6px;top:calc(var(--top) + 5px);bottom:6px;width:auto;max-height:none}
+ #spx-viewer .spx-body{padding:9px;gap:9px}
+ #spx-viewer #spx-imagebox{height:50dvh;min-height:220px;max-height:none;aspect-ratio:auto}
+}
