@@ -744,6 +744,15 @@ const GAIA_TAP=[
 const GAIA_LIMIT=3000;
 let gaiaDepth='auto',gaiaQueryEpoch=0;
 let gaiaStars=[],spherexSources=[];
+/* Gaia DR3 static field cache: verified TAP CSVs committed by GitHub Actions.
+ * These are limited 0.2-degree cones, not a substitute for whole-sky Gaia. */
+const gaiaLocal={manifest:null,attempted:false,loadError:'',files:new Map(),pending:new Set(),active:'',stars:[]};
+function availableGaiaStars(){
+ if(!gaiaLocal.stars.length)return gaiaStars;
+ if(!gaiaStars.length)return gaiaLocal.stars;
+ const ids=new Set(gaiaStars.map(s=>s.source_id));
+ return gaiaStars.concat(gaiaLocal.stars.filter(s=>!ids.has(s.source_id)));
+}
 let gaiaTimer=null,gaiaBusy=false,gaiaNotice='',spxNotice='',manualGaia=false;
 let gaiaLastFailure=null,gaiaFailureText='';
 const gaiaCache=[];
@@ -772,8 +781,12 @@ function catalogNotice(){
   const gaia=!L.gaia?(zh?'已關閉':'off'):
     V.fov>12?(zh?'需放大至 12° 內':'zoom to 12° or less'):
     gaiaBusy?(zh?'讀取中…':'loading…'):
-    gaiaFailureText?(zh?'查詢失敗（可重試）':'query failed (retry available)'):
-    gaiaNotice||(zh?'待查詢':'awaiting query');
+    gaiaFailureText?(gaiaLocal.stars.length
+      ?(zh?'本地 '+gaiaLocal.stars.length+' 筆（線上查詢失敗）':'local '+gaiaLocal.stars.length+' stars (online query failed)')
+      :(zh?'查詢失敗（可重試）':'query failed (retry available)')):
+    gaiaLocal.stars.length
+      ?(zh?'本地 Gaia '+gaiaLocal.stars.length+' 筆':'local Gaia '+gaiaLocal.stars.length+' stars')
+      :gaiaNotice||(zh?'待查詢':'awaiting query');
   const spx=spxNotice||(zh?'等待研究目標資料…':'awaiting science target…');
   catalogStatus.textContent=`Gaia DR3: ${gaia}  |  SPHEREx: ${spx}`;
   catalogStatus.classList.toggle('warn',!!(gaiaFailureText&&L.gaia&&V.fov<=12));
@@ -809,6 +822,58 @@ function normalizeGaia(rows){
     if(!Number.isFinite(ra)||!Number.isFinite(dec)||!Number.isFinite(mag)||dec < -90||dec>90)return null;
     return{kind:'gaia',ra:ra*D2R,dec:dec*D2R,mag,source_id:String(o.source_id??''),n:'Gaia DR3'};
   }).filter(Boolean);
+}
+/* Load same-origin Gaia CSV metadata once; load the nearest field lazily only
+ * when it intersects a small view. Never require users to upload files. */
+function initGaiaLocal(){
+ if(gaiaLocal.attempted)return;
+ gaiaLocal.attempted=true;
+ fetch('./catalogs/gaia/manifest.json',{cache:'force-cache'}).then(async r=>{
+   if(!r.ok)throw Error('Static Gaia manifest HTTP '+r.status);
+   const d=await r.json();
+   if(d.catalog!=='Gaia DR3'||!Array.isArray(d.fields))throw Error('Unexpected Gaia manifest');
+   gaiaLocal.manifest=d;
+   requestRender();
+ }).catch(e=>{gaiaLocal.loadError=String(e.message||e);catalogNotice();});
+}
+function syncGaiaLocal(view){
+ if(!L.gaia||V.fov>1||manualGaia){
+   if(gaiaLocal.stars.length||gaiaLocal.active){gaiaLocal.stars=[];gaiaLocal.active='';}
+   return;
+ }
+ if(!gaiaLocal.manifest){initGaiaLocal();return;}
+ const fields=gaiaLocal.manifest.fields;
+ let chosen=null,best=Infinity;
+ for(const f of fields){
+   if(!f?.file||!f?.center)continue;
+   const a=Number(f.center.ra_deg),d=Number(f.center.dec_deg),radius=Number(f.radius_deg);
+   if(![a,d,radius].every(Number.isFinite)||radius<=0)continue;
+   const dist=skySep(view.ra,view.dec,a*D2R,d*D2R);
+   if(dist<radius+view.radius&&dist<best){best=dist;chosen=f;}
+ }
+ if(!chosen){if(gaiaLocal.stars.length||gaiaLocal.active){gaiaLocal.stars=[];gaiaLocal.active='';}return;}
+ const id=String(chosen.target_id),current=gaiaLocal.files.get(id);
+ gaiaLocal.active=id;
+ if(current){if(gaiaLocal.stars!==current)gaiaLocal.stars=current;return;}
+ gaiaLocal.stars=[];
+ if(gaiaLocal.pending.has(id))return;
+ gaiaLocal.pending.add(id);
+ const file=String(chosen.file);
+ if(!/^[a-z0-9-]+\.csv$/i.test(file)){gaiaLocal.pending.delete(id);return;}
+ fetch('./catalogs/gaia/'+file,{cache:'force-cache'}).then(async r=>{
+   if(!r.ok)throw Error(file+' HTTP '+r.status);
+   const rows=parseCSV(await r.text());
+   const data=normalizeGaia(rows).filter(star=>
+     skySep(star.ra,star.dec,Number(chosen.center.ra_deg)*D2R,Number(chosen.center.dec_deg)*D2R)
+      <=Number(chosen.radius_deg)+0.0002 &&
+     star.mag<Number(chosen.mag_limit));
+   if(!data.length)throw Error(file+': no valid Gaia DR3 coordinates');
+   gaiaLocal.files.set(id,data);
+   if(gaiaLocal.active===id&&!manualGaia){gaiaLocal.stars=data;catalogNotice();requestRender();}
+ }).catch(e=>{
+   gaiaLocal.loadError=String(e.message||e);
+   if(gaiaLocal.active===id){catalogNotice();requestRender();}
+ }).finally(()=>gaiaLocal.pending.delete(id));
 }
 /* Error messages distinguish HTTP errors from blocked cross-origin fetches.
  * A generic TypeError cannot prove CORS; network/DNS and extensions can also
@@ -889,6 +954,7 @@ async function performGaiaQuery(){
 }
 function scheduleGaia(){
   if(manualGaia){catalogNotice();return;}
+  if(V.W&&V.H)syncGaiaLocal(gaiaView());
   if(!L.gaia||V.fov>12||!V.W||!V.H){
     clearTimeout(gaiaTimer);gaiaTimer=null;
     if(V.fov>12)gaiaStars=[];
@@ -972,7 +1038,7 @@ function drawGaia(){
   ctx.save();ctx.fillStyle='rgba(193,215,255,.80)';
   if(L.gaiaLabels&&V.fov<=0.45)ctx.font='10px '+getComputedStyle(document.body).getPropertyValue('--mono');
   let labels=0;
-  for(const s of gaiaStars){
+  for(const s of availableGaiaStars()){
     if(s.mag>faint||!project(s.ra,s.dec,P))continue;
     if(P.x<0||P.x>V.W||P.y<0||P.y>V.H)continue;
     const radius=clamp(0.55+(faint-s.mag)*0.12,0.55,2.6);
@@ -1225,7 +1291,7 @@ function nearestObject(ra,dec,px,py){
   }
   // A directly clicked SPHEREx measurement must not be masked by a large DSO icon.
   if(best&&best.kind==='spx'&&bd<=10)return best;
-  if(L.gaia&&V.fov<=12)for(const s of gaiaStars){
+  if(L.gaia&&V.fov<=12)for(const s of availableGaiaStars()){
     if(s.mag>gaiaMagLimit(V.fov)||!project(s.ra,s.dec,P))continue;
     const d=Math.hypot(P.x-px,P.y-py);
     if(d<bd){bd=d;best={kind:'gaia',o:s};}
@@ -1454,7 +1520,7 @@ function skyObjectSearch(query,maxResults=15){
  for(const o of DSOS)offer('dso',o.id,dsoName(o),[o.id,o.n,EN_DSO[o.id]||''],o.ra,o.dec,Math.max(.35,Math.min(10,o.size/60*3)),o.mag);
  for(const [idx,p] of PRESETS.entries())offer('preset',idx,lang==='zh'?p[0]:p[1],[p[0],p[1]],p[2]*15*D2R,p[3]*D2R,p[4]);
  for(const c of CONS)offer('constellation',c.zh,consName(c),[c.zh,EN_CONS[c.zh]||''],c.cra,c.cdec,30);
- for(const g of gaiaStars){
+ for(const g of availableGaiaStars()){
   if(g.source_id)offer('gaia',g.source_id,'Gaia DR3 '+g.source_id,[g.source_id],g.ra,g.dec,Math.min(V.fov,.3),g.mag);
  }
  for(const o of spherexSources)offer('spx',o.source_id,'SPHEREx '+o.source_id,[o.source_id],o.ra,o.dec,Math.min(V.fov,.3));
@@ -1504,6 +1570,12 @@ function setGaiaDepth(mode){
 }
 window.SkyAtlas={
   searchObjects:skyObjectSearch,focusObject:focusSkyObject,setGaiaDepth,getGaiaDepth:()=>gaiaDepth,
+  getGaiaCatalogStatus:()=>({
+    online_count:gaiaStars.length,static_count:gaiaLocal.stars.length,
+    static_target:gaiaLocal.active,loaded_fields:gaiaLocal.files.size,
+    static_manifest_loaded:!!gaiaLocal.manifest,static_error:gaiaLocal.loadError,
+    online_error:gaiaFailureText
+  }),
   // Move to a named/offline target or an explicit RA/Dec coordinate.
   // Do not interpret an arbitrary sky position as an actual SPHEREx detection.
   goToCoordinates({ra_deg,dec_deg,fov_deg}={}){
