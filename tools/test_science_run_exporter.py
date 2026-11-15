@@ -46,8 +46,10 @@ class ScienceRunExportTest(unittest.TestCase):
             self.assertEqual(manifest["sources"][0]["candidate_types"], ["mover"])
             self.assertEqual(manifest["sources"][0]["candidate_status"],
                              "algorithm_candidate_unverified")
-            self.assertEqual(manifest["bands"]["D1"]["blink_url"],
+            self.assertIsNone(manifest["bands"]["D1"]["blink_url"])
+            self.assertEqual(manifest["bands"]["D1"]["marked_gif_url"],
                              "media/group_stacks_marked.gif")
+            self.assertEqual(manifest["bands"]["D1"]["marker_gif_status"], "available")
             plots = manifest["bands"]["D1"]["seds"][0]["plots"]
             self.assertIn("groups", plots)
             self.assertIn("evolution", plots)
