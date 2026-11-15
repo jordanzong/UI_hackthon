@@ -78,6 +78,12 @@ def main():
                     asset(manifest_file.parent, path)
                     sed += 1
     assert gif == 36 and sed > 0 and frames > 0
+    assert not list(DATA.rglob("group_stacks_sources_epsf.gif")), (
+        "Redundant unmarked GIF was reintroduced into published science data"
+    )
+    assert len(list(DATA.rglob("group_stacks_marked.gif"))) == 36, (
+        "Expected one marked GIF per published Run"
+    )
     for name in ("catalogs/allsky/manifest.json", "catalogs/gaia/manifest.json",
                  "catalogs/gaia-wide/manifest.json"):
         assert (ROOT / name).is_file(), "Catalog lost: " + name

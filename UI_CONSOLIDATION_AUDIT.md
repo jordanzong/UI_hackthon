@@ -42,3 +42,6 @@ The SPHEREx Observation Viewer is now a large science-image viewing area. It is 
 - New importer prefers `group_stacks_movers_variables.gif` from the scientific pipeline and publishes it using the canonical marked filename without additionally publishing a duplicate original.
 
 - The older ZIP-based full data importer is manual-only to prevent accidental replacement of the newly published marked animations by stale ZIPs.
+
+- Cleaned all 36 redundant unmarked GIFs in verified data commit 49283d23; exactly 36 canonical marked GIFs remain, with science measurements unchanged.
+- Updated Science Results JS/CSS query versions to 6 so browser caches do not retain the old Target search field.
