@@ -34,6 +34,8 @@ el.innerHTML=[
  '<p id="srb-status" class="srb-status" role="status" aria-live="polite"></p>',
  '<div id="srb-media" hidden>',
  '<div class="srb-actions"><button id="srb-gif" class="btn sm" type="button">Group Stack</button>',
+ '<button id="srb-animation" class="btn sm" type="button">一般 GIF</button>',
+ '<button id="srb-marked" class="btn sm" type="button">Marker GIF</button>',
  '<button id="srb-sed" class="btn sm" type="button">SED</button>',
  '<button id="srb-viewer" class="btn sm" type="button">Open Viewer</button></div>',
  '<div id="srb-groups"><label class="srb-label" for="srb-group">Group / Epoch</label>',
@@ -136,6 +138,8 @@ async function refreshRun(){
   }));
   const validated={
    ...raw,product:{...p,frames,seds,blink_url:null,
+    animation_url:resolved(p.animation_url||p.blink_url,url),
+    marked_gif_url:resolved(p.marked_gif_url,url),
     overview_url:resolved(p.overview_url,url),diagnostic_url:resolved(p.diagnostic_url,url)},
    manifest_url:url,sources:Array.isArray(raw.sources)?raw.sources:[],
    candidates:Array.isArray(raw.candidates)?raw.candidates:[]
@@ -167,15 +171,25 @@ function sourceIds(p){
 function render(){
  const m=state.manifest;
  if(!m){$('srb-media').hidden=true;return;}
- const p=m.product,availableImages=!!p.overview_url||!!p.diagnostic_url||p.frames.some(f=>f.image_url);
+ const p=m.product,availableStacks=!!p.overview_url||!!p.diagnostic_url||p.frames.some(f=>f.image_url);
+ const hasAnyImage=availableStacks||!!p.animation_url||!!p.marked_gif_url;
  const ids=sourceIds(p),hasSED=ids.length>0;
  $('srb-media').hidden=false;
- if(!availableImages&&state.mode==='stack'&&hasSED)state.mode='sed';
- if(!hasSED&&state.mode==='sed'&&availableImages)state.mode='stack';
- $('srb-gif').disabled=!availableImages;
+ if(state.mode==='stack'&&!availableStacks)
+  state.mode=p.animation_url?'animation':p.marked_gif_url?'marked':hasSED?'sed':'stack';
+ if(state.mode==='animation'&&!p.animation_url)
+  state.mode=availableStacks?'stack':p.marked_gif_url?'marked':hasSED?'sed':'stack';
+ if(state.mode==='marked'&&!p.marked_gif_url)
+  state.mode=availableStacks?'stack':p.animation_url?'animation':hasSED?'sed':'stack';
+ if(state.mode==='sed'&&!hasSED)
+  state.mode=availableStacks?'stack':p.animation_url?'animation':p.marked_gif_url?'marked':'sed';
+ $('srb-gif').disabled=!availableStacks;
+ $('srb-animation').disabled=!p.animation_url;
+ $('srb-marked').disabled=!p.marked_gif_url;
+ $('srb-marked').title=p.marked_gif_url?'':tr('標記 GIF 製作中','Marked GIF not yet published');
  $('srb-sed').disabled=!hasSED;
- $('srb-viewer').disabled=!availableImages;
- $('srb-groups').hidden=state.mode!=='stack'||!availableImages;
+ $('srb-viewer').disabled=!hasAnyImage;
+ $('srb-groups').hidden=state.mode!=='stack'||!availableStacks;
  $('srb-sources').hidden=state.mode!=='sed'||!hasSED;
  const groupSelect=$('srb-group');groupSelect.replaceChildren();
  if(p.overview_url){
@@ -203,7 +217,13 @@ function render(){
  sel.value=chosen;
  $('srb-plot').value=state.plot;
  let url=null,caption='',sourceCaption='';
- if(state.mode==='sed'){
+ if(state.mode==='animation'){
+  url=p.animation_url;
+  caption=targetName(state.target)+' · '+state.band+' · '+state.run+' · '+tr('一般 GIF（未驗證標記）','ordinary GIF (marker status unverified)');
+ }else if(state.mode==='marked'){
+  url=p.marked_gif_url;
+  caption=targetName(state.target)+' · '+state.band+' · '+state.run+' · '+tr('Source Marker GIF','Source marker GIF');
+ }else if(state.mode==='sed'){
   const source=p.seds.find(s=>String(s.source_id)===state.source);
   const candidate=m.candidates.find(c=>String(c.source_id)===state.source);
   url=source?.plots?.[state.plot]||null;
@@ -232,6 +252,7 @@ function render(){
  status(targetName(state.target)+' · '+state.run+' · '+
    (p.frames.length+' Groups / '+ids.length+' SED Sources / '+m.candidates.length+
     ' '+tr('筆演算法候選','algorithm candidates'))+
+   (p.marked_gif_url?' · Marker GIF '+tr('已提供','available'):' · Marker GIF '+tr('製作中','pending'))+
    (m.candidates.length?' · '+tr('尚未經科學確認','not independently verified'):''));
 }
 async function loadIndex(){
@@ -276,6 +297,8 @@ $('srb-gif').onclick=()=>{
  else if(p?.diagnostic_url)state.group='diagnostic';
  render();
 };
+$('srb-animation').onclick=()=>{state.mode='animation';render();};
+$('srb-marked').onclick=()=>{state.mode='marked';render();};
 $('srb-sed').onclick=()=>{state.mode='sed';render();};
 $('srb-group').onchange=e=>{
  state.group=/^\d+$/.test(e.target.value)?Number(e.target.value):e.target.value;render();
@@ -287,7 +310,9 @@ $('srb-viewer').onclick=()=>{
  const p=m.product;
  const images=p.frames.filter(f=>!!f.image_url);
  const frames=images.length?images:
-  (p.overview_url?[{frame_id:'overview',label:'Stack overview PNG',image_url:p.overview_url}]:[]);
+  (p.overview_url?[{frame_id:'overview',label:'Stack overview PNG',image_url:p.overview_url}]:
+   p.animation_url?[{frame_id:'animation',label:'Group animation',image_url:p.animation_url}]:
+   p.marked_gif_url?[{frame_id:'marked',label:'Marked GIF',image_url:p.marked_gif_url}]:[]);
  if(!frames.length)return;
  const t=window.SPHERExNotebookResults?.targets?.find(x=>x.id===state.target);
  window.SPHERExViewer.setData({
