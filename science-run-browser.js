@@ -66,6 +66,7 @@ const resolved=(path,origin)=>{
  if(typeof path!=='string'||!path)return null;
  const url=new URL(path,origin);
  if(!['http:','https:'].includes(url.protocol))throw Error('Invalid media URL protocol');
+ if(url.origin!==base.origin)throw Error('Cross-origin media is not allowed in published runs');
  return url.href;
 };
 function runsFor(target,band){
@@ -154,6 +155,8 @@ function selectBand(value){if(!BANDS.includes(value))return;state.band=value;sta
 function selectTarget(value){
  if(!TARGETS.some(x=>x[0]===value))return;
  state.target=value;state.run='';
+ const first=state.index?.targets?.find(x=>x.target_id===value)?.runs?.[0];
+ if(first?.band_id&&BANDS.includes(first.band_id))state.band=first.band_id;
  window.SPHERExNotebookResults?.selectTarget?.(value);
  refreshRun();
 }
@@ -227,7 +230,22 @@ async function loadIndex(){
   if(index.schema_version!=='spherex-science-runs-index/v1'||
      !Array.isArray(index.targets)||!Array.isArray(index.bands))
     throw Error('Unsupported analysis index schema');
-  state.index=index;repaintOptions();await refreshRun();
+  // The standard 9 combinations are always listed. Additional experimental
+  // combinations (such as D5+D6) appear only if actually exported.
+  for(const run of index.targets.flatMap(t=>Array.isArray(t.runs)?t.runs:[])){
+   const b=String(run.band_id||'');
+   const parts=b.split('+');
+   if(BANDS.includes(b)||!parts.every(x=>/^D[1-6]$/.test(x))||
+      new Set(parts).size!==parts.length||parts.join('+')!==parts.slice().sort().join('+'))continue;
+   BANDS.push(b);
+   const op=document.createElement('option');op.value=b;op.textContent=b.replaceAll('+',' + ')+' (exp)';
+   $('srb-band').append(op);
+  }
+  state.index=index;
+  const first=index.targets.find(x=>x.target_id===state.target)?.runs?.[0];
+  if(first?.band_id&&BANDS.includes(first.band_id)&&!runsFor(state.target,state.band).length)
+   state.band=first.band_id;
+  repaintOptions();await refreshRun();
  }catch(e){
   state.failure=String(e.message||e);
   repaintOptions();
@@ -237,7 +255,9 @@ async function loadIndex(){
 $('srb-target').addEventListener('change',e=>selectTarget(e.target.value));
 $('srb-band').addEventListener('change',e=>selectBand(e.target.value));
 $('srb-version').addEventListener('change',e=>selectRun(e.target.value));
-$('srb-gif').onclick=()=>{state.mode='gif';state.group='gif';render();};
+$('srb-gif').onclick=()=>{
+ state.mode='gif';state.group=state.manifest?.product?.blink_url?'gif':0;render();
+};
 $('srb-sed').onclick=()=>{state.mode='sed';render();};
 $('srb-group').onchange=e=>{state.group=e.target.value==='gif'?'gif':Number(e.target.value);render();};
 $('srb-source').onchange=e=>{state.source=e.target.value;render();};
