@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Drive downloader
-        run: python3 -m pip install "gdown>=5"
+        run: python3 -m pip install "gdown>=5" "Pillow>=10"
       - name: Download verified new_output ZIP
         env:
           DRIVE_FILE_ID: ${{ inputs.drive_file_id || '15yFXpqRr6gSqpA7dWFbe_nODoOTQvId0' }}
@@ -63,6 +63,11 @@ jobs:
           python3 tools/update_marked_gifs.py \
             --archive /tmp/spherex-marked/new_output.zip \
             --published-dir ./science-runs
+      - name: Rebuild Viewer marked frames and real diagnostic/STACK figures
+        run: |
+          python3 tools/publish_science_visuals.py \
+            --archive /tmp/spherex-marked/new_output.zip \
+            --science-dir ./science-runs
       - name: Validate media paths and science inventory
         run: |
           python3 tools/test_ui_consolidation.py
