@@ -37,6 +37,28 @@ const BUILTIN={
   }})),
   notice:'Saved all-band SED figures. The complete photometry ECSV is not embedded.'}}}
 };
+/* Verified WISE 0855 field previews from the archived 2025 May/November DR1
+ * standardized FITS bundle. These are FIELD images, not a WISE 0855 detection.
+ * Reuse already-committed real, masked PNGs in spherex-demo.js.
+ * Source IDs from this two-epoch bundle MUST NOT be equated with the
+ * independently published 55-source / 12-group notebook SED analysis. */
+const wiseField=window.SPHEREx_DemoManifest;
+if(wiseField?.frames?.length===2&&wiseField.difference?.image_url&&
+   wiseField.field_id==='WISE0855_DR1_2025_May_Nov'){
+ BUILTIN.WISE_0855.bands.D2={
+  kind:'single-band',
+  label:'2025 May / Nov · D2 · archived field preview',
+  frames:wiseField.frames.map(f=>({...f})),
+  difference:{...wiseField.difference},
+  notice:'Two real 2025 D2 archived FIELD frames (May/November); '+
+   '101 common valid difference pixels. WISE 0855 target itself is '+
+   'outside the valid common mask. Do not claim detection or non-detection. '+
+   'These two exposures are separate from the SED source-ID mapping.',
+  dataset_id:'WISE0855_DR1_2025_May_Nov',
+  target_coverage:'unavailable',
+  source_association:'not_verified'
+ };
+}
 const $=id=>document.getElementById(id);
 const zh=()=>String(document.documentElement.lang||'zh').startsWith('zh');
 const tr=(tw,en)=>zh()?tw:en;
