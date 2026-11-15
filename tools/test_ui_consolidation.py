@@ -100,6 +100,11 @@ def main():
     assert "window.SPHERExNotebookResults=" in browser
     assert "SPHERExViewer.setData" in browser
     assert "panel.insertBefore(scienceSection,panel.firstElementChild)" in browser
+    for obsolete_ui in ("srb-query", "srb-find", "srb-search", "searchTarget"):
+        assert obsolete_ui not in browser, "01 duplicate target-search remains: " + obsolete_ui
+    # Target selector remains, and sky search lives in the separate search panel.
+    assert 'id="srb-target"' in browser
+    assert 'id="atlas-query"' in sky
     assert "plot:'evolution'" in browser
     assert "state.plot='evolution'" in browser
     assert 'value="evolution">Epoch-to-epoch evolution' in browser

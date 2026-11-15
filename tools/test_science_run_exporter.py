@@ -65,6 +65,26 @@ class ScienceRunExportTest(unittest.TestCase):
             self.assertEqual(next(t for t in index["targets"]
                                   if t["target_id"] == "WISE_0855")["runs"], [])
 
+    def test_movers_variables_gif_takes_precedence_without_other_gif_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "targets"
+            run = root / "WISE_0855" / "analysis_runs" / "D2_gap10_spaninf_v1"
+            run.mkdir(parents=True)
+            (run / "source_catalog.ecsv").write_text(
+                "source_id ra_deg dec_deg\\n1 133.789 -7.24\\n".replace("\\\\n", "\\n"))
+            (run / "group_stacks_sources_epsf.gif").write_bytes(GIF_1PX)
+            (run / "group_stacks_movers_variables.gif").write_bytes(GIF_1PX)
+            out = Path(tmp) / "publish"
+            index = build(root, out, extract_gif=False)
+            manifest_path = next(t for t in index["targets"] if t["target_id"] == "WISE_0855")["runs"][0]["manifest_url"]
+            manifest = json.loads((out / manifest_path).read_text())
+            product = manifest["bands"]["D2"]
+            self.assertEqual(product["blink_url"], "media/group_stacks_marked.gif")
+            self.assertEqual(product["gif_annotation"], "marked-unclassified")
+            media = (out / manifest_path).parent / "media"
+            self.assertTrue((media / "group_stacks_marked.gif").is_file())
+            self.assertFalse((media / "group_stacks_sources_epsf.gif").exists())
+
     def test_multiple_run_parameters_no_cross_contamination(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

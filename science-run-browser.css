@@ -77,12 +77,6 @@
 #nr-explorer #nr-details>summary{color:var(--muted)}
 #nr-explorer .nr-body{min-width:0}
 #nr-explorer #science-run-browser{margin:0}
-#science-run-browser .srb-search{display:flex;gap:6px;min-width:0}
-#science-run-browser .srb-search input{
- min-width:0;flex:1;background:var(--surface);border:1px solid var(--line);color:var(--fg);
- font:11px/1.4 var(--mono);padding:8px 7px
-}
-#science-run-browser .srb-search button{flex:0 0 64px;font-size:10px;min-width:0;padding:8px 3px;letter-spacing:0;text-indent:0}
 #science-run-browser .srb-target-where{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #science-run-browser .srb-target-where label{display:flex;flex-direction:column;gap:4px;color:var(--muted);font:10px/1.3 var(--mono)}
 #science-run-browser .srb-target-where input{min-width:0;width:100%;padding:8px 6px;color:var(--fg);background:var(--surface);border:1px solid var(--line);font:11px/1.3 var(--mono)}

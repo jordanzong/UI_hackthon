@@ -42,7 +42,6 @@ el.innerHTML=[
  '<span id="srb-counter">0 / 45</span></div>',
  '<p class="srb-sub">5 Targets × 9 Bandpass · 每組分析獨立載入，不共用 Source ID</p>',
  '<label class="srb-label" for="srb-target">Target / 研究目標</label><select id="srb-target"></select>',
- '<div class="srb-search"><input id="srb-query" type="search" placeholder="Name / alias · GJ 699 · RW Aur" aria-label="Search target name"><button id="srb-find" class="btn sm" type="button">搜尋</button></div>',
  '<div class="srb-target-where"><label>RA (°)<input id="srb-ra" type="number" min="0" max="360" step="any"></label><label>Dec (°)<input id="srb-dec" type="number" min="-90" max="90" step="any"></label></div>',
  '<button id="srb-go" type="button" class="btn sm srb-go">前往天球座標 / Go to sky</button>',
  '<p id="srb-lookup" class="srb-status" role="status" aria-live="polite"></p>',
@@ -358,18 +357,6 @@ $('srb-image').addEventListener('error',()=>{
  status(tr('圖片載入失敗，請檢查 GitHub Pages 檔案位置。','Image failed. Check deployed GitHub Pages paths.'));
 });
 $('srb-go').onclick=()=>goToSky($('srb-ra').value,$('srb-dec').value);
-function searchTarget(){
- const key=$('srb-query').value.toLowerCase().replace(/[^a-z0-9]/g,'');
- if(!key)return;
- const result=META.filter(x=>[x.name,x.id,...x.aliases].some(a=>
-  a.toLowerCase().replace(/[^a-z0-9]/g,'').includes(key)));
- if(result.length===1){selectTarget(result[0].id);$('srb-lookup').textContent='Target: '+result[0].name;}
- else $('srb-lookup').textContent=result.length
-  ?tr('多個目標符合，請使用上方選單。','Multiple matching targets; use menu.')
-  :tr('未找到目標，可輸入 RA / Dec 導航。','No matching target; use RA / Dec.');
-}
-$('srb-find').onclick=searchTarget;
-$('srb-query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchTarget();}});
 $('srb-locate').onclick=()=>{
  const s=state.manifest?.sources?.find(x=>String(x.source_id)===state.source);
  if(s)goToSky(s.ra_deg,s.dec_deg);

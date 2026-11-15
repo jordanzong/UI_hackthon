@@ -198,13 +198,15 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif):
     group_meta = {int(g["group_id"]): g for g in metadata}
     gifs = sorted(run_dir.glob("group_stacks*.gif"))
     # The classifier-marked GIF must win over older source-number-only GIFs.
-    gifs.sort(key=lambda p: (0 if "marked" in p.stem else
-                             1 if "sources_epsf" in p.stem else 2, p.name))
+    gifs.sort(key=lambda p: (0 if ("marked" in p.stem or "movers_variables" in p.stem)
+                             else 1 if "sources_epsf" in p.stem else 2, p.name))
     gif_url = None
     frame_paths = []
     if gifs:
         gif = gifs[0]
-        copied = safe_copy(gif, dest / "media" / gif.name)
+        is_marked = ("marked" in gif.stem or "movers_variables" in gif.stem)
+        published_name = "group_stacks_marked.gif" if is_marked else gif.name
+        copied = safe_copy(gif, dest / "media" / published_name)
         if copied:
             gif_url = "media/" + copied.name
             if extract_gif:
@@ -256,6 +258,8 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif):
         "frames": frames,
         "blink_url": gif_url,
         "gif_annotation": ("algorithm-candidates" if gif_url and
+                           "marked" in gif_url and markers else
+                           "marked-unclassified" if gif_url and
                            "marked" in gif_url else
                            "source-numbers" if gif_url else "none"),
         "sed_photometry_scope": "all-six-bands",

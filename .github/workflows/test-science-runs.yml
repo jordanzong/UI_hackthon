@@ -10,6 +10,8 @@ on:
       - 'tools/test_science_run_exporter.py'
       - 'tools/update_marked_gifs.py'
       - 'tools/test_marked_gif_update.py'
+      - 'tools/dedupe_marked_gifs.py'
+      - 'tools/test_dedupe_marked_gifs.py'
       - 'science-run-browser.js'
       - 'science-run-browser.css'
       - 'index.html'
@@ -36,6 +38,10 @@ jobs:
         run: python3 tools/test_science_run_exporter.py
       - name: Test marked-GIF-only update and rollback protections
         run: python3 tools/test_marked_gif_update.py
+      - name: Test marked-GIF duplication guard with synthetic files
+        run: |
+          python3 -m pip install "Pillow>=10"
+          python3 tools/test_dedupe_marked_gifs.py
       - name: Validate front-end JavaScript syntax
         run: |
           node --check science-run-browser.js
