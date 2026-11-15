@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#05070d">
 <meta name="sky-atlas-release" content="SPHEREX-MARKED-GIFS-FOV-0.2-20261115">
-<title>天球星圖</title>
+<title>Sky Atlas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
@@ -229,64 +229,64 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
   <header id="top">
     <div class="brand">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="M10 0v5M10 15v5M0 10h5M15 10h5"/></svg>
-      <h1 data-i18n="title">天球星圖</h1>
+      <h1 data-i18n="title">Sky Atlas</h1>
       <span class="brand-sep" aria-hidden="true"></span>
-      <span class="brand-sub" data-i18n="sub">J2000 · 赤道座標</span>
+      <span class="brand-sub" data-i18n="sub">J2000 · Equatorial</span>
       <span class="hyg-release" title="HYG retry and Gaia wide-field build">HYG + Gaia · v2</span>
     </div>
     <div class="top-actions">
-      <button type="button" class="btn sm" id="lang" aria-label="Language / 語言">EN</button>
-      <button type="button" class="btn sm" id="collapse" aria-expanded="true" aria-controls="panel">收合面板</button>
+      <button type="button" class="btn sm" id="lang" aria-label="Switch language">ZH</button>
+      <button type="button" class="btn sm" id="collapse" aria-expanded="true" aria-controls="panel">Hide panel</button>
     </div>
   </header>
 
   <div id="main">
-    <aside id="panel" data-collapsed="false" aria-label="控制面板" data-i18n-aria="panelAria">
+    <aside id="panel" data-collapsed="false" aria-label="Control panel" data-i18n-aria="panelAria">
       <div id="pbody">
         <div class="sec">
-          <h2 data-i18n="goto">前往座標</h2>
+          <h2 data-i18n="goto">Go to coordinates</h2>
           <form id="goto" autocomplete="off" novalidate>
-            <label class="field"><span data-i18n="ra">赤經 RA</span>
-              <div class="row"><input type="text" id="ra" placeholder="05h 35m 17s 或 83.82" data-i18n-ph="phRA" spellcheck="false">
-              <select id="raUnit" aria-label="赤經單位" data-i18n-aria="raUnitAria"><option value="auto" data-i18n="auto">自動</option><option value="h" data-i18n="hours">時</option><option value="d" data-i18n="degs">度</option></select></div></label>
-            <label class="field"><span data-i18n="dec">赤緯 Dec</span>
-              <input type="text" id="dec" placeholder="−05° 23′ 28″ 或 -5.39" data-i18n-ph="phDec" spellcheck="false"></label>
-            <label class="field"><span data-i18n="fov">天區大小 FOV（畫面短邊的視角）</span>
+            <label class="field"><span data-i18n="ra">Right ascension (RA)</span>
+              <div class="row"><input type="text" id="ra" placeholder="05h 35m 17s or 83.82" data-i18n-ph="phRA" spellcheck="false">
+              <select id="raUnit" aria-label="RA unit" data-i18n-aria="raUnitAria"><option value="auto" data-i18n="auto">Auto</option><option value="h" data-i18n="hours">h</option><option value="d" data-i18n="degs">°</option></select></div></label>
+            <label class="field"><span data-i18n="dec">Declination (Dec)</span>
+              <input type="text" id="dec" placeholder="−05° 23′ 28″ or -5.39" data-i18n-ph="phDec" spellcheck="false"></label>
+            <label class="field"><span data-i18n="fov">Field of view (shorter screen side)</span>
               <div class="row"><input type="text" id="fov" value="60" inputmode="decimal" aria-describedby="fov-range" spellcheck="false">
-              <select id="unit" aria-label="視場單位" data-i18n-aria="unitAria"><option value="1">°</option></select></div>
-              <small id="fov-range">FOV：0.2°–180°（最小 12′）</small></label>
-            <div class="btns"><button class="btn primary" type="submit" data-i18n="go">前往</button><button type="button" class="btn" id="readc" data-i18n="readc">讀取畫面中心</button></div>
+              <select id="unit" aria-label="Field-of-view unit" data-i18n-aria="unitAria"><option value="1">°</option></select></div>
+              <small id="fov-range">FOV: 0.2°–180° (minimum 12 arcmin)</small></label>
+            <div class="btns"><button class="btn primary" type="submit" data-i18n="go">Go</button><button type="button" class="btn" id="readc" data-i18n="readc">Use view center</button></div>
             <p id="msg" role="status"></p>
           </form>
           <div id="sel" class="selection-inline" aria-live="polite"></div>
         </div>
-        <div id="preset-staging" hidden><details><summary data-i18n="presets">預設目標</summary><div class="chips" id="presets"></div></details></div>
-        <div class="sec"><details open><summary data-i18n="layers">圖層</summary><div class="layers" id="layers"></div></details></div>
+        <div id="preset-staging" hidden><details><summary data-i18n="presets">Presets</summary><div class="chips" id="presets"></div></details></div>
+        <div class="sec"><details open><summary data-i18n="layers">Layers</summary><div class="layers" id="layers"></div></details></div>
         <div class="sec" id="science-catalogs">
-          <h2 data-i18n="additionalCatalogs">自動星表 / 科學資料</h2>
-          <p class="catalog-description" data-i18n="gaiaAutoDesc">Gaia DR3 於視野縮至 12° 內時自動查詢。</p>
-          <p class="catalog-description" data-i18n="spxAutoDesc">SPHEREx Source Catalog 隨研究目標自動讀取，尚無已驗證資料的目標不顯示來源。</p>
-          <button class="btn sm catalog-reload" type="button" id="reloadGaia" data-i18n="reloadGaia">重新查詢 Gaia</button>
+          <h2 data-i18n="additionalCatalogs">Automatic catalogs / science data</h2>
+          <p class="catalog-description" data-i18n="gaiaAutoDesc">Gaia DR3 loads automatically at FOV ≤ 12°.</p>
+          <p class="catalog-description" data-i18n="spxAutoDesc">SPHEREx sources load automatically when a verified catalog exists.</p>
+          <button class="btn sm catalog-reload" type="button" id="reloadGaia" data-i18n="reloadGaia">Refresh Gaia</button>
           <p id="catalogStatus" role="status" aria-live="polite"></p>
           <div class="gaia-cache-tools">
-            <label for="gaiaCacheTarget" data-i18n="gaiaCacheJump">Gaia CSV：前往已快取天區</label>
+            <label for="gaiaCacheTarget" data-i18n="gaiaCacheJump">Gaia CSV: jump to cached field</label>
             <div class="gaia-cache-actions">
-              <select id="gaiaCacheTarget" aria-label="Gaia cached science field" disabled><option value="">載入資料清單中…</option></select>
-              <button type="button" class="btn sm" id="gaiaCacheGo" disabled data-i18n="gaiaCacheGo">前往</button>
+              <select id="gaiaCacheTarget" aria-label="Gaia cached science field" disabled><option value="">Loading cached fields…</option></select>
+              <button type="button" class="btn sm" id="gaiaCacheGo" disabled data-i18n="gaiaCacheGo">Go</button>
             </div>
             <p id="gaiaCacheStatus" role="status" aria-live="polite"></p>
-            <p id="allSkyCatalogStatus" role="status" aria-live="polite">HYG 全天星表載入中…</p>
-            <button type="button" class="btn sm" id="allSkyRetry" data-i18n="retryHYG">重新載入 HYG 分區</button>
-            <p id="gaiaWideStatus" role="status" aria-live="polite">擴大版 Gaia 天區載入中…</p>
-            <p class="allsky-license">全天基礎恆星：<a href="https://github.com/astronexus/HYG-Database" target="_blank" rel="noopener noreferrer">HYG v4.1</a> · V 星等 · CC BY-SA 4.0。Gaia DR3 資料會獨立顯示。</p>
+            <p id="allSkyCatalogStatus" role="status" aria-live="polite">Loading HYG all-sky stars…</p>
+            <button type="button" class="btn sm" id="allSkyRetry" data-i18n="retryHYG">Retry HYG tiles</button>
+            <p id="gaiaWideStatus" role="status" aria-live="polite">Loading wide-field Gaia catalog…</p>
+            <p class="allsky-license">Base all-sky stars: <a href="https://github.com/astronexus/HYG-Database" target="_blank" rel="noopener noreferrer">HYG v4.1</a> · V magnitude · CC BY-SA 4.0. Gaia DR3 sources are shown separately.</p>
           </div>
           <p id="gaiaErrorDetails" class="catalog-error-details" role="status" aria-live="polite" hidden></p>
           <details class="catalog-advanced">
-            <summary data-i18n="catalogAdvanced">進階：匯入自訂星表（開發測試）</summary>
+            <summary data-i18n="catalogAdvanced">Advanced: import custom catalogs (developer testing)</summary>
             <div class="catalog-tools">
-              <button class="btn sm" type="button" id="importGaia" data-i18n="importGaia">匯入 Gaia CSV</button>
+              <button class="btn sm" type="button" id="importGaia" data-i18n="importGaia">Import Gaia CSV</button>
               <input id="gaiaFile" type="file" accept=".csv,text/csv" hidden>
-              <button class="btn sm" type="button" id="importSources" data-i18n="importSources">匯入 SPHEREx CSV / JSON</button>
+              <button class="btn sm" type="button" id="importSources" data-i18n="importSources">Import SPHEREx CSV / JSON</button>
               <input id="sourceFile" type="file" accept=".csv,.ecsv,.json,text/csv,application/json" hidden>
             </div>
           </details>
@@ -296,14 +296,14 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
     </aside>
 
     <main id="stage">
-      <canvas id="sky" aria-label="天球星圖，可拖曳平移、滾輪縮放、點擊選取座標" data-i18n-aria="canvasAria" tabindex="0"></canvas>
+      <canvas id="sky" aria-label="Sky atlas: drag to pan, scroll to zoom, click to choose coordinates" data-i18n-aria="canvasAria" tabindex="0"></canvas>
       <div id="ui">
-        <div id="zoomkeys"><button type="button" id="zin" aria-label="放大" data-i18n-aria="zin">+</button><button type="button" id="zout" aria-label="縮小" data-i18n-aria="zout">−</button></div>
+        <div id="zoomkeys"><button type="button" id="zin" aria-label="Zoom in" data-i18n-aria="zin">+</button><button type="button" id="zout" aria-label="Zoom out" data-i18n-aria="zout">−</button></div>
         <div id="bar">
-          <div class="cell hovcell"><span class="lab" data-i18n="hover">游標</span><span class="val" id="hov">—</span></div>
-          <div class="cell"><span class="lab" data-i18n="center">中心</span><span class="val" id="ctr">—</span></div>
-          <div class="cell"><span class="lab" data-i18n="fovl">視場</span><span class="val" id="fovread">—</span></div>
-          <span class="hint" data-i18n="hint">拖曳平移 · 滾輪縮放 · 點擊選點 · 雙擊放大</span>
+          <div class="cell hovcell"><span class="lab" data-i18n="hover">Cursor</span><span class="val" id="hov">—</span></div>
+          <div class="cell"><span class="lab" data-i18n="center">Center</span><span class="val" id="ctr">—</span></div>
+          <div class="cell"><span class="lab" data-i18n="fovl">FOV</span><span class="val" id="fovread">—</span></div>
+          <span class="hint" data-i18n="hint">Drag to pan · Scroll to zoom · Click to select · Double-click to zoom</span>
         </div>
       </div>
     </main>
@@ -737,9 +737,9 @@ en:{title:'Sky Atlas',sub:'J2000 · Equatorial',goto:'Go to coordinates',ra:'Rig
  okGo:(a,b)=>'Moved to '+a+', '+b+'.',okFov:'Field of view updated.',filled:'Filled in the view center.',
  catnote:(n,m)=>'Built-in '+n+' bright stars and '+m+' DSOs; Gaia DR3 queries are attempted below 12° FOV (magnitude and row limits apply). Gaia G is not SPHEREx infrared photometry. Milky Way is schematic.'}
 };
-let lang='zh';
-try{const sv=localStorage.getItem('sky-lang');lang=sv||((navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en');}catch(e){lang=(navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en';}
-if(lang!=='zh'&&lang!=='en')lang='zh';
+let lang='en';
+try{const sv=localStorage.getItem('sky-lang');lang=sv==='zh'?'zh':'en';}catch(e){lang='en';}
+if(lang!=='zh'&&lang!=='en')lang='en';
 const tr=k=>T[lang][k];
 const consName=c=>lang==='zh'?c.zh:(EN_CONS[c.zh]||c.zh);
 const dsoName=o=>lang==='zh'?o.n:(EN_DSO[o.id]?(o.id===EN_DSO[o.id]?o.id:o.id+' '+EN_DSO[o.id]):o.id);
@@ -1687,7 +1687,7 @@ function applyLang(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=tr(el.dataset.i18n);});
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>{el.placeholder=tr(el.dataset.i18nPh);});
   document.querySelectorAll('[data-i18n-aria]').forEach(el=>{el.setAttribute('aria-label',tr(el.dataset.i18nAria));});
-  $('lang').textContent=lang==='zh'?'EN':'中文';
+  $('lang').textContent=lang==='zh'?'EN':'ZH';
   $('collapse').textContent=$('panel').dataset.collapsed==='true'?tr('show'):tr('hide');
   Object.keys(layerTxt).forEach(k=>{layerTxt[k].nodeValue=tr('layerNames')[k];});
   presetBtns.forEach(([b,zh,en])=>{b.textContent=lang==='zh'?zh:en;});
