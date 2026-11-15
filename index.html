@@ -820,15 +820,15 @@ function catalogNotice(){
   const gaia=!L.gaia?(zh?'已關閉':'off'):
     V.fov>12?(zh?'需縮至 12° 內載入 Gaia DR3':'Gaia DR3 requires FOV ≤12°'):
     gaiaBusy?(zh?'讀取中…':'loading…'):
-    gaiaFailureText?(gaiaLocal.stars.length
-      ?(zh?'本地 '+gaiaLocal.stars.length+' 筆（線上查詢失敗）':'local '+gaiaLocal.stars.length+' stars (online query failed)')
+    gaiaFailureText?(gaiaLocal.stars.length||gaiaWide.stars.length
+      ?(zh?'本地 Gaia '+availableGaiaStars().length+' 筆（線上查詢失敗）':'local Gaia '+availableGaiaStars().length+' stars (online query failed)')
       :(zh?'查詢失敗（可重試）':'query failed (retry available)')):
-    gaiaLocal.stars.length
-      ?(zh?'本地 Gaia '+gaiaLocal.stars.length+' 筆':'local Gaia '+gaiaLocal.stars.length+' stars')
+    gaiaLocal.stars.length||gaiaWide.stars.length
+      ?(zh?'本地 Gaia '+availableGaiaStars().length+' 筆':'local Gaia '+availableGaiaStars().length+' stars')
       :gaiaNotice||(zh?'待查詢':'awaiting query');
   const spx=spxNotice||(zh?'等待研究目標資料…':'awaiting science target…');
   catalogStatus.textContent=`Gaia DR3: ${gaia}  |  SPHEREx: ${spx}`;
-  catalogStatus.classList.toggle('warn',!!(gaiaFailureText&&L.gaia&&V.fov<=12&&!gaiaLocal.stars.length));
+  catalogStatus.classList.toggle('warn',!!(gaiaFailureText&&L.gaia&&V.fov<=12&&!gaiaLocal.stars.length&&!gaiaWide.stars.length));
   catalogStatus.title=gaiaFailureText||'';
   const status=$('gaiaCacheStatus');
   if(status){
@@ -849,7 +849,7 @@ function catalogNotice(){
   }
   const diagnostics=$('gaiaErrorDetails');
   if(diagnostics){
-    const failed=!!(gaiaFailureText&&L.gaia&&V.fov<=12&&!gaiaLocal.stars.length);
+    const failed=!!(gaiaFailureText&&L.gaia&&V.fov<=12&&!gaiaLocal.stars.length&&!gaiaWide.stars.length);
     diagnostics.hidden=!failed;
     diagnostics.textContent=failed
       ?(zh?'Gaia 診斷：':'Gaia details: ')+gaiaFailureText+
