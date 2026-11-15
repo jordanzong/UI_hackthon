@@ -184,6 +184,7 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 }
 </style>
 <link rel="stylesheet" href="./spherex-viewer.css">
+<link rel="stylesheet" href="./notebook-results.css">
 </head>
 <body>
 <div id="app">
@@ -1345,6 +1346,16 @@ $('lang').onclick=()=>{lang=lang==='zh'?'en':'zh';try{localStorage.setItem('sky-
 /* Public bridge: clicking science-image markers focuses the matching sky position.
    Uses RA/Dec, never assumes detector or image pixels equal sky canvas pixels. */
 window.SkyAtlas={
+  // Move to a named/offline target or an explicit RA/Dec coordinate.
+  // Do not interpret an arbitrary sky position as an actual SPHEREx detection.
+  goToCoordinates({ra_deg,dec_deg,fov_deg}={}){
+    const ra=Number(ra_deg),dec=Number(dec_deg),fov=Number(fov_deg);
+    if(!Number.isFinite(ra)||ra<0||ra>=360||!Number.isFinite(dec)||dec< -90||dec>90)return false;
+    const actualFov=Number.isFinite(fov)&&fov>0&&fov<=180?fov:V.fov;
+    $('unit').value='1';$('fov').value=String(actualFov);
+    sel={ra:ra*D2R,dec:dec*D2R,hit:null};fillInputs(sel.ra,sel.dec);renderSel();
+    flyTo(sel.ra,sel.dec,actualFov);requestRender();return true;
+  },
   focusSource(source){
     const item=normalizeSPHEREx([source])[0];if(!item)return false;
     const hit=spherexSources.find(x=>x.source_id===item.source_id)||item;
@@ -1366,6 +1377,7 @@ resize();
 
 <script src="./spherex-demo.js"></script>
 <script src="./spherex-viewer.js"></script>
+<script src="./notebook-results.js"></script>
 
 </body>
 </html>
