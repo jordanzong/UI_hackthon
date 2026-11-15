@@ -197,9 +197,9 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif, include_gi
                     frame_paths.append("media/group_frames/" + src.name)
     frames = []
     for i, filename in enumerate(sorted(
-            frame_paths, key=lambda p: int(re.search(r"group[_-]?(\\d+)", p, re.I).group(1))
-            if re.search(r"group[_-]?(\\d+)", p, re.I) else 9999), start=1):
-        indexed = re.search(r"group[_-]?(\\d+)", filename, re.I)
+            frame_paths, key=lambda p: int(re.search(r"group[_-]?(\d+)", p, re.I).group(1))
+            if re.search(r"group[_-]?(\d+)", p, re.I) else 9999), start=1):
+        indexed = re.search(r"group[_-]?(\d+)", filename, re.I)
         group_id = int(indexed.group(1)) if indexed else i
         entry = {"frame_id": f"group_{group_id}", "label": f"Group {group_id}",
                  "image_url": filename}
