@@ -1,0 +1,69 @@
+name: Validate Published SPHEREx Three-Target Science Runs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/science-three-targets-gif-staged
+    paths:
+      - 'science-runs/index.json'
+      - 'tools/build_science_run_manifests.py'
+      - 'tools/test_science_run_exporter.py'
+      - 'science-run-browser.js'
+      - '.github/workflows/validate-three-targets.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate exporter and frontend syntax
+        run: |
+          python3 -m py_compile tools/build_science_run_manifests.py tools/test_science_run_exporter.py
+          python3 tools/test_science_run_exporter.py
+          node --check science-run-browser.js
+      - name: Verify only real published targets, Run identities, and on-disk media
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('science-runs')
+          idx=json.loads((root/'index.json').read_text())
+          counts={t['target_id']:len(t['runs']) for t in idx['targets']}
+          assert counts=={
+            'WISE_0855':9,'Barnards_Star':9,'Epsilon_Indi_B':9,
+            'RW_Aurigae':0,'R_Draconis':0
+          },counts
+          total={'frames':0,'seds':0,'gifs':0,'sources':0,'marked':0}
+          for target in idx['targets']:
+            for run in target['runs']:
+              f=root/run['manifest_url']
+              assert f.exists(),f
+              data=json.loads(f.read_text())
+              assert data['target_id']==target['target_id'],f
+              assert data['run_id']==run['run_id'],f
+              assert data['band_id']==run['band_id'],f
+              p=data['bands'][run['band_id']]
+              paths=[p.get('animation_url'),p.get('marked_gif_url'),
+                     p.get('overview_url'),p.get('diagnostic_url')]
+              paths += [e['image_url'] for e in p['frames']]
+              for source in p['seds']:
+                paths+=list(source['plots'].values())
+              for name in paths:
+                if name is None:continue
+                assert (f.parent/name).is_file(),f'{f}: missing {name}'
+              total['frames']+=len(p['frames'])
+              total['seds']+=len(p['seds'])
+              total['sources']+=len(data['sources'])
+              total['gifs']+=bool(p.get('animation_url'))
+              total['marked']+=bool(p.get('marked_gif_url'))
+          assert total['gifs']==27,total
+          assert total['marked']==0,total
+          assert total['frames']==136,total
+          assert total['seds']==955,total
+          print('Validated all 27 genuine run products:',total)
+          PY
