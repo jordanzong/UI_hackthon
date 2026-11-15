@@ -45,3 +45,10 @@ The SPHEREx Observation Viewer is now a large science-image viewing area. It is 
 
 - Cleaned all 36 redundant unmarked GIFs in verified data commit 49283d23; exactly 36 canonical marked GIFs remain, with science measurements unchanged.
 - Updated Science Results JS/CSS query versions to 6 so browser caches do not retain the old Target search field.
+
+## Updated Run visualization (new_output.zip)
+- Verified all 36 runs contain original `time_grouping_diagnostic.png`, `group_stacks_sources_epsf.png` and `group_stacks_movers_variables.gif` (2026-11-15 inspection).
+- Published 36 source Stack PNGs and 36 diagnostic PNGs directly from those runs, with no synthetic figures.
+- Extracted marked GIF frames as lossless WebP into a **separate** `media/viewer_marked_frames/` path; original `media/group_frames/` and every SED are untouched.
+- Science Results tabs: GIF / Group, STACK, SED, Time Grouping. Open Viewer uses `viewer_frames` only, with Prev / Next and duration-aware Blink.
+- Per-run manifests record the original Group MJD and marked Viewer frame source. The new CI audit verifies all 36 published assets and all original science data paths.

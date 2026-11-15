@@ -55,7 +55,7 @@ def main():
     assert sum(len(t["runs"]) for t in targets.values()) == 36
     assert not targets["R_Draconis"]["runs"]
     assert targets["R_Draconis"]["publication_status"] == "photometry_under_revision"
-    gif = sed = frames = 0
+    gif = sed = frames = marked_frames = diagnostics = stacks = 0
     for target_id in EXPECTED:
         t = targets[target_id]
         assert len(t["runs"]) == 9, "Incomplete published runs: " + target_id
@@ -72,12 +72,24 @@ def main():
             for f in p["frames"]:
                 asset(manifest_file.parent, f["image_url"])
                 frames += 1
+            assert p.get("viewer_frame_source") == "group_stacks_marked.gif"
+            assert len(p.get("viewer_frames",[])) == len(p["frames"]) > 0
+            for f in p["viewer_frames"]:
+                asset(manifest_file.parent, f["image_url"])
+                assert f["duration_ms"] >= 80
+                marked_frames += 1
+            asset(manifest_file.parent, p["diagnostic_url"])
+            asset(manifest_file.parent, p["stack_url"])
+            diagnostics += 1
+            stacks += 1
             for s in p["seds"]:
                 assert str(s["source_id"])
                 for path in s["plots"].values():
                     asset(manifest_file.parent, path)
                     sed += 1
     assert gif == 36 and sed > 0 and frames > 0
+    assert marked_frames == frames, "Marked Viewer is missing Group epochs"
+    assert diagnostics == stacks == 36, "Run visualization data incomplete"
     assert not list(DATA.rglob("group_stacks_sources_epsf.gif")), (
         "Redundant unmarked GIF was reintroduced into published science data"
     )
@@ -127,13 +139,20 @@ def main():
     assert 'main.append(panel)' in viewer and 'focusSkyContext()' in viewer
     assert 'SkyAtlas?.goToCoordinates?' in viewer
     assert 'target_name:targetName(state.target)' in browser
+    for tab in ("srb-gif","srb-stack","srb-sed","srb-diagnostic","srb-viewer"):
+        assert 'id="'+tab+'"' in browser, "Missing science tab: "+tab
+    assert "p.viewer_frames.filter" in browser
+    assert "const images=p.frames.filter" not in browser
+    assert "frame_origin:'marked-gif'" in browser
+    assert "duration_ms" in viewer and "setTimeout" in viewer
     for bad in ("spx-import-img", "spx-import-json", "spx-file-img", "spx-file-json",
                 "spx-manifest-url", "spx-demo", "importImages", "loadFromUrl",
                 "SPHEREx_DemoManifest"):
         assert bad not in viewer, "Legacy import/demo remains: " + bad
-    print("PASS: %d published GIFs, %d Group frames, %d genuine SED image assets; "
-          "36 scoped runs and real HYG/Gaia catalogs preserved; legacy test files absent."
-          % (gif, frames, sed))
+    print("PASS: %d marked GIFs, %d original Group frames, %d marked Viewer frames, "
+          "%d STACK figures, %d Time Grouping figures, %d SED images; "
+          "36 scoped runs, real HYG/Gaia catalogs preserved."
+          % (gif, frames, marked_frames, stacks, diagnostics, sed))
 
 if __name__ == "__main__":
     main()
