@@ -80,7 +80,7 @@ if(nav){const btn=document.createElement('button');btn.type='button';btn.id='nr-
  btn.onclick=()=>{const p=$('panel');if(p){p.dataset.collapsed='false';$('collapse')?.setAttribute('aria-expanded','true');} $('nr-details').open=true;section.scrollIntoView({block:'start',behavior:'smooth'});};}
 
 function target(){return OBS.find(o=>o.id===state.target)||OBS[0];}
-function defaultData(id){return structuredClone?structuredClone(BUILTIN[id]||{bands:{}}):JSON.parse(JSON.stringify(BUILTIN[id]||{bands:{}}));}
+function defaultData(id){return typeof structuredClone==='function'?structuredClone(BUILTIN[id]||{bands:{}}):JSON.parse(JSON.stringify(BUILTIN[id]||{bands:{}}));}
 function data(){return refs.get(state.target)||defaultData(state.target);}
 function product(){return data().bands?.[state.band]||null;}
 function link(path,base){
@@ -253,7 +253,7 @@ function render(){
  if(p?.notice)msg+=' '+p.notice;
  if(d.notice)msg+=' '+d.notice;
  setText('nr-availability',msg);
- $('nr-load').disabled=!(state.mode==='image'&&img&&!!(p?.blink_url||canStill));
+ $('nr-load').disabled=!(state.mode==='image'&&img&&!!(p?.blink_url||canStill||p?.difference?.image_url));
  currentPreview();
 }
 function selectTarget(id){
@@ -328,10 +328,11 @@ async function openViewer(){
    if(decoded?.length)frames=decoded.map((url,i)=>({...p.frames[i],image_url:url}));
    else frames=[{frame_id:'animated',label:target().name+' · '+state.band+' Blink GIF',image_url:p.blink_url}];
   }
-  const t=target();
+  if(!frames.length&&p.difference?.image_url)frames=[{frame_id:'difference_only',label:'Difference (only preview)',image_url:p.difference.image_url}];
+  const t=target(),center=data().center||{ra_deg:t.ra,dec_deg:t.dec};
   window.SPHERExViewer.setData({
    field_id:t.id+'_'+state.band,status:'ready',
-   center:{ra_deg:t.ra,dec_deg:t.dec},
+   center:{ra_deg:Number(center.ra_deg),dec_deg:Number(center.dec_deg)},
    frames,difference:p.difference?.image_url?p.difference:null,
    sources:data().sources||[],
    notice:(p.kind==='combined'?'Combined-band reference only. ':'')+(p.notice||'')+
