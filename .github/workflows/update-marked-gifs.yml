@@ -37,6 +37,27 @@ jobs:
           mkdir -p /tmp/spherex-marked
           gdown "https://drive.google.com/uc?id=$DRIVE_FILE_ID" -O /tmp/spherex-marked/new_output.zip
           test -s /tmp/spherex-marked/new_output.zip
+      - name: Inspect per-target GIF names in actual ZIP
+        run: |
+          python3 - <<'PY'
+          import json, zipfile
+          from collections import defaultdict
+          archive='/tmp/spherex-marked/new_output.zip'
+          by=defaultdict(list)
+          with zipfile.ZipFile(archive) as z:
+              for file in z.namelist():
+                  parts=file.replace('\\','/').split('/')
+                  for i,p in enumerate(parts):
+                      if p=='analysis_runs' and i>0 and i+2<len(parts):
+                          target,run=parts[i-1],parts[i+1]
+                          if target in ('WISE_0855','Barnards_Star','Epsilon_Indi_B','RW_Aurigae'):
+                              if file.lower().endswith('.gif'):
+                                  by[(target,run)].append(parts[-1])
+                          break
+          for (target,run),files in sorted(by.items()):
+              print(target,run,','.join(files))
+          print('GIF-bearing runs:',len(by))
+          PY
       - name: Update marked GIFs without replacing measured science assets
         run: |
           python3 tools/update_marked_gifs.py \
