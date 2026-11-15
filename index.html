@@ -722,6 +722,7 @@ const GAIA_TAP=[
   'https://mast.stsci.edu/vo-tap/api/v0.1/gaiadr3/sync'
 ];
 const GAIA_LIMIT=3000;
+let gaiaDepth='auto',gaiaQueryEpoch=0;
 let gaiaStars=[],spherexSources=[];
 let gaiaTimer=null,gaiaBusy=false,gaiaNotice='',spxNotice='',manualGaia=false;
 let gaiaLastFailure=null,gaiaFailureText='';
@@ -758,7 +759,11 @@ function catalogNotice(){
   catalogStatus.classList.toggle('warn',!!(gaiaFailureText&&L.gaia&&V.fov<=12));
   catalogStatus.title=gaiaFailureText||'';
 }
-function gaiaMagLimit(fov){return fov>8?9.5:fov>3?12:fov>1?14:fov>0.25?17:fov>0.08?18.5:20;}
+function gaiaMagLimit(fov){
+ const automatic=fov>8?9.5:fov>3?12:fov>1?14:fov>0.25?17:fov>0.08?18.5:20;
+ return gaiaDepth==='bright'?Math.max(4,automatic-3):
+   gaiaDepth==='deep'?Math.min(20,automatic+2.5):automatic;
+}
 function skySep(a,b,c,d){return sep(a,b,c,d)*R2D;}
 function isCovered(record,ra,dec,radius,mag){
   return record&&record.mag>=mag&&skySep(record.ra,record.dec,ra,dec)+radius<=record.radius*0.97;
@@ -807,17 +812,23 @@ async function performGaiaQuery(){
   const cache=gaiaCache.find(c=>isCovered(c,view.ra,view.dec,view.radius,view.mag));
   if(cache){gaiaStars=cache.stars;gaiaNotice=(lang==='zh'?'已載入 ':'loaded ')+gaiaStars.length+(lang==='zh'?' 筆':' stars');catalogNotice();requestRender();return;}
   if(isCovered(gaiaLastFailure,view.ra,view.dec,view.radius,view.mag))return;
-  gaiaBusy=true;gaiaFailureText='';catalogNotice();  try{
+  const requestEpoch=++gaiaQueryEpoch;
+  gaiaBusy=true;gaiaFailureText='';catalogNotice();
+  try{
     const stars=await loadGaia(view);
+    if(requestEpoch!==gaiaQueryEpoch)return; // Older requests must not overwrite new view settings.
     gaiaCache.unshift({...view,stars});if(gaiaCache.length>4)gaiaCache.pop();
     gaiaStars=stars;gaiaNotice=(lang==='zh'?'已載入 ':'loaded ')+stars.length+(lang==='zh'?' 筆':' stars');
     gaiaLastFailure=null;
     if(stars.length>=GAIA_LIMIT)gaiaNotice+=(lang==='zh'?'（已達筆數上限）':' (row cap reached)');
   }catch(e){
+    if(requestEpoch!==gaiaQueryEpoch)return;
     gaiaFailureText=String(e&&e.message||e).slice(0,160);
     gaiaLastFailure=view;
     gaiaStars=[];
-  }finally{gaiaBusy=false;catalogNotice();requestRender();}
+  }finally{
+    if(requestEpoch===gaiaQueryEpoch){gaiaBusy=false;catalogNotice();requestRender();}
+  }
 }
 function scheduleGaia(){
   if(manualGaia){catalogNotice();return;}
@@ -875,7 +886,7 @@ $('gaiaFile').addEventListener('change',async e=>{
   }catch(error){gaiaFailureText='Gaia CSV: '+String(error.message||error);catalogNotice();}
   e.target.value='';
 });
-$('reloadGaia').onclick=()=>{manualGaia=false;gaiaLastFailure=null;gaiaFailureText='';gaiaCache.length=0;gaiaStars=[];catalogNotice();scheduleGaia();};
+$('reloadGaia').onclick=()=>{gaiaQueryEpoch++;gaiaBusy=false;clearTimeout(gaiaTimer);manualGaia=false;gaiaLastFailure=null;gaiaFailureText='';gaiaCache.length=0;gaiaStars=[];catalogNotice();scheduleGaia();};
 function drawGaia(){
   if(!L.gaia||V.fov>12)return;
   const faint=gaiaMagLimit(V.fov);
@@ -1142,7 +1153,7 @@ function nearestObject(ra,dec,px,py){
   }
   if(best&&best.kind==='gaia'&&bd<=7)return best;
   for(const s of STARS){if(!project(s.ra,s.dec,P))continue;const d=Math.hypot(P.x-px,P.y-py);if(d<bd){bd=d;best={kind:'star',o:s};}}
-  for(const o of DSOS){if(!project(o.ra,o.dec,P))continue;const half=Math.max(5,V.S*P.k*(o.size/60)*D2R/2);const d=Math.max(0,Math.hypot(P.x-px,P.y-py)-Math.min(half,40));if(d<bd){bd=d;best={kind:'dso',o:o};}}
+  if(L.dso&&V.fov<=120)for(const o of DSOS){if(!project(o.ra,o.dec,P))continue;const half=Math.max(5,V.S*P.k*(o.size/60)*D2R/2);const d=Math.max(0,Math.hypot(P.x-px,P.y-py)-Math.min(half,40));if(d<bd){bd=d;best={kind:'dso',o:o};}}
   return best;
 }
 const selEl=$('sel');
@@ -1345,7 +1356,75 @@ $('lang').onclick=()=>{lang=lang==='zh'?'en':'zh';try{localStorage.setItem('sky-
 
 /* Public bridge: clicking science-image markers focuses the matching sky position.
    Uses RA/Dec, never assumes detector or image pixels equal sky canvas pixels. */
+/* Offline search only: named objects from the built-in real-star/DSO catalogs,
+ * constellation centroids, presets, and science targets in the notebook UI.
+ * An arbitrary search result is a sky position, not a SPHEREx detection. */
+function skyObjectSearch(query,maxResults=15){
+ const cleaned=v=>String(v??'').normalize('NFKC').toLowerCase().replace(/[\s\u2019'._-]+/g,'');
+ const q=cleaned(query).trim();
+ if(q.length<2)return[];
+ const candidates=[];
+ const offer=(kind,id,label,aliases,ra,dec,fov,mag)=>{
+  const strings=[label,...aliases].map(cleaned);
+  const exact=strings.some(x=>x===q),prefix=strings.some(x=>x.startsWith(q)),part=strings.some(x=>x.includes(q));
+  if(!part)return;
+  candidates.push({kind,id:String(id),label,ra_deg:ra*R2D,dec_deg:dec*R2D,fov_deg:fov,
+    ...(Number.isFinite(mag)?{mag}:{}),rank:exact?0:prefix?1:2});
+ };
+ for(const s of STARS)offer('star',s.k,s.n,[],s.ra,s.dec,Math.min(V.fov,4),s.mag);
+ for(const o of DSOS)offer('dso',o.id,dsoName(o),[o.id,o.n,EN_DSO[o.id]||''],o.ra,o.dec,Math.max(.35,Math.min(10,o.size/60*3)),o.mag);
+ for(const [idx,p] of PRESETS.entries())offer('preset',idx,lang==='zh'?p[0]:p[1],[p[0],p[1]],p[2]*15*D2R,p[3]*D2R,p[4]);
+ for(const c of CONS)offer('constellation',c.zh,consName(c),[c.zh,EN_CONS[c.zh]||''],c.cra,c.cdec,30);
+ for(const g of gaiaStars){
+  if(g.source_id)offer('gaia',g.source_id,'Gaia DR3 '+g.source_id,[g.source_id],g.ra,g.dec,Math.min(V.fov,.3),g.mag);
+ }
+ for(const o of spherexSources)offer('spx',o.source_id,'SPHEREx '+o.source_id,[o.source_id],o.ra,o.dec,Math.min(V.fov,.3));
+ const targets=window.SPHERExNotebookResults?.targets||[];
+ for(const t of targets){
+  const a=Number(t.ra_deg),d=Number(t.dec_deg);
+  if(Number.isFinite(a)&&Number.isFinite(d)){
+    const aliases=t.id==='Barnards_Star'?['GJ 699',"Barnard's Star"]:t.id==='WISE_0855'?['WISE 0855']:[];
+    offer('target',t.id,t.name,[t.id,...aliases],a*D2R,d*D2R,Math.min(V.fov,.5));
+  }
+ }
+ const limit=clamp(Number(maxResults)||15,1,40);
+ return candidates.sort((a,b)=>a.rank-b.rank||(a.mag??99)-(b.mag??99)||a.label.localeCompare(b.label))
+   .slice(0,limit).map(({rank,...item})=>item);
+}
+function focusSkyObject(result){
+ if(!result||typeof result!=='object')return false;
+ const kind=String(result.kind),id=String(result.id);
+ let o=null,hit=null,ra=null,dec=null,fov=4;
+ if(kind==='star'){o=STARS.find(v=>v.k===id);hit=o?{kind:'star',o}:null;}
+ else if(kind==='dso'){o=DSOS.find(v=>v.id===id);hit=o?{kind:'dso',o}:null;}
+ else if(kind==='gaia'){o=gaiaStars.find(v=>v.source_id===id);hit=o?{kind:'gaia',o}:null;}
+ else if(kind==='spx'){o=spherexSources.find(v=>v.source_id===id);hit=o?{kind:'spx',o}:null;}
+ else if(kind==='constellation'){o=CONS.find(v=>v.zh===id);}
+ else if(kind==='preset'){const p=PRESETS[Number(id)];if(p)o={ra:p[2]*15*D2R,dec:p[3]*D2R};}
+ else if(kind==='target'){
+  const t=window.SPHERExNotebookResults?.targets?.find(v=>v.id===id);
+  if(t)o={ra:Number(t.ra_deg)*D2R,dec:Number(t.dec_deg)*D2R};
+ }
+ if(!o)return false;
+ ra=o.ra??o.cra;dec=o.dec??o.cdec;
+ fov=Number(result.fov_deg);
+ if(!Number.isFinite(ra)||!Number.isFinite(dec)||!Number.isFinite(fov))return false;
+ fov=clamp(fov,.001,180);
+ sel={ra,dec,hit};fillInputs(ra,dec);renderSel();
+ flyTo(ra,dec,fov);requestRender();
+ if(hit?.kind==='spx')window.dispatchEvent(new CustomEvent('spherex:select-source',{detail:{source:o}}));
+ return true;
+}
+function setGaiaDepth(mode){
+ if(!['auto','bright','deep'].includes(mode))return false;
+ if(gaiaDepth===mode)return true;
+ gaiaDepth=mode;gaiaQueryEpoch++;gaiaBusy=false;clearTimeout(gaiaTimer);
+ gaiaTimer=null;gaiaStars=manualGaia?gaiaStars:[];gaiaLastFailure=null;gaiaFailureText='';
+ catalogNotice();requestRender();
+ return true;
+}
 window.SkyAtlas={
+  searchObjects:skyObjectSearch,focusObject:focusSkyObject,setGaiaDepth,getGaiaDepth:()=>gaiaDepth,
   // Move to a named/offline target or an explicit RA/Dec coordinate.
   // Do not interpret an arbitrary sky position as an actual SPHEREx detection.
   goToCoordinates({ra_deg,dec_deg,fov_deg}={}){
