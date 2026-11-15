@@ -49,7 +49,8 @@ const panel=$('pbody');if(!panel)return;
 const section=document.createElement('section');section.className='sec';section.id='nr-explorer';
 section.innerHTML=[
  '<details id="nr-details" open><summary id="nr-heading">Notebook Science Results</summary><div class="nr-body">',
- '<label class="nr-label" for="nr-target">Target</label><input type="search" id="nr-target" list="nr-targets" autocomplete="off" spellcheck="false"><datalist id="nr-targets"></datalist>',
+ '<label class="nr-label" for="nr-target">Target / 星體名稱</label><select id="nr-target" aria-label="Select target"></select>',
+ '<div class="nr-name-actions"><input id="nr-name-query" type="search" autocomplete="off" spellcheck="false" placeholder="Name / alias (e.g. GJ 699)"><button id="nr-name-go" class="btn sm" type="button">Search</button></div>',
  '<div class="nr-coordinates"><label><span>RA (°)</span><input id="nr-ra" type="number" min="0" max="360" step="any"></label><label><span>Dec (°)</span><input id="nr-dec" type="number" min="-90" max="90" step="any"></label></div>',
  '<div class="nr-actions"><button class="btn sm" id="nr-go" type="button">Go to sky</button><button class="btn sm" id="nr-load" type="button">Open image viewer</button></div>',
  '<label class="nr-label" for="nr-band" id="nr-band-label">Wavelength band</label>',
@@ -70,11 +71,11 @@ section.innerHTML=[
  '<div class="nr-manifest-actions"><input id="nr-manifest-url" type="text" placeholder="https://.../manifest.json" spellcheck="false"><button id="nr-fetch-manifest" class="btn sm" type="button">Load JSON</button></div>',
  '<p id="nr-manifest-status" class="nr-note"></p></div>',
  '<p id="nr-status" class="nr-note" role="status" aria-live="polite"></p>',
- '<p class="nr-source-note" id="nr-provenance">Source: saved notebook outputs and target-specific uploaded manifests. Missing products are not synthesized.</p>',
+ '<p class="nr-source-note" id="nr-provenance">Source: saved notebook outputs and target-specific uploaded manifests. Missing products are not synthesized.</p><p class="nr-build" id="nr-build">MULTI-TARGET UI · v2.1</p>',
  '</div></details>'
 ].join('');
 const layerSection=$('layers')?.closest('.sec');panel.insertBefore(section,layerSection||null);
-for(const item of OBS)for(const name of item.aliases){const op=document.createElement('option');op.value=name;$('nr-targets').append(op);}
+for(const item of OBS){const op=document.createElement('option');op.value=item.id;op.textContent=item.name;$('nr-target').append(op);}
 const nav=document.querySelector('#top .top-actions');
 if(nav){const btn=document.createElement('button');btn.type='button';btn.id='nr-open';btn.className='btn sm';btn.textContent='SCIENCE';nav.prepend(btn);
  btn.onclick=()=>{const p=$('panel');if(p){p.dataset.collapsed='false';$('collapse')?.setAttribute('aria-expanded','true');} $('nr-details').open=true;section.scrollIntoView({block:'start',behavior:'smooth'});};}
@@ -191,7 +192,11 @@ function currentPreview(){
  if(p.difference?.image_url)return display('',tr('此波段只有 Difference，請按 Difference 按鈕。','Only Difference is available for this band.'));
  return display('',tr('此波段沒有影像，可切換至 SED 或匯入新 Manifest。','No image for this band; try SED or a new manifest.'));
 }
-function countForBand(t){return /^D[1-6]$/.test(state.band)?t.counts[Number(state.band.slice(1))-1]:null;}
+function countForBand(t){
+ if(/^D[1-6]$/.test(state.band))return String(t.counts[Number(state.band.slice(1))-1]);
+ if(state.band==='D5+D6')return `D5 ${t.counts[4]} · D6 ${t.counts[5]}`;
+ return tr('六個波段','6 bands');
+}
 function chooseSource(p){
  const ids=sourceList(p),select=$('nr-source');
  if(!ids.includes(state.source))state.source=ids[0]||'';
@@ -202,7 +207,8 @@ function chooseSource(p){
 }
 function render(){
  const t=target(),d=data(),p=product(),ids=chooseSource(p),n=allFrames(p),canStill=hasStill(p),img=hasImages(p),sed=hasSeds(p);
- setText('nr-count',t.valid+' / '+t.total);setText('nr-bandcount',countForBand(t)??'—');
+ setText('nr-count',t.valid+' / '+t.total);setText('nr-bandcount',countForBand(t));
+ setText('nr-selected-label',state.band==='D5+D6'?tr('D5／D6 各自紀錄','D5 / D6 records'):tr('所選波段紀錄','Selected-band records'));
  for(const op of $('nr-band').options){
   const bp=d.bands?.[op.value];const ready=hasImages(bp)||hasSeds(bp);
   const base=op.value==='all'?tr('全部波段（摘要）','All bands (summary)'):op.value==='D5+D6'?'D5+D6 '+tr('合併','combined'):op.value;
@@ -272,7 +278,7 @@ function selectTarget(id){
  const d=refs.get(id)||defaultData(id);
  const available=Object.keys(d.bands||{}).filter(k=>hasImages(d.bands[k])||hasSeds(d.bands[k]));
  state.band=available[0]||'all';
- $('nr-target').value=t.name;$('nr-ra').value=fmt(t.ra,8);$('nr-dec').value=fmt(t.dec,8);setText('nr-status','');
+ $('nr-target').value=t.id;$('nr-name-query').value='';$('nr-ra').value=fmt(t.ra,8);$('nr-dec').value=fmt(t.dec,8);setText('nr-status','');
  render();fetchStandard(id);return true;
 }
 function selectBand(id){
@@ -356,7 +362,8 @@ function localize(){
  setText('nr-heading',tr('Notebook 科學結果','Notebook science results'));
  setText('nr-go',tr('前往天球座標','Go to sky'));setText('nr-load',tr('開啟影像 Viewer','Open image viewer'));
  setText('nr-band-label',tr('波段選擇','Wavelength band'));
- setText('nr-valid-label',tr('有效 FITS','Usable FITS'));setText('nr-selected-label',tr('所選波段紀錄','Selected-band records'));
+ setText('nr-valid-label',tr('有效 FITS','Usable FITS'));
+ setText('nr-name-go',tr('搜尋','Search'));
  setText('nr-epoch-heading',tr('觀測時間組','Observation epochs'));
  setText('nr-image-mode',tr('影像','Images'));setText('nr-sed-mode','SED');
  setText('nr-source-heading',tr('Source Catalog / SED','Source catalog / SED'));
@@ -368,12 +375,24 @@ function localize(){
  setText('nr-provenance',tr('既有圖像來自 All_Band (1).ipynb；新的圖像由各目標 Manifest 提供。沒有檔案就不顯示結果。','Built-in media: saved All_Band (1).ipynb outputs. New images come from per-target manifests; missing data are never fabricated.'));
  render();
 }
-$('nr-target').addEventListener('change',e=>{
- const key=String(e.target.value).trim().toLowerCase().replace(/[^a-z0-9]/g,'');
- const t=OBS.find(o=>o.aliases.some(a=>a.toLowerCase().replace(/[^a-z0-9]/g,'')===key));
- if(t)selectTarget(t.id);else setText('nr-status',tr('未收錄此名稱；仍可使用 RA / Dec 定位。','Name not in offline list; use RA / Dec to navigate.'));
-});
-$('nr-target').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.target.dispatchEvent(new Event('change'));}});
+$('nr-target').addEventListener('change',e=>selectTarget(e.target.value));
+function findByName(text){
+ const key=String(text).trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+ if(!key)return {match:null,count:0};
+ const exact=OBS.filter(o=>o.aliases.some(a=>a.toLowerCase().replace(/[^a-z0-9]/g,'')===key));
+ if(exact.length===1)return {match:exact[0],count:1};
+ const partial=OBS.filter(o=>o.aliases.some(a=>a.toLowerCase().replace(/[^a-z0-9]/g,'').includes(key)));
+ return {match:partial.length===1?partial[0]:null,count:partial.length};
+}
+function searchByName(){
+ const found=findByName($('nr-name-query').value);
+ if(found.match)selectTarget(found.match.id);
+ else setText('nr-status',found.count>1
+  ?tr('找到多個符合的星體，請使用上方選單。','Multiple matches: choose from the target menu.')
+  :tr('未找到該星體；可以使用上方選單或輸入 RA / Dec 定位。','Target not found: use the menu or enter RA / Dec.'));
+}
+$('nr-name-go').onclick=searchByName;
+$('nr-name-query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchByName();}});
 $('nr-band').addEventListener('change',e=>selectBand(e.target.value));
 $('nr-go').onclick=()=>goTo($('nr-ra').value,$('nr-dec').value);
 $('nr-load').onclick=openViewer;
