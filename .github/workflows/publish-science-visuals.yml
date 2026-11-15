@@ -5,7 +5,7 @@ on:
       drive_file_id:
         description: "new_output.zip source file ID"
         required: true
-        default: "15yFXpqRr6gSqpA7dWFbe_nODoOTQvId0"
+        default: "1YPrM1Yz2KgeDlVZ7ZtBToSfKDZkY_YBr"
   push:
     branches:
       - feature/science-analysis-runs
@@ -27,7 +27,7 @@ jobs:
         run: python3 -m pip install "Pillow>=10" "gdown>=5"
       - name: Download exact science source ZIP
         env:
-          DRIVE_FILE_ID: ${{ inputs.drive_file_id || '15yFXpqRr6gSqpA7dWFbe_nODoOTQvId0' }}
+          DRIVE_FILE_ID: ${{ inputs.drive_file_id || '1YPrM1Yz2KgeDlVZ7ZtBToSfKDZkY_YBr' }}
         run: |
           set -euo pipefail
           gdown "https://drive.google.com/uc?id=$DRIVE_FILE_ID" -O /tmp/spherex_visuals.zip
@@ -36,7 +36,8 @@ jobs:
         run: |
           python3 tools/publish_science_visuals.py \
             --archive /tmp/spherex_visuals.zip \
-            --science-dir ./science-runs
+            --science-dir ./science-runs \
+            --targets WISE_0855 Barnards_Star Epsilon_Indi_B RW_Aurigae R_Draconis
       - name: Check complete science inventory
         run: |
           python3 tools/test_ui_consolidation.py
@@ -53,14 +54,14 @@ jobs:
                   path=root/r["manifest_url"]
                   m=json.loads(path.read_text())
                   p=m["bands"][r["band_id"]]
-                  assert len(p["viewer_frames"])==len(p["frames"])>0
-                  for key in ("diagnostic_url","stack_url"):
+                  assert len(p["viewer_frames"])==len(p["plain_viewer_frames"])==len(p["frames"])>0
+                  for key in ("diagnostic_url","stack_url","unmarked_blink_url"):
                       assert (path.parent/p[key]).is_file()
-                  for f in p["viewer_frames"]+p["frames"]:
+                  for f in p["viewer_frames"]+p["plain_viewer_frames"]+p["frames"]:
                       assert (path.parent/f["image_url"]).is_file()
                   count+=1
           assert count==36
-          print("PASS 36 diagnostics, 36 STACK, marked viewer and original group frames")
+          print("PASS 45 diagnostics, 45 STACK, marked and plain Viewer frames, original Group frames retained")
           PY
       - name: Publish verified additive media
         run: |
