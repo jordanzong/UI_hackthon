@@ -8,10 +8,23 @@ const sky=window.SkyAtlas;
 if(!sky?.registerAllSkyLayer)return;
 const state={
   manifest:null,bright:[],tiles:new Map(),active:[],pending:new Set(),
-  failed:new Set(),error:'',ready:false
+  retryAt:new Map(),attempts:new Map(),error:'',ready:false
 };
 const D2R=Math.PI/180, R2D=180/Math.PI;
 const ROOT='./catalogs/allsky/';
+const MAX_ATTEMPTS=3,MAX_PARALLEL=2;
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function fetchJsonWithRetry(url,max=3){
+ let last=null;
+ for(let i=0;i<max;i++){
+  try{
+   const r=await fetch(url,{cache:i?'no-store':'force-cache'});
+   if(!r.ok)throw Error('HTTP '+r.status);
+   return await r.json();
+  }catch(e){last=e;if(i+1<max)await sleep(800*Math.pow(2,i));}
+ }
+ throw last||Error('Catalog request failed');
+}
 function normalize(data){
  if(!Array.isArray(data))return[];
  return data.map(s=>{
@@ -32,15 +45,11 @@ function sepDeg(a,b,c,d){
 function requestDraw(){sky.requestRedraw?.();}
 async function init(){
  try{
-  const r=await fetch(ROOT+'manifest.json',{cache:'force-cache'});
-  if(!r.ok)throw Error('HYG manifest HTTP '+r.status);
-  const m=await r.json();
+  const m=await fetchJsonWithRetry(ROOT+'manifest.json');
   if(m.catalog!=='HYG Database v4.1'||!Array.isArray(m.tiles)||
      m.tile_count<100||m.bright_count<4000)
    throw Error('Unexpected HYG manifest');
-  const rb=await fetch(ROOT+String(m.bright_file||'bright.json'),{cache:'force-cache'});
-  if(!rb.ok)throw Error('HYG bright HTTP '+rb.status);
-  const bright=normalize(await rb.json());
+  const bright=normalize(await fetchJsonWithRetry(ROOT+String(m.bright_file||'bright.json')));
   if(bright.length<4000)throw Error('HYG bright data invalid or empty');
   state.manifest=m;state.bright=bright;state.ready=true;state.error='';
   requestDraw();
@@ -68,18 +77,31 @@ function sync(view){
                  Number(t.dec_center_deg)*D2R)<=rad+cellRadius;
  });
  state.active=wanted.map(t=>t.id);
+ const now=Date.now();
  for(const t of wanted){
-  if(state.pending.size>=5)break;
-  if(state.tiles.has(t.id)||state.pending.has(t.id)||state.failed.has(t.id))continue;
+  if(state.pending.size>=MAX_PARALLEL)break;
+  if(state.tiles.has(t.id)||state.pending.has(t.id))continue;
   if(!/^tiles\/r\d{2}_d\d{2}\.json$/.test(String(t.file)))continue;
+  const attempts=state.attempts.get(t.id)||0;
+  if(attempts>=MAX_ATTEMPTS)continue; // Manual retry is always available.
+  if((state.retryAt.get(t.id)||0)>now)continue;
   state.pending.add(t.id);
-  fetch(ROOT+t.file,{cache:'force-cache'}).then(async r=>{
-   if(!r.ok)throw Error(t.id+': HTTP '+r.status);
-   const data=normalize(await r.json());
-   if(!data.length)throw Error(t.id+': invalid or empty tile');
-   state.tiles.set(t.id,data);
+  const nth=attempts+1;
+  fetch(ROOT+t.file,{cache:nth>1?'no-store':'force-cache'}).then(async r=>{
+    if(!r.ok)throw Error(t.id+': HTTP '+r.status);
+    const data=normalize(await r.json());
+    if(!data.length)throw Error(t.id+': tile missing real source records');
+    state.tiles.set(t.id,data);
+    state.attempts.delete(t.id);state.retryAt.delete(t.id);
+    if(!state.attempts.size)state.error='';
   }).catch(e=>{
-   state.failed.add(t.id);state.error=String(e.message||e).slice(0,170);
+    state.error=String(e.message||e).slice(0,170);
+    state.attempts.set(t.id,nth);
+    if(nth<MAX_ATTEMPTS){
+      const delay=1200*Math.pow(2,nth-1);
+      state.retryAt.set(t.id,Date.now()+delay);
+      setTimeout(requestDraw,delay+40);
+    }
   }).finally(()=>{state.pending.delete(t.id);requestDraw();});
  }
 }
@@ -125,10 +147,18 @@ function search(text,max=12){
  }
  return found.sort((a,b)=>a.rank-b.rank||a.mag-b.mag).slice(0,max);
 }
+function retryFailedTiles(){
+ state.attempts.clear();state.retryAt.clear();state.error='';
+ requestDraw();return true;
+}
 function status(){
+ const activeMissing=state.active.filter(id=>!state.tiles.has(id));
  return {
   ready:state.ready,bright_count:state.bright.length,
   loaded_tiles:state.tiles.size,active_tiles:state.active.length,
+  active_loaded_tiles:state.active.length-activeMissing.length,
+  active_missing_tiles:activeMissing.length,
+  active_failed_tiles:activeMissing.filter(id=>(state.attempts.get(id)||0)>=MAX_ATTEMPTS).length,
   total_catalog_stars:state.manifest?
      state.manifest.bright_count+state.manifest.tile_source_count:0,
   loaded_sources:state.bright.length+Array.from(state.tiles.values()).reduce((n,t)=>n+t.length,0),
@@ -138,13 +168,23 @@ function status(){
  };
 }
 function statusText(zh){
- if(state.error)return (zh?'全天星表載入問題：':'All-sky catalog issue: ')+state.error;
- if(!state.ready)return zh?'HYG 全天真實星表載入中…':'Loading HYG real whole-sky stars…';
- const n=state.active.filter(id=>state.tiles.has(id)).length;
- return (zh?'HYG 全天亮星 ':'HYG whole-sky bright ')+state.bright.length+
-  (zh?' 筆；較暗星點分區 ':'; faint-star tiles ')+n+'/'+state.active.length+
-  (zh?' 已載入（V 星等）':' loaded (V magnitude)');
+ if(!state.ready)return state.error
+  ?(zh?'HYG 全天亮星載入失敗：':'HYG bright catalog failed: ')+state.error
+  :(zh?'HYG 全天真實星表載入中…':'Loading HYG real whole-sky stars…');
+ const loaded=state.active.filter(id=>state.tiles.has(id)).length;
+ const missing=state.active.length-loaded;
+ const stopped=state.active.filter(id=>!state.tiles.has(id)
+   &&(state.attempts.get(id)||0)>=MAX_ATTEMPTS).length;
+ const base=(zh?'HYG 全天亮星 ':'HYG whole-sky bright ')+state.bright.length+
+  (zh?' 筆；附近較暗星表分區 ':'; local faint-star tiles ')+loaded+'/'+state.active.length+
+  (zh?' 已載入（V 星等）':' loaded (V mag)');
+ return stopped
+  ?base+(zh?'；'+stopped+' 個分區暫時失敗，可按「重試 HYG」':
+          '; '+stopped+' tile(s) unavailable; use Retry HYG')
+  :missing?base+(zh?'；其餘載入中／重試中':' (loading/retrying)')
+          :base;
 }
-sky.registerAllSkyLayer({sync,draw,nearest,findById,search,status,statusText});
+
+sky.registerAllSkyLayer({sync,draw,nearest,findById,search,status,statusText,retryFailedTiles});
 init();
 })();
