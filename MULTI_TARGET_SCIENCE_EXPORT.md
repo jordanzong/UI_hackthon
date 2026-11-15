@@ -1,0 +1,175 @@
+# Multi-target SPHEREx Science Explorer
+
+This branch has a **data-driven target × band × product** science panel.
+All five names are navigable. For each band, the UI only enables actual exported **Epoch images, Blink, Difference, Source Catalog, SED**. Missing products show a missing-data message; no target is silently substituted.
+
+## Built-in products vs missing products
+
+- **Epsilon Indi B:** seven-group D5+D6 combined-stack GIF, overview image, grouping diagnostic.
+- **WISE 0855:** Source 1–3 all-band SED plots (groups / overlay), plus two actual 2025 May/Nov D2 **field previews** and a November−May Difference image reused from the previously validated DR1 standardized archive. This is *not* a WISE 0855 detection: the target is outside the 101-pixel common difference mask. The two-frame archive is separate from the saved Notebook SED source-ID associations.
+- **Barnard's Star, RW Aurigae, R Draconis:** six-band download counts and sky coordinates only, until real product files are added.
+
+The SED / Epsilon products are taken from saved outputs of All_Band (1).ipynb. The additional WISE 0855 May/Nov D2 preview comes from the separate validated SPHEREx-DR1-May-Nov-standardized.zip archive already embedded in spherex-demo.js. No cross-dataset Source IDs are assumed.
+
+## Backend / GitHub Pages workflow
+
+The UI auto-looks for a file named:
+- notebook-results/barnards-star/manifest.json
+- notebook-results/rw-aurigae/manifest.json
+- notebook-results/r-draconis/manifest.json
+- notebook-results/epsilon-indi-b/manifest.json
+- notebook-results/wise-0855/manifest.json
+
+Absent JSON returns a normal missing-data state. The SCIENCE panel also has a text input for a remote **Manifest URL**. Relative image URLs resolve against the manifest URL. Cross-origin JSON endpoints must allow CORS; serve over HTTPS.
+
+### Export real science results
+
+After an offline notebook run has produced calibrated/aligned Stack FITS or PNG, Difference and SED charts, install:
+
+~~~bash
+pip install numpy pillow astropy
+~~~
+
+Copy 'tools/example_target_products.json' to a spec file, e.g. 'products/barnards.json'; replace every REPLACE_WITH placeholder with a real filename from Barnard's Star, or remove unavailable products.
+
+Minimal example (filenames and MJDs BELOW ARE HYPOTHETICAL placeholders, NOT real observations):
+
+~~~json
+{
+  "target_id": "Barnards_Star",
+  "center": {"ra_deg": 269.45207696, "dec_deg": 4.69336497},
+  "bands": {
+    "D2": {
+      "kind": "single-band",
+      "frames": [
+        {"frame_id": "may", "label": "2025 May", "mjd": 60801.0, "image_file": "outputs/barnards/D2_may_stack.fits"},
+        {"frame_id": "nov", "label": "2025 November", "mjd": 60986.0, "image_file": "outputs/barnards/D2_nov_stack.fits"}
+      ],
+      "difference": {"image_file": "outputs/barnards/D2_nov_minus_may.fits"}
+    }
+  },
+  "sources_file": "outputs/barnards/source_catalog.ecsv"
+}
+~~~
+
+Run from the repository directory:
+
+~~~bash
+python tools/export_spherex_products.py --spec products/barnards.json --output-root notebook-results
+~~~
+
+The exporter will create:
+- notebook-results/barnards-star/manifest.json
+- notebook-results/barnards-star/assets/D2_frame_001.png
+- notebook-results/barnards-star/assets/D2_frame_002.png
+- notebook-results/barnards-star/assets/D2_difference.png
+
+Spec file paths resolve relative to the spec location, not where you run Python. The exporter reads science-ready 2D FITS, generates percentile-stretched PNGs (transparent for NaN), copies GIF/PNG/JPG/WebP, writes ECSV source positions when supplied, and generates a JSON manifest. The tool never performs ZODI subtraction, FLAGS checking, ePSF fitting, or cross-epoch association. Do not treat generated PNGs as calibrated photometry.
+
+Then submit these files to your working fork branch and deploy GitHub Pages; the UI automatically detects the new target/epoch/band.
+
+~~~bash
+git add notebook-results/barnards-star
+git commit -m "data: add validated Barnard's Star science products"
+git push
+~~~
+
+Repeat for RW Aurigae and R Draconis when those actual products are ready.
+
+## Standard manifest schema
+
+Each target has a separate JSON:
+
+~~~json
+{
+  "target_id": "RW_Aurigae",
+  "bands": {
+    "D2": {
+      "kind": "single-band",
+      "frames": [
+        {
+          "frame_id": "group_1",
+          "label": "Group 1",
+          "mjd": 60801.0,
+          "image_url": "assets/D2_frame_001.png",
+          "width": 65,
+          "height": 65
+        }
+      ],
+      "blink_url": "assets/D2_blink.gif",
+      "difference": {
+        "image_url": "assets/D2_difference.png",
+        "valid_pixel_count": 101
+      },
+      "seds": [
+        {
+          "source_id": "1",
+          "plots": {
+            "groups": "assets/D2_sed_001_groups.png",
+            "overlay": "assets/D2_sed_001_overlay.png"
+          }
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "detection_id": "det_1",
+      "global_source_id": null,
+      "ra_deg": 76.95,
+      "dec_deg": 30.40,
+      "quality_status": "unknown",
+      "frame_positions": [
+        {"frame_id": "group_1", "x_px": 20.5, "y_px": 30.5, "covered": true}
+      ]
+    }
+  ]
+}
+~~~
+
+**Every number/source record in this manifest example is illustrative, not a measured RW Aurigae datum.** Replace with your team's verified values, or remove the field. The example is not deployed as scientific data.
+
+The 0-based (x_px,y_px) locations refer to the FINAL displayed PNG, origin top-left. A source is selectable in the image Viewer only with valid per-frame frame_positions; raw FITS detector coordinates are not interchangeable. If the PNG was cropped, flipped or resampled, recompute positions. Missing coverage is not nondetection. Do not invent global_source_id for epoch-local detections. Only populated calibrated flux_mjy fields represent real photometry; never convert flux_proxy_jy silently.
+
+Band keys accepted: 'all', 'D1' to 'D6', 'D5+D6'. The latter is always a **combined** band, not independent D5/D6 photometry.
+
+## Web front-end hooks
+
+~~~javascript
+await window.SPHERExNotebookResults.loadManifest(
+  "https://example.org/api/targets/RW_Aurigae/manifest",
+  "RW_Aurigae"
+);
+window.SPHERExNotebookResults.selectTarget("RW_Aurigae");
+window.SPHERExNotebookResults.selectBand("D2");
+~~~
+
+An already fetched JSON object may be installed using:
+~~~javascript
+window.SPHERExNotebookResults.setManifest(json, "RW_Aurigae", document.baseURI);
+~~~
+
+
+## Exact All_Band (1).ipynb workflow for the other targets
+
+The local-notebook outputs are **not** embedded in the notebook attachment: the FITS/ECSV files must be collected from the machine that executed it. To produce them for each target:
+
+1. In **Cell F3** set `TARGET_TO_ANALYZE` to `'Barnards_Star'`, `'RW_Aurigae'` or `'R_Draconis'` (one at a time).
+2. Run **F3 → B → B1 → B2 → C → D → E** in order, verifying the selected target in every output. Keep each run in its own `RUN_DIR`.
+3. Collect `RUN_DIR/time_grouped_stacks.fits`, `RUN_DIR/group_stack_frames/group_*.png`, `RUN_DIR/group_stacks.gif`, `RUN_DIR/source_catalog.ecsv`, `RUN_DIR/allbands_epsf_photometry.ecsv` and `RUN_DIR/sed_plots/*.png`.
+4. The inspected notebook does **not** produce a validated Difference image for every target. Only add `difference` after a separate PSF-/WCS-matched difference analysis with a verified common-valid mask.
+5. Use the export tool with target-specific real filenames and MJD metadata. Do not substitute sample MJDs from `tools/example_target_products.json`.
+
+For WISE 0855 the additional 2025 May/Nov D2 field previews were already committed in the separate `spherex-demo.js` asset. The WISE notebook SED source IDs and these two-frame matched-source indices have **not been cross-linked**, so a complete per-source cross-dataset catalog still requires scientific verification.
+
+## Verification before merging
+
+1. All 5 targets remain selectable and RA/Dec navigation works.
+2. Missing D1–D6 assets show a clear unavailable state rather than another band's Stack.
+3. Existing Epsilon Indi B seven-group GIF and WISE 0855 SED continue to display.
+4. Manifest target_id mismatch is rejected.
+5. Test every generated asset URL for HTTP 200 on GitHub Pages.
+6. Verify ePSF source association, valid masks and final image-pixel mapping.
+7. Test Epoch/Blink/Difference, source selection, mobile layout and real backend CORS.
+
+The fork's GitHub Pages can preview the branch before an upstream PR is merged.
