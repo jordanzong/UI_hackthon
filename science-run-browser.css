@@ -63,8 +63,16 @@
 #science-run-browser .srb-frame img[hidden]{display:none}
 #science-run-browser .srb-frame p{margin:10px;color:var(--muted);font-size:11px}
 #science-run-browser #srb-open{
- color:var(--accent);font:10px/1.5 var(--mono);
- text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere
+ box-sizing:border-box;display:block;width:100%;
+ padding:13px 14px;margin:0;
+ background:var(--accent);border:1px solid var(--accent);
+ color:var(--on);font:600 12px/1.4 var(--font);
+ letter-spacing:.09em;text-transform:uppercase;text-decoration:none;
+ text-align:center;overflow-wrap:anywhere;cursor:pointer
+}
+#science-run-browser #srb-open:hover,
+#science-run-browser #srb-open:focus-visible{
+ background:transparent;color:var(--accent);outline-offset:2px
 }
 #science-run-browser #srb-open[hidden]{display:none}
 #science-run-browser .srb-caption{
