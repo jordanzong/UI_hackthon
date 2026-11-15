@@ -93,7 +93,7 @@ section.innerHTML=[
  '<div class="nr-manifest-actions"><input id="nr-manifest-url" type="text" placeholder="https://.../manifest.json" spellcheck="false"><button id="nr-fetch-manifest" class="btn sm" type="button">Load JSON</button></div>',
  '<p id="nr-manifest-status" class="nr-note"></p></div>',
  '<p id="nr-status" class="nr-note" role="status" aria-live="polite"></p>',
- '<p class="nr-source-note" id="nr-provenance">Source: saved notebook outputs and target-specific uploaded manifests. Missing products are not synthesized.</p><p class="nr-build" id="nr-build">MULTI-TARGET UI · v2.1</p>',
+ '<p class="nr-source-note" id="nr-provenance">Source: saved notebook outputs and target-specific uploaded manifests. Missing products are not synthesized.</p><p class="nr-build" id="nr-build">MULTI-TARGET UI · v2.2</p>',
  '</div></details>'
 ].join('');
 const layerSection=$('layers')?.closest('.sec');panel.insertBefore(section,layerSection||null);
