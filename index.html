@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#05070d">
-<meta name="sky-atlas-release" content="HYG-ALLSKY-20261115">
+<meta name="sky-atlas-release" content="HYG-GAIA-WIDE-20261115">
 <title>天球星圖</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -225,7 +225,7 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
       <h1 data-i18n="title">天球星圖</h1>
       <span class="brand-sep" aria-hidden="true"></span>
       <span class="brand-sub" data-i18n="sub">J2000 · 赤道座標</span>
-      <span class="hyg-release" title="HYG whole-sky catalog build">HYG 全天星表</span>
+      <span class="hyg-release" title="HYG retry and Gaia wide-field build">HYG + Gaia · v2</span>
     </div>
     <div class="top-actions">
       <button type="button" class="btn sm" id="lang" aria-label="Language / 語言">EN</button>
@@ -269,7 +269,7 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
             </div>
             <p id="gaiaCacheStatus" role="status" aria-live="polite"></p>
             <p id="allSkyCatalogStatus" role="status" aria-live="polite">HYG 全天星表載入中…</p>
-            <button type="button" class="btn sm" id="allSkyRetry">重新載入 HYG 分區</button>
+            <button type="button" class="btn sm" id="allSkyRetry" data-i18n="retryHYG">重新載入 HYG 分區</button>
             <p id="gaiaWideStatus" role="status" aria-live="polite">擴大版 Gaia 天區載入中…</p>
             <p class="allsky-license">全天基礎恆星：<a href="https://github.com/astronexus/HYG-Database" target="_blank" rel="noopener noreferrer">HYG v4.1</a> · V 星等 · CC BY-SA 4.0。Gaia DR3 資料會獨立顯示。</p>
           </div>
@@ -706,7 +706,7 @@ zh:{title:'天球星圖',sub:'J2000 · 赤道座標',goto:'前往座標',ra:'赤
  mag:m=>(m<0?'−':'')+Math.abs(m).toFixed(2)+' 等',
  types:{gal:'星系',neb:'星雲',oc:'疏散星團',gc:'球狀星團',ctr:'銀心'},
  layerNames:{cl:'星座連線',cn:'星座名稱',sn:'恆星名稱',grid:'赤道座標格線',ecl:'黃道',mw:'銀河（示意）',dso:'深空天體',hyg:'全天 HYG 真實恆星',gaia:'Gaia DR3 星點',gaiaLabels:'Gaia 星等標籤',spx:'SPHEREx 來源',spxLabels:'Source ID 標籤',spxPassOnly:'僅顯示品質通過',ret:'中心十字'},
- additionalCatalogs:'自動星表 / 科學資料',gaiaAutoDesc:'Gaia DR3：視野縮至 12° 內自動查詢，離線時仍保留內建亮星。',spxAutoDesc:'SPHEREx：依研究目標自動載入已驗證 Source Catalog；無資料時不顯示候選源。',catalogAdvanced:'進階：匯入自訂星表（開發測試）',gaiaCacheJump:'Gaia CSV：前往已快取天區',gaiaCacheGo:'前往',reloadGaia:'重新查詢 Gaia',importSources:'匯入 SPHEREx CSV / JSON',importGaia:'匯入 Gaia CSV',
+ additionalCatalogs:'自動星表 / 科學資料',gaiaAutoDesc:'Gaia DR3：視野縮至 12° 內自動查詢，離線時仍保留內建亮星。',spxAutoDesc:'SPHEREx：依研究目標自動載入已驗證 Source Catalog；無資料時不顯示候選源。',catalogAdvanced:'進階：匯入自訂星表（開發測試）',gaiaCacheJump:'Gaia CSV：前往已快取天區',gaiaCacheGo:'前往',retryHYG:'重試 HYG 分區',reloadGaia:'重新查詢 Gaia',importSources:'匯入 SPHEREx CSV / JSON',importGaia:'匯入 Gaia CSV',
  needBoth:'赤經與赤緯需要一起輸入。',
  badRA:'赤經無法辨識。可用 83.82、5.588h、05:35:17 或 5h 35m 17s。',
  badDec:'赤緯需介於 −90° 與 +90°，例如 -5.39、-05 23 28。',
@@ -722,7 +722,7 @@ en:{title:'Sky Atlas',sub:'J2000 · Equatorial',goto:'Go to coordinates',ra:'Rig
  mag:m=>'mag '+(m<0?'−':'')+Math.abs(m).toFixed(2),
  types:{gal:'Galaxy',neb:'Nebula',oc:'Open cluster',gc:'Globular cluster',ctr:'Galactic center'},
  layerNames:{cl:'Constellation lines',cn:'Constellation names',sn:'Star names',grid:'Equatorial grid',ecl:'Ecliptic',mw:'Milky Way (schematic)',dso:'Deep-sky objects',hyg:'All-sky HYG stars',gaia:'Gaia DR3 stars',gaiaLabels:'Gaia G labels',spx:'SPHEREx sources',spxLabels:'Source ID labels',spxPassOnly:'PASS quality only',ret:'Center crosshair'},
- additionalCatalogs:'Automatic catalogs / science data',gaiaAutoDesc:'Gaia DR3 loads automatically at FOV ≤ 12°. Built-in bright stars remain available offline.',spxAutoDesc:'SPHEREx sources load automatically for the selected science target when a verified catalog exists.',catalogAdvanced:'Advanced: import custom catalogs (developer testing)',gaiaCacheJump:'Gaia CSV: jump to a cached field',gaiaCacheGo:'Go',reloadGaia:'Refresh Gaia',importSources:'Import SPHEREx CSV / JSON',importGaia:'Import Gaia CSV',
+ additionalCatalogs:'Automatic catalogs / science data',gaiaAutoDesc:'Gaia DR3 loads automatically at FOV ≤ 12°. Built-in bright stars remain available offline.',spxAutoDesc:'SPHEREx sources load automatically for the selected science target when a verified catalog exists.',catalogAdvanced:'Advanced: import custom catalogs (developer testing)',gaiaCacheJump:'Gaia CSV: jump to a cached field',gaiaCacheGo:'Go',retryHYG:'Retry HYG tiles',reloadGaia:'Refresh Gaia',importSources:'Import SPHEREx CSV / JSON',importGaia:'Import Gaia CSV',
  needBoth:'Enter both RA and Dec.',
  badRA:'RA not recognized. Try 83.82, 5.588h, 05:35:17 or 5h 35m 17s.',
  badDec:'Dec must be between −90° and +90°, e.g. -5.39 or -05 23 28.',
