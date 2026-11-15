@@ -159,7 +159,8 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 /* Public map FOV range is 2°–180°; no sub-degree zoom is available. */
 #fov-range{display:block;color:var(--muted);font:10px/1.4 var(--mono);margin-top:4px}
 
-#allSkyCatalogStatus{color:var(--fg);font:11px/1.55 var(--mono);overflow-wrap:anywhere}
+#allSkyCatalogStatus,#gaiaWideStatus{color:var(--fg);font:11px/1.55 var(--mono);overflow-wrap:anywhere}
+#allSkyRetry{align-self:flex-start;font:500 10px/1.4 var(--font);letter-spacing:.03em;padding:7px 12px;text-indent:0}
 #science-catalogs .allsky-license{margin:0;color:var(--muted);font:10px/1.6 var(--font)}
 #science-catalogs .allsky-license a{color:var(--accent);text-decoration:underline}
 .hyg-release{font:500 9px/1.4 var(--mono);color:var(--accent);border:1px solid var(--line);padding:4px 6px;letter-spacing:.05em;white-space:nowrap}
@@ -268,6 +269,8 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
             </div>
             <p id="gaiaCacheStatus" role="status" aria-live="polite"></p>
             <p id="allSkyCatalogStatus" role="status" aria-live="polite">HYG 全天星表載入中…</p>
+            <button type="button" class="btn sm" id="allSkyRetry">重新載入 HYG 分區</button>
+            <p id="gaiaWideStatus" role="status" aria-live="polite">擴大版 Gaia 天區載入中…</p>
             <p class="allsky-license">全天基礎恆星：<a href="https://github.com/astronexus/HYG-Database" target="_blank" rel="noopener noreferrer">HYG v4.1</a> · V 星等 · CC BY-SA 4.0。Gaia DR3 資料會獨立顯示。</p>
           </div>
           <p id="gaiaErrorDetails" class="catalog-error-details" role="status" aria-live="polite" hidden></p>
@@ -777,12 +780,17 @@ let gaiaStars=[],spherexSources=[];
 /* Gaia DR3 static field cache: verified TAP CSVs committed by GitHub Actions.
  * These are limited 0.2-degree cones, not a substitute for whole-sky Gaia. */
 const gaiaLocal={manifest:null,attempted:false,loadError:'',files:new Map(),pending:new Set(),active:'',stars:[]};
+const gaiaWide={manifest:null,attempted:false,loadError:'',files:new Map(),pending:new Set(),active:'',stars:[]};
 let allSkyLayer=null; // Real HYG v4.1 J2000, visual V; separate from Gaia DR3 G.
 function availableGaiaStars(){
- if(!gaiaLocal.stars.length)return gaiaStars;
- if(!gaiaStars.length)return gaiaLocal.stars;
- const ids=new Set(gaiaStars.map(s=>s.source_id));
- return gaiaStars.concat(gaiaLocal.stars.filter(s=>!ids.has(s.source_id)));
+ const result=[],ids=new Set();
+ for(const array of [gaiaStars,gaiaWide.stars,gaiaLocal.stars])
+   for(const star of array){
+     if(ids.has(star.source_id))continue;
+     ids.add(star.source_id);result.push(star);
+   }
+ return result;
+
 }
 let gaiaTimer=null,gaiaBusy=false,gaiaNotice='',spxNotice='',manualGaia=false;
 let gaiaLastFailure=null,gaiaFailureText='';
@@ -851,7 +859,7 @@ function catalogNotice(){
   }
 }
 function gaiaMagLimit(fov){
- const automatic=fov>8?9.5:fov>3?12:fov>1?14:fov>0.25?17:fov>0.08?18.5:20;
+ const automatic=fov>8?9.5:fov>3?12:fov>2.5?14.0:15.5;
  return gaiaDepth==='bright'?Math.max(4,automatic-3):
    gaiaDepth==='deep'?Math.min(20,automatic+2.5):automatic;
 }
@@ -937,6 +945,81 @@ function syncGaiaLocal(view){
    gaiaLocal.loadError=String(e.message||e);
    if(gaiaLocal.active===id){catalogNotice();requestRender();}
  }).finally(()=>gaiaLocal.pending.delete(id));
+}
+/* Wide Gaia DR3 G<15.5 static fields are separate from narrow G<18.5
+ * fields. Each download is a genuine 2.1-degree cone around a science
+ * target; one field does NOT imply complete whole-sky Gaia coverage. */
+function initGaiaWide(){
+ if(gaiaWide.attempted)return;
+ gaiaWide.attempted=true;
+ fetch('./catalogs/gaia-wide/manifest.json',{cache:'force-cache'}).then(async r=>{
+  if(!r.ok)throw Error('Wide Gaia manifest HTTP '+r.status);
+  const m=await r.json();
+  if(m.catalog!=='Gaia DR3'||!Array.isArray(m.fields))throw Error('Invalid Gaia-wide manifest');
+  gaiaWide.manifest=m;
+  catalogNotice();requestRender();
+ }).catch(e=>{
+  gaiaWide.loadError=String(e.message||e);
+  catalogNotice();
+ });
+}
+function syncGaiaWide(view){
+ if(!L.gaia||V.fov>12||manualGaia){
+   if(gaiaWide.stars.length||gaiaWide.active){gaiaWide.active='';gaiaWide.stars=[];}
+   return;
+ }
+ if(!gaiaWide.manifest){initGaiaWide();return;}
+ const fields=gaiaWide.manifest.fields;
+ let selected=null,nearest=Infinity;
+ for(const f of fields){
+   if(!f?.center||!f?.file)continue;
+   const ra=Number(f.center.ra_deg),dec=Number(f.center.dec_deg),radius=Number(f.radius_deg);
+   if(![ra,dec,radius].every(Number.isFinite)||radius<=0)continue;
+   const dist=skySep(view.ra,view.dec,ra*D2R,dec*D2R);
+   if(dist<radius+view.radius&&dist<nearest){nearest=dist;selected=f;}
+ }
+ if(!selected){gaiaWide.active='';gaiaWide.stars=[];return;}
+ const id=String(selected.target_id);
+ gaiaWide.active=id;
+ const present=gaiaWide.files.get(id);
+ if(present){gaiaWide.stars=present;return;}
+ gaiaWide.stars=[];
+ if(gaiaWide.pending.has(id))return;
+ const file=String(selected.file);
+ if(!/^[a-z0-9-]+\.csv$/i.test(file))return;
+ gaiaWide.pending.add(id);
+ fetch('./catalogs/gaia-wide/'+file,{cache:'force-cache'}).then(async r=>{
+  if(!r.ok)throw Error('Wide Gaia '+file+': HTTP '+r.status);
+  const raw=parseCSV(await r.text());
+  const data=normalizeGaia(raw).filter(o=>
+    o.mag<=Number(selected.mag_limit)+0.001&&
+    skySep(o.ra,o.dec,Number(selected.center.ra_deg)*D2R,
+      Number(selected.center.dec_deg)*D2R)<=Number(selected.radius_deg)+0.0002);
+  if(!data.length)throw Error('Empty Gaia-wide CSV: '+file);
+  gaiaWide.files.set(id,data);
+  if(gaiaWide.active===id&&!manualGaia){gaiaWide.stars=data;catalogNotice();requestRender();}
+ }).catch(e=>{
+  gaiaWide.loadError=String(e.message||e).slice(0,180);
+  if(gaiaWide.active===id)catalogNotice();
+ }).finally(()=>gaiaWide.pending.delete(id));
+}
+function updateGaiaWideStatus(){
+ const el=$('gaiaWideStatus');if(!el)return;
+ const zh=lang==='zh';
+ if(!L.gaia){el.textContent=zh?'Gaia 圖層已關閉':'Gaia layer off';return;}
+ if(gaiaWide.stars.length){
+  const entry=gaiaWide.manifest?.fields?.find(x=>x.target_id===gaiaWide.active);
+  el.textContent=(entry?.name||gaiaWide.active)+': '+gaiaWide.stars.length+
+   (zh?' 筆擴大 Gaia 星表（半徑 2.1°、G<15.5；不代表全 FOV）':
+        ' wide Gaia stars (2.1° radius, G<15.5; not whole FOV)')+
+   (entry?.truncated?(zh?'；達筆數上限':' (truncated at row limit)'):'');
+  return;
+ }
+ if(gaiaWide.loadError){el.textContent=(zh?'擴大 Gaia 星表尚不可用：':'Wide Gaia cache unavailable: ')+gaiaWide.loadError;return;}
+ el.textContent=!gaiaWide.manifest
+  ?(zh?'擴大 Gaia 星表清單載入中…':'Loading wide Gaia manifest…')
+  :(zh?'五個研究目標有擴大 Gaia 星表；其他天區使用 HYG 全天底圖。':
+    'Wide Gaia is available for five science fields; HYG covers other sky regions.');
 }
 function gaiaLocalCoversView(view){
   if(!gaiaLocal.stars.length||!gaiaLocal.manifest||!gaiaLocal.active)return false;
@@ -1034,15 +1117,19 @@ async function performGaiaQuery(){
 }
 function scheduleGaia(){
   if(manualGaia){catalogNotice();return;}
-  if(V.W&&V.H)syncGaiaLocal(gaiaView());
+  if(V.W&&V.H){
+    const v=gaiaView();
+    syncGaiaLocal(v);syncGaiaWide(v);
+  }
   const currentView=gaiaView();
-  if(L.gaia&&V.fov<=12&&gaiaLocalCoversView(currentView)){
+  if(L.gaia&&V.fov<=12&&(gaiaLocalCoversView(currentView)||
+     (V.fov<=3&&gaiaWide.stars.length>0&&gaiaWide.active))){
     // A complete local catalog already covers this field and magnitude range.
     // Never force public browsers to make a cross-origin TAP request here.
     clearTimeout(gaiaTimer);gaiaTimer=null;
     if(gaiaBusy){gaiaQueryEpoch++;gaiaBusy=false;}
     gaiaFailureText='';gaiaLastFailure=null;gaiaStars=[];
-    catalogNotice();
+    catalogNotice();updateGaiaWideStatus();
     return;
   }
   if(!L.gaia||V.fov>12||!V.W||!V.H){
@@ -1351,7 +1438,7 @@ function render(){
   drawMilkyWay();drawGrid();drawEcliptic();drawConstellations();drawDSO();
   if(L.hyg)allSkyLayer?.draw(ctx,V,project,P,TAU,clamp);
   drawGaia();drawStars();drawSPHEREx();drawSelection();drawReticle();
-  updateReadout();scheduleGaia();
+  updateReadout();scheduleGaia();updateGaiaWideStatus();
   const status=$('allSkyCatalogStatus');
   if(status){
     const next=allSkyLayer?.statusText(lang==='zh')||(lang==='zh'?'HYG 全天星表載入中…':'Loading HYG all-sky stars…');
@@ -1682,6 +1769,8 @@ window.SkyAtlas={
   searchObjects:skyObjectSearch,focusObject:focusSkyObject,setGaiaDepth,getGaiaDepth:()=>gaiaDepth,
   getGaiaCatalogStatus:()=>({
     online_count:gaiaStars.length,static_count:gaiaLocal.stars.length,
+    wide_count:gaiaWide.stars.length,wide_target:gaiaWide.active,
+    wide_manifest_loaded:!!gaiaWide.manifest,wide_error:gaiaWide.loadError,
     static_target:gaiaLocal.active,loaded_fields:gaiaLocal.files.size,
     static_manifest_loaded:!!gaiaLocal.manifest,static_error:gaiaLocal.loadError,
     online_error:gaiaFailureText
@@ -1707,16 +1796,21 @@ window.SkyAtlas={
   getView(){return{ra_deg:V.ra*R2D,dec_deg:V.dec*R2D,fov_deg:V.fov};}
 };
 
+$('allSkyRetry').onclick=()=>{
+  if(!allSkyLayer?.retryFailedTiles)return;
+  allSkyLayer.retryFailedTiles();requestRender();
+};
 /* ---- start ---- */
 if(window.innerWidth<640){$('panel').dataset.collapsed='true';$('collapse').setAttribute('aria-expanded','false');}
 applyLang();
 initGaiaLocal(); // Preload tiny manifest; CSVs stay lazy until a field is selected.
+initGaiaWide(); // Separate real 2.1-degree DR3 field previews when available.
 setView(5.6*15*D2R,-1.2*D2R,60);
 resize();
 })();
 </script>
 
-<script src="./allsky-stars.js?v=20261115B"></script>
+<script src="./allsky-stars.js?v=20261115C"></script>
 <script src="./spherex-demo.js"></script>
 <script src="./spherex-viewer.js"></script>
 <script src="./notebook-results.js?v=2.4"></script>
