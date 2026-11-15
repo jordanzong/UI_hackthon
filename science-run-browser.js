@@ -186,6 +186,9 @@ function render(){
   if(f.mjd!=null)op.textContent+=' · MJD '+Number(f.mjd).toFixed(2);
   groupSelect.append(op);
  });
+ if(state.group==='gif'&&!p.blink_url)state.group=0;
+ if(typeof state.group==='number'&&state.group>=p.frames.length)state.group=0;
+ groupSelect.value=String(state.group);
  const chosen=ids.includes(state.source)?state.source:ids[0]||'';
  state.source=chosen;
  const sel=$('srb-source');sel.replaceChildren();
