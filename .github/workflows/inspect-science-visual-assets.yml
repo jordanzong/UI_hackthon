@@ -1,0 +1,24 @@
+name: Inspect Real Science Visualization Names
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/science-analysis-runs
+    paths:
+      - ".github/workflows/inspect-science-visual-assets.yml"
+      - "tools/inspect_science_visual_assets.py"
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install "gdown>=5"
+      - name: Download team-provided new_output.zip
+        run: |
+          gdown "https://drive.google.com/uc?id=15yFXpqRr6gSqpA7dWFbe_nODoOTQvId0" -O /tmp/new_output.zip
+          test -s /tmp/new_output.zip
+      - name: List actual diagnostic and stack visualization filenames
+        run: python3 tools/inspect_science_visual_assets.py /tmp/new_output.zip
