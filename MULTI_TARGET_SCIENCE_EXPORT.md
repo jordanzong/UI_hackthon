@@ -6,10 +6,10 @@ All five names are navigable. For each band, the UI only enables actual exported
 ## Built-in products vs missing products
 
 - **Epsilon Indi B:** seven-group D5+D6 combined-stack GIF, overview image, grouping diagnostic.
-- **WISE 0855:** Source 1–3 all-band SED plots, groups and overlay.
+- **WISE 0855:** Source 1–3 all-band SED plots (groups / overlay), plus two actual 2025 May/Nov D2 **field previews** and a November−May Difference image reused from the previously validated DR1 standardized archive. This is *not* a WISE 0855 detection: the target is outside the 101-pixel common difference mask. The two-frame archive is separate from the saved Notebook SED source-ID associations.
 - **Barnard's Star, RW Aurigae, R Draconis:** six-band download counts and sky coordinates only, until real product files are added.
 
-These are all taken from the saved outputs of All_Band (1).ipynb. No additional scientific products are claimed.
+The SED / Epsilon products are taken from saved outputs of All_Band (1).ipynb. The additional WISE 0855 May/Nov D2 preview comes from the separate validated SPHEREx-DR1-May-Nov-standardized.zip archive already embedded in spherex-demo.js. No cross-dataset Source IDs are assumed.
 
 ## Backend / GitHub Pages workflow
 
