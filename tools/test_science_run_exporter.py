@@ -75,5 +75,37 @@ class ScienceRunExportTest(unittest.TestCase):
                                 for x in runs))
 
 
+    def test_png_only_import_excludes_existing_gif(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "input"
+            run = root / "Epsilon_Indi_B" / "analysis_runs" / "D2_gap10_spaninf_v1"
+            (run / "group_stack_frames").mkdir(parents=True)
+            (run / "sed_plots").mkdir()
+            (run / "group_stacks_sources_epsf.gif").write_bytes(GIF_1PX)
+            (run / "group_stacks_sources_epsf.png").write_bytes(PNG_1PX)
+            (run / "time_grouping_diagnostic.png").write_bytes(PNG_1PX)
+            for number in (3, 1, 2):
+                (run / "group_stack_frames" / f"group_{number:02d}_sources_epsf.png").write_bytes(PNG_1PX)
+            (run / "source_catalog.ecsv").write_text(
+                "source_id ra_deg dec_deg\\n1 331.04 -56.78\\n", encoding="utf-8")
+            (run / "sed_plots" / "source_001_group_sed.png").write_bytes(PNG_1PX)
+            out = Path(tmp) / "published"
+            index = build(root, out, extract_gif=False, include_gif=False)
+            entry = next(t for t in index["targets"] if t["target_id"] == "Epsilon_Indi_B")
+            self.assertEqual(len(entry["runs"]), 1)
+            self.assertFalse(entry["runs"][0]["has_gif"])
+            self.assertTrue(entry["runs"][0]["has_frames"])
+            self.assertTrue(entry["runs"][0]["has_overview"])
+            base = out / "epsilon-indi-b" / "D2_gap10_spaninf_v1"
+            data = json.loads((base / "manifest.json").read_text())
+            product = data["bands"]["D2"]
+            self.assertIsNone(product["blink_url"])
+            self.assertEqual([f["frame_id"] for f in product["frames"]],
+                             ["group_1", "group_2", "group_3"])
+            self.assertEqual(product["overview_url"], "media/group_stacks_sources_epsf.png")
+            self.assertEqual(product["diagnostic_url"], "media/time_grouping_diagnostic.png")
+            self.assertFalse(list(base.rglob("*.gif")))
+
+
 if __name__ == "__main__":
     unittest.main()
