@@ -1,0 +1,78 @@
+/* SPHEREx science viewer, overlaid without changing the sky-atlas canvas. */
+#spx-launch{position:absolute;right:14px;top:12px;z-index:7;pointer-events:auto;background:#b2e3ff;color:#081624;border-color:#7bc7fa;font-size:12px;font-weight:700}
+#spx-launch:hover{background:#d8f1ff}
+#spx-viewer{position:absolute;z-index:8;pointer-events:auto;right:12px;top:59px;bottom:68px;width:min(415px,calc(100vw - 28px));display:flex;flex-direction:column;overflow:hidden;border:1px solid #426589;border-radius:12px;background:rgba(6,12,27,.97);box-shadow:0 14px 42px #000b;color:#e0ecff;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+#spx-viewer[hidden]{display:none}
+#spx-viewer button{font-size:12px;padding:7px 9px}
+#spx-viewer button:disabled{opacity:.35;cursor:default}
+#spx-viewer button[aria-pressed="true"]{border-color:#68cfff;background:#184363}
+#spx-viewer .spx-head{display:flex;justify-content:space-between;gap:8px;align-items:center;border-bottom:1px solid #ffffff27;padding:12px}
+#spx-viewer h2{margin:0;font-size:15px}
+#spx-viewer .spx-sub{font:11px var(--mono);color:#97adc8;margin:2px 0 0}
+#spx-viewer .spx-body{padding:10px 12px 13px;overflow:auto;min-height:0;display:flex;flex-direction:column;gap:9px}
+#spx-viewer .spx-controls{display:flex;flex-wrap:wrap;gap:6px}
+#spx-viewer .spx-controls>*{flex:1}
+#spx-viewer .spx-url{display:flex;gap:6px}
+#spx-viewer .spx-url input{min-width:0;flex:1;background:#ffffff0b;border:1px solid #ffffff33;border-radius:6px;color:#e0ecff;padding:7px;font:12px var(--mono)}
+#spx-viewer #spx-imagebox{position:relative;aspect-ratio:1;border:1px solid #ffffff2b;border-radius:8px;overflow:hidden;background:#02040a;display:flex;align-items:center;justify-content:center}
+#spx-viewer #spx-image{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;display:block}
+#spx-viewer #spx-markers{position:absolute;inset:0;pointer-events:none}
+#spx-viewer .spx-marker{position:absolute;pointer-events:auto;width:18px;height:18px;border-radius:50%;transform:translate(-50%,-50%);background:#03172366;border:2px solid #6adeff;padding:0}
+#spx-viewer .spx-marker.warn{border-color:#ffc180}
+#spx-viewer .spx-marker:focus-visible,#spx-viewer .spx-marker.selected{outline:2px solid #ffb347;outline-offset:2px}
+#spx-viewer #spx-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;background:#02040af0;color:#9fb3d4;font-size:12px;padding:16px}
+#spx-viewer #spx-empty[hidden]{display:none}
+#spx-viewer .spx-meta{display:flex;justify-content:space-between;gap:5px;color:#c3d3e8;font:11px/1.4 var(--mono)}
+#spx-viewer #spx-slider{width:100%;accent-color:#69ccff}
+#spx-viewer #spx-status{min-height:1.5em;font-size:11px;color:#a9bfd8;margin:0}
+#spx-viewer #spx-status.error{color:#ff9999}
+#spx-viewer #spx-caveat{font-size:11px;color:#f6d29d;background:#d58a1518;border-left:2px solid #e5aa58;padding:7px 9px}
+#spx-viewer #spx-caveat[hidden]{display:none}
+#spx-viewer #spx-source-detail{font-size:11px;white-space:pre-wrap;border-top:1px solid #ffffff20;padding-top:9px;color:#bed5ec;overflow-wrap:anywhere}
+#spx-viewer .spx-note{font-size:11px;color:#8ea3c1;margin:0;line-height:1.5}
+#spx-viewer #spx-toggle-markers{display:flex;gap:6px;align-items:center;font-size:12px}
+#spx-viewer input[type=checkbox]{accent-color:#5ccfff}
+@media(min-width:950px){body.spx-open #zoomkeys{right:445px}}
+@media(max-width:700px){#spx-viewer{left:8px;right:8px;bottom:57px;top:auto;width:auto;max-height:68dvh}#spx-viewer #spx-imagebox{max-height:36dvh;aspect-ratio:1.3}#spx-launch{right:10px;top:10px}}
+
+
+/* Mission-control integration: match sky-atlas.html header, rails and square controls. */
+#spx-launch{position:static;inset:auto;z-index:auto;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--on);background:var(--accent);border:1px solid var(--accent);border-radius:0;
+  font:600 10px/1.1 var(--font);letter-spacing:.10em;text-transform:uppercase;text-align:center;
+  padding:9px 12px;white-space:nowrap;box-shadow:none;backdrop-filter:none;cursor:pointer}
+#spx-launch:hover{background:transparent;color:var(--accent);border-color:var(--accent)}
+#spx-launch:focus-visible{outline:1px solid var(--accent);outline-offset:3px}
+#spx-viewer{position:fixed;z-index:25;left:auto;right:12px;top:calc(var(--top) + 10px);bottom:12px;
+  width:min(420px,calc(100vw - var(--rail) - 34px));max-height:none;
+  border:1px solid var(--line);border-radius:0;background:rgba(8,12,21,.97);box-shadow:0 16px 46px #000a;
+  color:var(--fg)}
+#spx-viewer .spx-head{background:var(--surface);border-bottom:1px solid var(--line-soft);padding:14px 14px 13px}
+#spx-viewer .spx-head h2{font:600 13px/1.2 var(--font);letter-spacing:.12em;text-transform:uppercase}
+#spx-viewer .spx-sub{color:var(--muted);letter-spacing:.04em}
+#spx-viewer button{border-radius:0;background:transparent;color:var(--fg);border:1px solid var(--line);
+  font:600 10.5px/1.3 var(--font);letter-spacing:.03em;padding:9px}
+#spx-viewer button:hover:not(:disabled){background:var(--fg);color:var(--on)}
+#spx-viewer button[aria-pressed="true"]{border-color:var(--accent);background:rgba(255,180,84,.13);color:var(--accent)}
+#spx-viewer #spx-imagebox{border:1px solid var(--line);border-radius:0;background:var(--bg)}
+#spx-viewer .spx-url input{border-radius:0;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--fg)}
+#spx-viewer .spx-url input:focus{outline:0;border-bottom-color:var(--accent)}
+#spx-viewer .spx-meta{color:var(--fg)}
+#spx-viewer .spx-note{color:var(--muted)}
+#spx-viewer #spx-slider,#spx-viewer input[type=checkbox]{accent-color:var(--accent)}
+#spx-viewer .spx-marker{border-color:#66cdb9}
+#spx-viewer .spx-marker.warn{border-color:var(--accent)}
+#spx-viewer .spx-marker.selected{outline-color:var(--accent)}
+#spx-viewer #spx-caveat{color:#f7d29b}
+body.spx-open #zoomkeys{right:calc(min(420px,100vw - var(--rail) - 34px) + 25px)}
+@media (max-width:950px){body.spx-open #zoomkeys{right:20px}}
+@media (max-width:720px){
+  #spx-viewer{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:73dvh}
+  #spx-viewer #spx-imagebox{max-height:35dvh;aspect-ratio:1.3}
+  body.spx-open #zoomkeys{right:20px}
+}
+@media (max-width:520px){
+  #spx-launch{font-size:0;padding:9px 7px;min-width:48px}
+  #spx-launch::after{content:"SPX";font:600 11px/1 var(--mono);letter-spacing:.02em}
+  #spx-launch[aria-expanded="true"]::after{content:"× SPX"}
+}

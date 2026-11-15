@@ -3,98 +3,206 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<style>html,body{margin:0;padding:0}</style>
+<meta name="theme-color" content="#05070d">
 <title>天球星圖</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
-/* Layout: full-bleed sky canvas; one control panel top-left, readout bar bottom, zoom keys right.
-   Single deliberate dark look (night-sky tool), amber reserved for the user's selected point. */
+/* Mission-control look: deep blue-black, hairline rules, square corners, wide-tracked uppercase labels.
+   Colour carries hierarchy: white = objects, steel blue = structure, teal = deep-sky, amber = what you act on. */
 :root{
-  --bg:#04060d;
-  --panel:rgba(9,13,25,.80);
-  --line:rgba(150,180,230,.20);
-  --fg:#dde6f7;
-  --muted:#8494b2;
-  --accent:#ffb347;
-  --accent-ink:#1b1204;
-  --bad:#ff8585;
-  --font:'Noto Sans TC',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --bg:#05070d;
+  --surface:#080c15;
+  --on:#05070d;
+  --fg:#e8eef9;
+  --muted:#8a97ae;
+  --line:rgba(150,175,215,.32);
+  --line-soft:rgba(150,175,215,.15);
+  --accent:#ffb454;
+  --bad:#ff7a6b;
+  --panel:rgba(5,8,15,.84);
+  --top:56px;
+  --rail:352px;
+  --font:'Barlow','Noto Sans TC',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
   color-scheme:dark;
 }
-html,body{height:100%}
-body{position:relative;background:var(--bg);color:var(--fg);font:14px/1.5 var(--font);overflow:hidden}
-#stage{position:absolute;inset:0}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;padding:0;background:var(--bg)}
+body{color:var(--fg);font:14px/1.5 var(--font);overflow:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+button{font:inherit;color:inherit;margin:0}
+
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+
+/* ---- top bar ---- */
+#top{flex:none;height:var(--top);display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding-inline:max(20px,env(safe-area-inset-left,0px)) max(20px,env(safe-area-inset-right,0px));
+  background:var(--surface);border-bottom:1px solid var(--line-soft);position:relative;z-index:10}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.brand svg{flex:none;width:20px;height:20px;color:var(--accent)}
+.brand h1{margin:0;font:600 14px/1 var(--font);letter-spacing:.34em;text-transform:uppercase;white-space:nowrap}
+.brand-sep{flex:none;width:1px;height:16px;background:var(--line)}
+.brand-sub{font:400 11px/1 var(--mono);letter-spacing:.1em;color:var(--muted);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-actions{display:flex;gap:10px;flex:none}
+
+/* ---- buttons ---- */
+.btn{appearance:none;-webkit-appearance:none;font:600 11px/1 var(--font);letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;text-align:center;
+  color:var(--fg);background:transparent;border:1px solid var(--line);border-radius:0;padding:13px 16px;cursor:pointer;white-space:nowrap;
+  transition:background-color .18s,color .18s,border-color .18s}
+.btn:hover{background:var(--fg);color:var(--on);border-color:var(--fg)}
+.btn.primary{background:var(--accent);color:var(--on);border-color:var(--accent)}
+.btn.primary:hover{background:transparent;color:var(--accent);border-color:var(--accent)}
+.btn.sm{padding:9px 12px;font-size:10.5px}
+.btn:focus-visible,summary:focus-visible,.chips button:focus-visible,#zoomkeys button:focus-visible{outline:1px solid var(--accent);outline-offset:3px}
+
+/* ---- layout ---- */
+#main{flex:1;min-height:0;display:flex;position:relative}
+#panel{flex:none;width:var(--rail);min-height:0;display:flex;flex-direction:column;background:var(--surface);border-right:1px solid var(--line-soft);counter-reset:sec}
+#panel[data-collapsed="true"]{display:none}
+#pbody{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:26px;
+  padding:24px 20px 28px;padding-left:max(20px,env(safe-area-inset-left,0px));
+  scrollbar-width:thin;scrollbar-color:rgba(150,175,215,.28) transparent}
+#pbody::-webkit-scrollbar{width:6px}
+#pbody::-webkit-scrollbar-thumb{background:rgba(150,175,215,.28)}
+#stage{flex:1;min-width:0;position:relative;background:var(--bg)}
 #sky{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair;background:var(--bg)}
 #sky.grabbing{cursor:grabbing}
+#sky:focus-visible{outline:1px solid var(--line);outline-offset:-1px}
+#ui{position:absolute;inset:0;pointer-events:none}
 
-#ui{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;gap:8px;
-  padding-block:12px;
-  padding-left:max(16px,env(safe-area-inset-left,0px));
-  padding-right:max(16px,env(safe-area-inset-right,0px))}
-#panel{pointer-events:auto;align-self:flex-start;width:min(330px,100%);min-height:0;display:flex;flex-direction:column;
-  background:var(--panel);border:1px solid var(--line);border-radius:10px;
-  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-#phead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 10px 14px}
-#phead h1{margin:0;font-size:15px;font-weight:700;letter-spacing:.08em}
-#phead small{color:var(--muted);font-size:11px;margin-left:8px;font-weight:400;letter-spacing:0}
-#pbody{overflow:auto;min-height:0;padding:0 14px 14px;display:flex;flex-direction:column;gap:14px}
-#panel[data-collapsed="true"] #pbody{display:none}
-.sec{display:flex;flex-direction:column;gap:8px;min-width:0}
-.sec+.sec{border-top:1px solid var(--line);padding-top:12px}
-.sec>h2{margin:0;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
-details>summary{cursor:pointer;list-style:none;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;display:flex;justify-content:space-between}
-details>summary::-webkit-details-marker{display:none}
-details>summary::after{content:"＋";letter-spacing:0}
-details[open]>summary::after{content:"－"}
-details[open]>summary{margin-bottom:8px}
+/* ---- panel sections ---- */
+.sec{display:flex;flex-direction:column;gap:12px;min-width:0}
+.sec+.sec{border-top:1px solid var(--line-soft);padding-top:24px}
+.sec>h2,summary{margin:0;font:500 10.5px/1.2 var(--font);letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.sec>h2::before,.sec>details>summary::before{counter-increment:sec;content:counter(sec,decimal-leading-zero) "\00a0\00a0—\00a0\00a0";font-family:var(--mono);letter-spacing:.06em;color:var(--accent)}
+summary{cursor:pointer;list-style:none;display:flex;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"";margin-left:auto;width:9px;height:9px;
+  background:linear-gradient(currentColor,currentColor) center/100% 1px no-repeat,linear-gradient(currentColor,currentColor) center/1px 100% no-repeat}
+details[open]>summary::after{background:linear-gradient(currentColor,currentColor) center/100% 1px no-repeat}
+details[open]>summary{margin-bottom:14px}
+summary:hover{color:var(--fg)}
 
-form{display:flex;flex-direction:column;gap:10px}
-.field{display:flex;flex-direction:column;gap:3px;min-width:0}
-.field>span{font-size:12px;color:var(--muted)}
-.row{display:flex;gap:8px;min-width:0}
+/* ---- form ---- */
+form{display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:2px;min-width:0}
+.field>span{font:500 10.5px/1.4 var(--font);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;gap:14px;min-width:0;align-items:flex-end}
 .row>*{min-width:0}
-input[type=text],select{font:16px/1.3 var(--mono);color:var(--fg);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;box-sizing:border-box}
-select{width:auto;flex:0 0 auto;font-family:var(--font);font-size:15px}
-input[type=text]:focus,select:focus,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-input[aria-invalid="true"]{border-color:var(--bad)}
-button{font:500 14px var(--font);color:var(--fg);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:6px;padding:7px 12px;cursor:pointer}
-button:hover{background:rgba(255,255,255,.12)}
-button.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:700;flex:1}
-button.primary:hover{filter:brightness(1.08)}
-#msg{margin:0;min-height:1.4em;font-size:12px;color:var(--muted)}
+input[type=text],select{font:400 14px/1.3 var(--mono);color:var(--fg);background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:9px 0;width:100%;
+  transition:border-color .15s,box-shadow .15s}
+input[type=text]::placeholder{color:rgba(138,151,174,.5)}
+input[type=text]:hover,select:hover{border-bottom-color:rgba(150,175,215,.65)}
+input[type=text]:focus,select:focus{outline:0;border-bottom-color:var(--accent);box-shadow:0 1px 0 0 var(--accent)}
+select{appearance:none;-webkit-appearance:none;width:auto;flex:0 0 auto;min-width:64px;padding-right:18px;font-family:var(--font);font-size:13px;cursor:pointer;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23f0f0fa' stroke-width='1.2'/></svg>") right 2px center/9px 6px no-repeat}
+select option{background:#080c15;color:var(--fg)}
+input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 var(--bad)}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
+#msg{margin:0;min-height:1.5em;font:400 11.5px/1.5 var(--mono);color:var(--muted)}
 #msg.err{color:var(--bad)}
+
+/* ---- presets / layers ---- */
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chips button{padding:4px 10px;font-size:12px;border-radius:99px}
-.layers{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
-.layers label{display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer}
-.layers input{accent-color:var(--accent);width:16px;height:16px;margin:0}
-#sel dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0;font-size:13px}
-#sel dt{color:var(--muted)}
-#sel dd{margin:0;font-family:var(--mono);font-size:12.5px;overflow-wrap:anywhere}
-#sel .name{font-weight:700;color:var(--accent);margin:0 0 2px;font-size:14px}
-#sel .none{color:var(--muted);font-size:13px;margin:0}
-.fine{margin:0;font-size:11px;color:var(--muted);line-height:1.5}
+.chips button{appearance:none;font:500 12px/1 var(--font);letter-spacing:.06em;color:var(--fg);background:transparent;border:1px solid var(--line-soft);border-radius:0;padding:9px 11px;cursor:pointer;
+  transition:background-color .15s,color .15s,border-color .15s}
+.chips button:hover{background:var(--fg);color:var(--on);border-color:var(--fg)}
+.layers{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+.layers label{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer}
+.layers input{appearance:none;-webkit-appearance:none;flex:none;width:14px;height:14px;margin:0;border:1px solid var(--line);border-radius:0;background:transparent;cursor:pointer;display:grid;place-items:center;transition:background-color .15s,border-color .15s}
+.layers input:hover{border-color:var(--fg)}
+.layers input:checked{background:var(--fg);border-color:var(--fg)}
+.layers input:checked::after{content:"";width:7px;height:4px;border-left:1.5px solid var(--on);border-bottom:1.5px solid var(--on);transform:translateY(-1px) rotate(-45deg)}
+.layers input:focus-visible{outline:1px solid var(--accent);outline-offset:3px}
 
-#zoomkeys{position:absolute;pointer-events:auto;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;
-  right:max(16px,env(safe-area-inset-right,0px))}
-#zoomkeys button{width:38px;height:38px;padding:0;font-size:20px;line-height:1;background:var(--panel);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-#bar{pointer-events:none;align-self:stretch;display:flex;flex-wrap:wrap;gap:2px 20px;background:var(--panel);border:1px solid var(--line);border-radius:8px;
-  padding:7px 12px;font:12px/1.5 var(--mono);color:var(--fg);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-#bar b{font-weight:500;color:var(--muted);margin-right:6px}
-#bar .hint{color:var(--muted);margin-left:auto}
-@media (max-width:640px){#bar .hint{display:none}#pbody{max-height:58vh}}
+/* ---- selection card ---- */
+#sel dl{display:grid;grid-template-columns:auto 1fr;margin:0}
+#sel dt,#sel dd{padding:8px 0;border-top:1px solid var(--line-soft)}
+#sel dt{font:500 10.5px/1.7 var(--font);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding-right:16px}
+#sel dd{margin:0;font:400 12.5px/1.5 var(--mono);text-align:right;overflow-wrap:anywhere}
+#sel dd .sub{display:block;color:var(--muted);font-size:11.5px}
+#sel .name{margin:0 0 10px;font:600 15px/1.35 var(--font);letter-spacing:.06em}
+#sel .name .meta{color:var(--muted);font-weight:400;font-size:12px;letter-spacing:.04em}
+#sel .none{margin:0;color:var(--muted);font-size:13px}
+#sel .btns{margin-top:12px}
+.fine{margin:0;font-size:11px;line-height:1.65;color:var(--muted)}
+
+/* ---- zoom keys + telemetry bar ---- */
+#zoomkeys{position:absolute;pointer-events:auto;top:50%;transform:translateY(-50%);right:max(20px,env(safe-area-inset-right,0px));display:flex;flex-direction:column}
+#zoomkeys button{appearance:none;width:40px;height:40px;padding:0;font:300 22px/1 var(--font);color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:0;cursor:pointer;
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:background-color .15s,color .15s}
+#zoomkeys button+button{margin-top:-1px}
+#zoomkeys button:hover{background:var(--fg);color:var(--on)}
+#bar{position:absolute;left:0;right:0;bottom:0;pointer-events:none;display:flex;flex-wrap:wrap;align-items:stretch;
+  background:var(--panel);border-top:1px solid var(--line-soft);padding-bottom:env(safe-area-inset-bottom,0px);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#bar .cell{display:flex;flex-direction:column;gap:5px;padding:10px 20px 11px;border-left:1px solid var(--line-soft);min-width:0}
+#bar .cell:first-child{border-left:0}
+#bar .lab{font:500 10px/1 var(--font);letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+#bar .val{font:400 12px/1.4 var(--mono);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar .hint{margin-left:auto;align-self:center;padding:0 20px;font:400 11px/1.4 var(--font);letter-spacing:.12em;color:var(--muted)}
+
+@media (max-width:720px){
+  .brand-sub,.brand-sep{display:none}
+  .brand h1{letter-spacing:.26em}
+  #panel{position:absolute;z-index:6;left:0;right:0;top:0;width:auto;max-height:78%;border-right:0;border-bottom:1px solid var(--line);background:rgba(8,12,21,.96)}
+  #pbody{padding-right:max(20px,env(safe-area-inset-right,0px))}
+  #bar .hint{display:none}
+  #bar .cell{flex:1 1 auto;padding:8px 14px 9px}
+}
+@media (hover:none){#bar .cell.hovcell{display:none}}
+@media (pointer:coarse){input[type=text],select{font-size:16px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-</style>
 
-<main id="stage">
-  <canvas id="sky" aria-label="天球星圖，可拖曳平移、滾輪縮放、點擊選取座標" data-i18n-aria="canvasAria" tabindex="0"></canvas>
-  <div id="ui">
-    <section id="panel" data-collapsed="false">
-      <div id="phead">
-        <h1><span data-i18n="title">天球星圖</span><small data-i18n="sub">J2000 · 赤道座標</small></h1>
-        <div class="row"><button type="button" id="lang" aria-label="Language / 語言">EN</button><button type="button" id="collapse" aria-expanded="true" aria-controls="pbody">收合</button></div>
-      </div>
+/* Science extensions: keep the uploaded mission-control design and original control IDs. */
+.catalog-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.catalog-tools .btn{min-width:0;white-space:normal;line-height:1.35;min-height:36px;letter-spacing:.04em;text-indent:0;padding:9px 7px}
+.catalog-tools #importSources{grid-column:span 2}
+#catalogStatus{font:11px/1.6 var(--mono);color:var(--muted);overflow-wrap:anywhere;margin:0;min-height:1.5em}
+#catalogStatus.warn{color:var(--bad)}
+#science-catalogs{gap:12px}
+#sel h2{margin:0;font:500 10.5px/1.2 var(--font);letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+#sel .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+#sel .btns button{min-width:0;font:600 11px/1.25 var(--font);letter-spacing:.1em;text-transform:uppercase;background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:0;padding:10px 7px;cursor:pointer}
+#sel .btns button:hover{background:var(--fg);color:var(--on)}
+#pbody button:focus-visible{outline:1px solid var(--accent);outline-offset:3px}
+#bar .val{font-variant-numeric:tabular-nums}
+#top .top-actions{align-items:center}
+#top .btn.sm{font-size:10px}
+@media(max-width:720px){
+  #panel[data-collapsed="true"]{display:none}
+  .top-actions{gap:5px}
+  #top{padding-left:12px;padding-right:12px}
+  #top .btn.sm{padding:9px 7px;letter-spacing:.06em;text-indent:0}
+  #pbody{gap:20px}
+}
+@media(max-width:410px){
+  .brand h1{font-size:12px;letter-spacing:.16em}
+  .brand{gap:5px}
+  #top .top-actions{gap:4px}
+}
+</style>
+<link rel="stylesheet" href="./spherex-viewer.css">
+<link rel="stylesheet" href="./notebook-results.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div class="brand">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="M10 0v5M10 15v5M0 10h5M15 10h5"/></svg>
+      <h1 data-i18n="title">天球星圖</h1>
+      <span class="brand-sep" aria-hidden="true"></span>
+      <span class="brand-sub" data-i18n="sub">J2000 · 赤道座標</span>
+    </div>
+    <div class="top-actions">
+      <button type="button" class="btn sm" id="lang" aria-label="Language / 語言">EN</button>
+      <button type="button" class="btn sm" id="collapse" aria-expanded="true" aria-controls="panel">收合面板</button>
+    </div>
+  </header>
+
+  <div id="main">
+    <aside id="panel" data-collapsed="false" aria-label="控制面板" data-i18n-aria="panelAria">
       <div id="pbody">
         <div class="sec">
           <h2 data-i18n="goto">前往座標</h2>
@@ -107,25 +215,42 @@ button.primary:hover{filter:brightness(1.08)}
             <label class="field"><span data-i18n="fov">天區大小 FOV（畫面短邊的視角）</span>
               <div class="row"><input type="text" id="fov" value="60" inputmode="decimal" spellcheck="false">
               <select id="unit" aria-label="視場單位" data-i18n-aria="unitAria"><option value="1">°</option><option value="60">′</option><option value="3600">″</option></select></div></label>
-            <div class="row"><button class="primary" type="submit" data-i18n="go">前往</button><button type="button" id="readc" data-i18n="readc">讀取畫面中心</button></div>
+            <div class="btns"><button class="btn primary" type="submit" data-i18n="go">前往</button><button type="button" class="btn" id="readc" data-i18n="readc">讀取畫面中心</button></div>
             <p id="msg" role="status"></p>
           </form>
         </div>
         <div class="sec" id="sel" aria-live="polite"></div>
         <div class="sec"><details><summary data-i18n="presets">預設目標</summary><div class="chips" id="presets"></div></details></div>
         <div class="sec"><details open><summary data-i18n="layers">圖層</summary><div class="layers" id="layers"></div></details></div>
+        <div class="sec" id="science-catalogs">
+          <h2 data-i18n="additionalCatalogs">外部星表 / 科學資料</h2>
+          <div class="catalog-tools">
+            <button class="btn sm" type="button" id="reloadGaia" data-i18n="reloadGaia">重新查詢 Gaia</button>
+            <button class="btn sm" type="button" id="importGaia" data-i18n="importGaia">匯入 Gaia CSV</button>
+            <input id="gaiaFile" type="file" accept=".csv,text/csv" hidden>
+            <button class="btn sm" type="button" id="importSources" data-i18n="importSources">匯入 SPHEREx CSV / JSON</button>
+            <input id="sourceFile" type="file" accept=".csv,.ecsv,.json,text/csv,application/json" hidden>
+          </div>
+          <p id="catalogStatus" role="status" aria-live="polite"></p>
+        </div>
         <p class="fine" id="catnote"></p>
       </div>
-    </section>
-    <div id="zoomkeys"><button type="button" id="zin" aria-label="放大" data-i18n-aria="zin">+</button><button type="button" id="zout" aria-label="縮小" data-i18n-aria="zout">−</button></div>
-    <div id="bar">
-      <span><b data-i18n="hover">游標</b><span id="hov">—</span></span>
-      <span><b data-i18n="center">中心</b><span id="ctr">—</span></span>
-      <span><b data-i18n="fovl">視場</b><span id="fovread">—</span></span>
-      <span class="hint" data-i18n="hint">拖曳平移 · 滾輪縮放 · 點擊選點 · 雙擊放大</span>
-    </div>
+    </aside>
+
+    <main id="stage">
+      <canvas id="sky" aria-label="天球星圖，可拖曳平移、滾輪縮放、點擊選取座標" data-i18n-aria="canvasAria" tabindex="0"></canvas>
+      <div id="ui">
+        <div id="zoomkeys"><button type="button" id="zin" aria-label="放大" data-i18n-aria="zin">+</button><button type="button" id="zout" aria-label="縮小" data-i18n-aria="zout">−</button></div>
+        <div id="bar">
+          <div class="cell hovcell"><span class="lab" data-i18n="hover">游標</span><span class="val" id="hov">—</span></div>
+          <div class="cell"><span class="lab" data-i18n="center">中心</span><span class="val" id="ctr">—</span></div>
+          <div class="cell"><span class="lab" data-i18n="fovl">視場</span><span class="val" id="fovread">—</span></div>
+          <span class="hint" data-i18n="hint">拖曳平移 · 滾輪縮放 · 點擊選點 · 雙擊放大</span>
+        </div>
+      </div>
+    </main>
   </div>
-</main>
+</div>
 
 <script>
 //<core>
@@ -519,7 +644,7 @@ const $=id=>document.getElementById(id);
 const cv=$('sky'),ctx=cv.getContext('2d'),stage=$('stage');
 let DPR=1,dirty=false,anim=null,sel=null;
 const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const L={cl:true,cn:true,sn:true,grid:true,ecl:false,mw:true,dso:true,ret:true};
+const L={cl:true,cn:true,sn:true,grid:true,ecl:false,mw:true,dso:true,gaia:true,gaiaLabels:false,spx:true,spxLabels:false,spxPassOnly:false,ret:true};
 const T={
 zh:{title:'天球星圖',sub:'J2000 · 赤道座標',goto:'前往座標',ra:'赤經 RA',dec:'赤緯 Dec',fov:'天區大小 FOV（畫面短邊的視角）',auto:'自動',hours:'時',degs:'度',
  phRA:'05h 35m 17s 或 83.82',phDec:'−05° 23′ 28″ 或 -5.39',raUnitAria:'赤經單位',unitAria:'視場單位',go:'前往',readc:'讀取畫面中心',
@@ -529,13 +654,14 @@ zh:{title:'天球星圖',sub:'J2000 · 赤道座標',goto:'前往座標',ra:'赤
  selCenter:'置中',selCopy:'複製座標',copied:'已複製。',copyFail:'無法自動複製，請手動選取上方座標。',
  mag:m=>(m<0?'−':'')+Math.abs(m).toFixed(2)+' 等',
  types:{gal:'星系',neb:'星雲',oc:'疏散星團',gc:'球狀星團',ctr:'銀心'},
- layerNames:{cl:'星座連線',cn:'星座名稱',sn:'恆星名稱',grid:'赤道座標格線',ecl:'黃道',mw:'銀河（示意）',dso:'深空天體',ret:'中心十字'},
+ layerNames:{cl:'星座連線',cn:'星座名稱',sn:'恆星名稱',grid:'赤道座標格線',ecl:'黃道',mw:'銀河（示意）',dso:'深空天體',gaia:'Gaia DR3 星點',gaiaLabels:'Gaia 星等標籤',spx:'SPHEREx 來源',spxLabels:'Source ID 標籤',spxPassOnly:'僅顯示品質通過',ret:'中心十字'},
+ additionalCatalogs:'外部星表 / 科學資料',reloadGaia:'重新查詢 Gaia',importSources:'匯入 SPHEREx CSV / JSON',importGaia:'匯入 Gaia CSV',
  needBoth:'赤經與赤緯需要一起輸入。',
  badRA:'赤經無法辨識。可用 83.82、5.588h、05:35:17 或 5h 35m 17s。',
  badDec:'赤緯需介於 −90° 與 +90°，例如 -5.39、-05 23 28。',
  badFov:'天區大小需介於 2″ 與 180° 之間，且只能填一個數字。',
  okGo:(a,b)=>'已前往 '+a+'、'+b+'。',okFov:'已更新天區大小。',filled:'已填入畫面中心座標。',
- catnote:(n,m)=>'星表為內建的 '+n+' 顆亮星與 '+m+' 個深空天體，用於定位與示意，並非完整星表。銀河為依銀道面繪製的示意。'},
+ catnote:(n,m)=>'內建 '+n+' 顆亮星、'+m+' 個深空天體；縮至 12° 內時嘗試載入 Gaia DR3（有亮度/筆數限制，非完整星表）。Gaia G 星等不代表 SPHEREx 紅外偵測。銀河為示意。'},
 en:{title:'Sky Atlas',sub:'J2000 · Equatorial',goto:'Go to coordinates',ra:'Right ascension (RA)',dec:'Declination (Dec)',fov:'Field of view (across the shorter screen side)',auto:'Auto',hours:'h',degs:'°',
  phRA:'05h 35m 17s or 83.82',phDec:'−05° 23′ 28″ or -5.39',raUnitAria:'RA unit',unitAria:'FOV unit',go:'Go',readc:'Use view center',
  msgInit:'Leave RA and Dec empty to change only the field of view.',presets:'Presets',layers:'Layers',zin:'Zoom in',zout:'Zoom out',hover:'Cursor',center:'Center',fovl:'FOV',
@@ -544,13 +670,14 @@ en:{title:'Sky Atlas',sub:'J2000 · Equatorial',goto:'Go to coordinates',ra:'Rig
  selCenter:'Center on it',selCopy:'Copy coordinates',copied:'Copied.',copyFail:'Could not copy automatically. Please select the coordinates above.',
  mag:m=>'mag '+(m<0?'−':'')+Math.abs(m).toFixed(2),
  types:{gal:'Galaxy',neb:'Nebula',oc:'Open cluster',gc:'Globular cluster',ctr:'Galactic center'},
- layerNames:{cl:'Constellation lines',cn:'Constellation names',sn:'Star names',grid:'Equatorial grid',ecl:'Ecliptic',mw:'Milky Way (schematic)',dso:'Deep-sky objects',ret:'Center crosshair'},
+ layerNames:{cl:'Constellation lines',cn:'Constellation names',sn:'Star names',grid:'Equatorial grid',ecl:'Ecliptic',mw:'Milky Way (schematic)',dso:'Deep-sky objects',gaia:'Gaia DR3 stars',gaiaLabels:'Gaia G labels',spx:'SPHEREx sources',spxLabels:'Source ID labels',spxPassOnly:'PASS quality only',ret:'Center crosshair'},
+ additionalCatalogs:'External catalogs / science data',reloadGaia:'Reload Gaia',importSources:'Import SPHEREx CSV / JSON',importGaia:'Import Gaia CSV',
  needBoth:'Enter both RA and Dec.',
  badRA:'RA not recognized. Try 83.82, 5.588h, 05:35:17 or 5h 35m 17s.',
  badDec:'Dec must be between −90° and +90°, e.g. -5.39 or -05 23 28.',
  badFov:'FOV must be a single number between 2″ and 180°.',
  okGo:(a,b)=>'Moved to '+a+', '+b+'.',okFov:'Field of view updated.',filled:'Filled in the view center.',
- catnote:(n,m)=>'Built-in catalog of '+n+' bright stars and '+m+' deep-sky objects, for orientation only; it is not a complete star catalog. The Milky Way is a schematic drawn along the galactic plane.'}
+ catnote:(n,m)=>'Built-in '+n+' bright stars and '+m+' DSOs; Gaia DR3 queries are attempted below 12° FOV (magnitude and row limits apply). Gaia G is not SPHEREx infrared photometry. Milky Way is schematic.'}
 };
 let lang='zh';
 try{const sv=localStorage.getItem('sky-lang');lang=sv||((navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en');}catch(e){lang=(navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en';}
@@ -583,7 +710,210 @@ function makeSprite(rgb){
 const SPR_COOL=makeSprite('175,195,240'),SPR_WARM=makeSprite('245,205,160');
 
 const TINT={bet:'#ffb08a',ant:'#ff9f7c',ald:'#ffc08c',arc:'#ffcf9c',pol:'#ffd8aa',rig:'#a9c6ff',spi:'#a9c4ff',veg:'#d4e3ff',sir:'#e4efff',den:'#e8f0ff',alt:'#f2f2ff',atl:'#f2f2ff',bel:'#b4ccff',cap:'#fff0c8',pro:'#fff4de',reg:'#c8dcff',mim:'#a9c4ff',acx:'#a9c4ff',gac:'#ffb894',can:'#fff6e0'};
-const DSO_COL={gal:'#c79bff',neb:'#6fe3bc',oc:'#ffd96e',gc:'#ff9494',ctr:'#ffffff'};
+const DSO_COL={gal:'#85d2c8',neb:'#66cdb9',oc:'#b6debe',gc:'#82bdcc',ctr:'#e8eef9'};
+
+
+/* ---- optional external catalog layers ----
+   Gaia DR3 is retrieved from public TAP archives when zoomed in; no fabricated
+   stars are inserted on network errors. SPHEREx measurements are imported or
+   supplied by a future API; they are not treated as a complete source catalog. */
+const GAIA_TAP=[
+  'https://gea.esac.esa.int/tap-server/tap/sync',
+  'https://mast.stsci.edu/vo-tap/api/v0.1/gaiadr3/sync'
+];
+const GAIA_LIMIT=3000;
+let gaiaStars=[],spherexSources=[];
+let gaiaTimer=null,gaiaBusy=false,gaiaNotice='',spxNotice='',manualGaia=false;
+let gaiaLastFailure=null,gaiaFailureText='';
+const gaiaCache=[];
+const catalogStatus=$('catalogStatus');
+function escHtml(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function parseCSV(text){
+  const rows=[],line=[];let value='',quoted=false;
+  const push=()=>{line.push(value);value='';};
+  const finish=()=>{push();if(line.some(v=>v.trim()))rows.push(line.slice());line.length=0;};
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'){
+      if(quoted&&text[i+1]==='"'){value+='"';i++;}else quoted=!quoted;
+    }else if(ch===','&&!quoted)push();
+    else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&text[i+1]==='\n')i++;finish();}
+    else value+=ch;
+  }
+  if(value||line.length)finish();
+  const data=rows.filter(row=>!String(row[0]).trim().startsWith('#'));
+  if(!data.length)return[];
+  const columns=data.shift().map(v=>v.trim().replace(/^\uFEFF/,''));
+  return data.map(row=>Object.fromEntries(columns.map((k,i)=>[k,row[i]??''])));
+}
+function catalogNotice(){
+  const zh=lang==='zh';
+  const gaia=!L.gaia?(zh?'已關閉':'off'):
+    V.fov>12?(zh?'需放大至 12° 內':'zoom to 12° or less'):
+    gaiaBusy?(zh?'讀取中…':'loading…'):
+    gaiaFailureText?(zh?'查詢失敗（可重試）':'query failed (retry available)'):
+    gaiaNotice||(zh?'待查詢':'awaiting query');
+  const spx=spxNotice||(zh?'未匯入（可載入 CSV/JSON）':'not loaded (CSV/JSON)');
+  catalogStatus.textContent=`Gaia DR3: ${gaia}  |  SPHEREx: ${spx}`;
+  catalogStatus.classList.toggle('warn',!!(gaiaFailureText&&L.gaia&&V.fov<=12));
+  catalogStatus.title=gaiaFailureText||'';
+}
+function gaiaMagLimit(fov){return fov>8?9.5:fov>3?12:fov>1?14:fov>0.25?17:fov>0.08?18.5:20;}
+function skySep(a,b,c,d){return sep(a,b,c,d)*R2D;}
+function isCovered(record,ra,dec,radius,mag){
+  return record&&record.mag>=mag&&skySep(record.ra,record.dec,ra,dec)+radius<=record.radius*0.97;
+}
+function gaiaView(){
+  const asp=Math.max(V.W,V.H)/Math.max(1,Math.min(V.W,V.H));
+  const radius=clamp(V.fov*0.5*Math.sqrt(1+asp*asp)*1.12,0.006,12);
+  return{ra:V.ra,dec:V.dec,radius,mag:gaiaMagLimit(V.fov)};
+}
+function normalizeGaia(rows){
+  return rows.map(o=>{
+    const ra=Number(o.ra),dec=Number(o.dec),mag=Number(o.phot_g_mean_mag);
+    if(!Number.isFinite(ra)||!Number.isFinite(dec)||!Number.isFinite(mag)||dec < -90||dec>90)return null;
+    return{kind:'gaia',ra:ra*D2R,dec:dec*D2R,mag,source_id:String(o.source_id??''),n:'Gaia DR3'};
+  }).filter(Boolean);
+}
+async function tapRequest(endpoint,query){
+  const q=new URLSearchParams({REQUEST:'doQuery',LANG:'ADQL',FORMAT:'csv',QUERY:query,MAXREC:String(GAIA_LIMIT)});
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),14000);
+  try{
+    const resp=await fetch(endpoint+'?'+q,{signal:controller.signal});
+    if(!resp.ok)throw Error('HTTP '+resp.status);
+    const raw=await resp.text();
+    if(/^\s*</.test(raw))throw Error('TAP returned XML/HTML error');
+    const rows=parseCSV(raw);
+    if(!rows.length)throw Error('Empty or invalid TAP response');
+    if(!('ra' in rows[0])||!('dec' in rows[0]))throw Error('Unsupported TAP columns');
+    return rows;
+  }finally{clearTimeout(timer);}
+}
+async function loadGaia(view){
+  const ra=view.ra*R2D,dec=view.dec*R2D;
+  const sql=`SELECT TOP ${GAIA_LIMIT} source_id, ra, dec, phot_g_mean_mag FROM gaiadr3.gaia_source WHERE 1=CONTAINS(POINT('ICRS',ra,dec),CIRCLE('ICRS',${ra.toFixed(7)},${dec.toFixed(7)},${view.radius.toFixed(6)})) AND phot_g_mean_mag < ${view.mag.toFixed(1)} ORDER BY phot_g_mean_mag ASC`;
+  let err;
+  for(const endpoint of GAIA_TAP){
+    try{return normalizeGaia(await tapRequest(endpoint,sql));}
+    catch(e){err=e;}
+  }
+  throw err||Error('Gaia TAP unavailable');
+}
+async function performGaiaQuery(){
+  gaiaTimer=null;
+  if(manualGaia||gaiaBusy||!L.gaia||V.fov>12||!V.W||!V.H)return;
+  const view=gaiaView();
+  const cache=gaiaCache.find(c=>isCovered(c,view.ra,view.dec,view.radius,view.mag));
+  if(cache){gaiaStars=cache.stars;gaiaNotice=(lang==='zh'?'已載入 ':'loaded ')+gaiaStars.length+(lang==='zh'?' 筆':' stars');catalogNotice();requestRender();return;}
+  if(isCovered(gaiaLastFailure,view.ra,view.dec,view.radius,view.mag))return;
+  gaiaBusy=true;gaiaFailureText='';catalogNotice();  try{
+    const stars=await loadGaia(view);
+    gaiaCache.unshift({...view,stars});if(gaiaCache.length>4)gaiaCache.pop();
+    gaiaStars=stars;gaiaNotice=(lang==='zh'?'已載入 ':'loaded ')+stars.length+(lang==='zh'?' 筆':' stars');
+    gaiaLastFailure=null;
+    if(stars.length>=GAIA_LIMIT)gaiaNotice+=(lang==='zh'?'（已達筆數上限）':' (row cap reached)');
+  }catch(e){
+    gaiaFailureText=String(e&&e.message||e).slice(0,160);
+    gaiaLastFailure=view;
+    gaiaStars=[];
+  }finally{gaiaBusy=false;catalogNotice();requestRender();}
+}
+function scheduleGaia(){
+  if(manualGaia){catalogNotice();return;}
+  if(!L.gaia||V.fov>12||!V.W||!V.H){
+    clearTimeout(gaiaTimer);gaiaTimer=null;
+    if(V.fov>12)gaiaStars=[];
+    catalogNotice();return;
+  }
+  const view=gaiaView();
+  const cached=gaiaCache.find(c=>isCovered(c,view.ra,view.dec,view.radius,view.mag));
+  if(cached){if(gaiaStars!==cached.stars){gaiaStars=cached.stars;catalogNotice();}return;}
+  if(isCovered(gaiaLastFailure,view.ra,view.dec,view.radius,view.mag))return;
+  if(gaiaBusy)return;
+  clearTimeout(gaiaTimer);
+  gaiaTimer=setTimeout(performGaiaQuery,850);
+}
+function normalizeSPHEREx(input){
+  const raw=Array.isArray(input)?input:(Array.isArray(input?.sources)?input.sources:[]);
+  return raw.map((o,i)=>{
+    const ra=Number(o.ra_deg??o.ra),dec=Number(o.dec_deg??o.dec);
+    if(!Number.isFinite(ra)||!Number.isFinite(dec)||dec < -90||dec>90)return null;
+    const id=String(o.global_source_id||o.detection_id||o.candidate_id||o.source_id||'row_'+(i+1));
+    return {...o,kind:'spx',ra:ra*D2R,dec:dec*D2R,n:id,source_id:id,quality_status:String(o.quality_status||'unknown')};
+  }).filter(Boolean);
+}
+function setSPHERExSources(input){
+  spherexSources=normalizeSPHEREx(input);
+  spxNotice=(lang==='zh'?'已載入 ':'loaded ')+spherexSources.length+(lang==='zh'?' 筆量測':' measurements');
+  catalogNotice();requestRender();
+  return spherexSources.length;
+}
+window.SPHERExCatalog={setSources:setSPHERExSources,
+  async loadFromUrl(url){const r=await fetch(url);if(!r.ok)throw Error('HTTP '+r.status);
+    return setSPHERExSources(url.toLowerCase().split('?')[0].endsWith('.csv')?parseCSV(await r.text()):await r.json());
+  }
+};
+$('importSources').onclick=()=>$('sourceFile').click();
+$('sourceFile').addEventListener('change',async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{const content=await file.text();const rows=file.name.toLowerCase().endsWith('.json')?JSON.parse(content):parseCSV(content);
+    const n=setSPHERExSources(rows);if(!n)throw Error('No valid ra_deg / dec_deg rows');
+  }catch(error){spxNotice=(lang==='zh'?'讀取失敗：':'Import failed: ')+String(error.message||error);catalogNotice();}
+  e.target.value='';
+});
+$('importGaia').onclick=()=>$('gaiaFile').click();
+$('gaiaFile').addEventListener('change',async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{
+    const stars=normalizeGaia(parseCSV(await file.text()));
+    if(!stars.length)throw Error('No Gaia ra, dec, phot_g_mean_mag rows');
+    manualGaia=true;gaiaStars=stars;gaiaLastFailure=null;gaiaFailureText='';
+    clearTimeout(gaiaTimer);gaiaTimer=null;
+    gaiaNotice=(lang==='zh'?'手動載入 ':'manual catalog ')+stars.length+(lang==='zh'?' 筆':' stars');
+    catalogNotice();requestRender();
+  }catch(error){gaiaFailureText='Gaia CSV: '+String(error.message||error);catalogNotice();}
+  e.target.value='';
+});
+$('reloadGaia').onclick=()=>{manualGaia=false;gaiaLastFailure=null;gaiaFailureText='';gaiaCache.length=0;gaiaStars=[];catalogNotice();scheduleGaia();};
+function drawGaia(){
+  if(!L.gaia||V.fov>12)return;
+  const faint=gaiaMagLimit(V.fov);
+  ctx.save();ctx.fillStyle='rgba(193,215,255,.80)';
+  if(L.gaiaLabels&&V.fov<=0.45)ctx.font='10px '+getComputedStyle(document.body).getPropertyValue('--mono');
+  let labels=0;
+  for(const s of gaiaStars){
+    if(s.mag>faint||!project(s.ra,s.dec,P))continue;
+    if(P.x<0||P.x>V.W||P.y<0||P.y>V.H)continue;
+    const radius=clamp(0.55+(faint-s.mag)*0.12,0.55,2.6);
+    ctx.globalAlpha=clamp(.30+(faint-s.mag)*.11,.3,.92);
+    ctx.beginPath();ctx.arc(P.x,P.y,radius,0,TAU);ctx.fill();
+    if(L.gaiaLabels&&V.fov<=0.45&&s.mag<=14&&labels<60){
+      const label='G '+s.mag.toFixed(1),lx=P.x+radius+3,ly=P.y-3,w=ctx.measureText(label).width;
+      if(freeSpot(lx,ly-9,w,12)){ctx.globalAlpha=.86;halo(label,lx,ly,'#abbfe0');labels++;}
+    }
+  }
+  ctx.restore();
+}
+function drawSPHEREx(){
+  if(!L.spx)return;
+  ctx.save();ctx.lineWidth=1.4;
+  if(L.spxLabels&&V.fov<=1)ctx.font='11px '+getComputedStyle(document.body).getPropertyValue('--mono');
+  let labels=0;
+  for(const s of spherexSources){
+    if(L.spxPassOnly&&s.quality_status.toLowerCase()!=='pass')continue;
+    if(!project(s.ra,s.dec,P)||P.x<-8||P.x>V.W+8||P.y<-8||P.y>V.H+8)continue;
+    const pass=s.quality_status.toLowerCase()==='pass';
+    ctx.strokeStyle=pass?'#57dfff':'#ffb347';
+    ctx.setLineDash(pass?[]:[2,3]);
+    ctx.beginPath();ctx.arc(P.x,P.y,4.5,0,TAU);ctx.stroke();ctx.setLineDash([]);
+    if(L.spxLabels&&V.fov<=1&&labels<65){
+      const label=String(s.source_id||s.n).slice(0,14),lx=P.x+7,ly=P.y-6,w=ctx.measureText(label).width;
+      if(freeSpot(lx,ly-10,w,13)){halo(label,lx,ly,pass?'#78dff5':'#ffc688');labels++;}
+    }
+  }
+  ctx.restore();
+}
 
 /* ---- sizing ---- */
 function resize(){
@@ -625,7 +955,7 @@ function drawGrid(){
   let raSpan=180;
   if(Math.abs(decC)+span<89){raSpan=Math.min(180,span/Math.max(Math.cos((Math.abs(decC)+span)*D2R),0.05));}
   const sampleDeg=Math.max(fov/25,1e-4);
-  ctx.save();ctx.lineWidth=1;ctx.strokeStyle='rgba(95,140,210,.28)';
+  ctx.save();ctx.lineWidth=1;ctx.strokeStyle='rgba(112,142,196,.30)';
   const decLab=[],raLab=[];
   // meridians (constant RA)
   const r0=Math.ceil((raC-raSpan)/step-1e-9),r1=Math.floor((raC+raSpan)/step+1e-9);
@@ -679,7 +1009,7 @@ function drawEcliptic(){
 }
 function drawConstellations(){
   if(L.cl){
-    ctx.save();ctx.strokeStyle='rgba(110,150,225,.55)';ctx.lineWidth=1.1;ctx.beginPath();
+    ctx.save();ctx.strokeStyle='rgba(118,164,236,.55)';ctx.lineWidth=1.1;ctx.beginPath();
     for(const c of CONS)for(const e of c.edges){
       if(!project(e[0].ra,e[0].dec,P)||!project(e[1].ra,e[1].dec,Q))continue;
       ctx.moveTo(P.x,P.y);ctx.lineTo(Q.x,Q.y);
@@ -691,7 +1021,7 @@ function drawConstellations(){
     for(const c of CONS){
       if(!project(c.cra,c.cdec,P))continue;
       if(P.x<20||P.x>V.W-20||P.y<20||P.y>V.H-20)continue;
-      halo(consName(c),P.x,P.y,'rgba(150,185,245,.7)','center');
+      halo(consName(c),P.x,P.y,'rgba(156,188,231,.74)','center');
     }
     ctx.restore();
   }
@@ -768,8 +1098,8 @@ function render(){
   g.addColorStop(0,'#0b1429');g.addColorStop(1,'#02030a');
   ctx.fillStyle=g;ctx.fillRect(0,0,V.W,V.H);
   placed.length=0;
-  drawMilkyWay();drawGrid();drawEcliptic();drawConstellations();drawDSO();drawStars();drawSelection();drawReticle();
-  updateReadout();
+  drawMilkyWay();drawGrid();drawEcliptic();drawConstellations();drawDSO();drawGaia();drawStars();drawSPHEREx();drawSelection();drawReticle();
+  updateReadout();scheduleGaia();
 }
 
 /* ---- readouts ---- */
@@ -797,6 +1127,20 @@ function hover(x,y){
 /* ---- selection ---- */
 function nearestObject(ra,dec,px,py){
   let best=null,bd=16;
+  if(L.spx)for(const s of spherexSources){
+    if(L.spxPassOnly&&s.quality_status.toLowerCase()!=='pass')continue;
+    if(!project(s.ra,s.dec,P))continue;
+    const d=Math.hypot(P.x-px,P.y-py);
+    if(d<bd){bd=d;best={kind:'spx',o:s};}
+  }
+  // A directly clicked SPHEREx measurement must not be masked by a large DSO icon.
+  if(best&&best.kind==='spx'&&bd<=10)return best;
+  if(L.gaia&&V.fov<=12)for(const s of gaiaStars){
+    if(s.mag>gaiaMagLimit(V.fov)||!project(s.ra,s.dec,P))continue;
+    const d=Math.hypot(P.x-px,P.y-py);
+    if(d<bd){bd=d;best={kind:'gaia',o:s};}
+  }
+  if(best&&best.kind==='gaia'&&bd<=7)return best;
   for(const s of STARS){if(!project(s.ra,s.dec,P))continue;const d=Math.hypot(P.x-px,P.y-py);if(d<bd){bd=d;best={kind:'star',o:s};}}
   for(const o of DSOS){if(!project(o.ra,o.dec,P))continue;const half=Math.max(5,V.S*P.k*(o.size/60)*D2R/2);const d=Math.max(0,Math.hypot(P.x-px,P.y-py)-Math.min(half,40));if(d<bd){bd=d;best={kind:'dso',o:o};}}
   return best;
@@ -807,9 +1151,18 @@ function renderSel(){
   const gl=eqToGal(sel.ra,sel.dec),sepC=sep(sel.ra,sel.dec,V.ra,V.dec)*R2D;
   let name='';
   if(sel.hit){
-    const sub=sel.hit.kind==='star'?tr('mag')(sel.hit.o.mag):tr('types')[sel.hit.o.t];
-    const nm=sel.hit.kind==='star'?sel.hit.o.n:dsoName(sel.hit.o);
-    name='<p class="name">'+nm+'<span style="color:var(--muted);font-weight:400"> · '+sub+'</span></p>';
+    const o=sel.hit.o,k=sel.hit.kind;
+    const sub=k==='star'?tr('mag')(o.mag):k==='gaia'?('G '+o.mag.toFixed(2)):
+      k==='spx'?('SPHEREx · '+o.quality_status):tr('types')[o.t];
+    const nm=k==='star'||k==='spx'?o.n:k==='gaia'?('Gaia DR3 '+o.source_id):dsoName(o);
+    name='<p class="name">'+escHtml(nm)+'<span style="color:var(--muted);font-weight:400"> · '+escHtml(sub)+'</span></p>';
+    if(k==='spx'){
+      const extra=[];
+      if(o.epoch_id!=null)extra.push('Epoch '+o.epoch_id);
+      if(Number.isFinite(Number(o.wavelength_um)))extra.push('λ '+Number(o.wavelength_um).toFixed(4)+' μm');
+      if(Number.isFinite(Number(o.chi2_reduced)))extra.push('χ²ᵣ '+Number(o.chi2_reduced).toFixed(2));
+      if(extra.length)name+='<p class="fine">'+escHtml(extra.join(' · '))+'</p>';
+    }
   }
   selEl.innerHTML='<h2>'+tr('selTitle')+'</h2>'+name+'<dl>'
    +'<dt>'+tr('dRA')+'</dt><dd>'+fmtHMS(sel.ra*R2D,2)+'</dd>'
@@ -838,6 +1191,7 @@ function select(ra,dec,px,py){
   let hit=null;
   if(px!=null){hit=nearestObject(ra,dec,px,py);if(hit){ra=hit.o.ra;dec=hit.o.dec;}}
   sel={ra,dec,hit};fillInputs(ra,dec);renderSel();requestRender();
+  if(hit&&hit.kind==='spx')window.dispatchEvent(new CustomEvent('spherex:select-source',{detail:{source:hit.o}}));
 }
 
 /* ---- animation ---- */
@@ -852,6 +1206,7 @@ function flyTo(ra,dec,fov){
     const t=Math.min(1,(now-t0)/dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
     setView(s.ra+dRa*e,s.dec+dDec*e,Math.exp(s.lf+dLf*e));render();
     anim=t<1?requestAnimationFrame(step):null;
+    if(t>=1&&sel)renderSel();
   };
   anim=requestAnimationFrame(step);
 }
@@ -966,7 +1321,7 @@ const layerTxt={};
 Object.keys(L).forEach(k=>{
   const lb=document.createElement('label'),cb=document.createElement('input'),tx=document.createTextNode('');
   cb.type='checkbox';cb.checked=L[k];cb.id='ly-'+k;
-  cb.onchange=()=>{L[k]=cb.checked;requestRender();};
+  cb.onchange=()=>{L[k]=cb.checked;catalogNotice();requestRender();};
   lb.appendChild(cb);lb.appendChild(tx);lay.appendChild(lb);layerTxt[k]=tx;
 });
 
@@ -982,10 +1337,35 @@ function applyLang(){
   Object.keys(layerTxt).forEach(k=>{layerTxt[k].nodeValue=tr('layerNames')[k];});
   presetBtns.forEach(([b,zh,en])=>{b.textContent=lang==='zh'?zh:en;});
   $('catnote').textContent=tr('catnote')(STARS.length,DSOS.length);
+  catalogNotice();
   say(lastMsg.k,lastMsg.err,lastMsg.a);
   renderSel();requestRender();
 }
 $('lang').onclick=()=>{lang=lang==='zh'?'en':'zh';try{localStorage.setItem('sky-lang',lang);}catch(e){}applyLang();};
+
+/* Public bridge: clicking science-image markers focuses the matching sky position.
+   Uses RA/Dec, never assumes detector or image pixels equal sky canvas pixels. */
+window.SkyAtlas={
+  // Move to a named/offline target or an explicit RA/Dec coordinate.
+  // Do not interpret an arbitrary sky position as an actual SPHEREx detection.
+  goToCoordinates({ra_deg,dec_deg,fov_deg}={}){
+    const ra=Number(ra_deg),dec=Number(dec_deg),fov=Number(fov_deg);
+    if(!Number.isFinite(ra)||ra<0||ra>=360||!Number.isFinite(dec)||dec< -90||dec>90)return false;
+    const actualFov=Number.isFinite(fov)&&fov>0&&fov<=180?fov:V.fov;
+    $('unit').value='1';$('fov').value=String(actualFov);
+    sel={ra:ra*D2R,dec:dec*D2R,hit:null};fillInputs(sel.ra,sel.dec);renderSel();
+    flyTo(sel.ra,sel.dec,actualFov);requestRender();return true;
+  },
+  focusSource(source){
+    const item=normalizeSPHEREx([source])[0];if(!item)return false;
+    const hit=spherexSources.find(x=>x.source_id===item.source_id)||item;
+    sel={ra:hit.ra,dec:hit.dec,hit:{kind:'spx',o:hit}};
+    fillInputs(hit.ra,hit.dec);renderSel();
+    flyTo(hit.ra,hit.dec,Math.min(V.fov,1.5));requestRender();
+    return true;
+  },
+  getView(){return{ra_deg:V.ra*R2D,dec_deg:V.dec*R2D,fov_deg:V.fov};}
+};
 
 /* ---- start ---- */
 if(window.innerWidth<640){$('panel').dataset.collapsed='true';$('collapse').setAttribute('aria-expanded','false');}
@@ -995,3 +1375,9 @@ resize();
 })();
 </script>
 
+<script src="./spherex-demo.js"></script>
+<script src="./spherex-viewer.js"></script>
+<script src="./notebook-results.js"></script>
+
+</body>
+</html>
