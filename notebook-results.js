@@ -62,7 +62,7 @@ section.innerHTML=[
  '<div class="nr-actions"><button id="nr-difference" class="btn sm" type="button" aria-pressed="false">Difference</button></div><p id="nr-epochinfo" class="nr-note"></p></div>',
  '<div id="nr-source-area" hidden><div class="nr-minihead"><span id="nr-source-heading">Source catalog / SED</span><span id="nr-sourcecount" class="nr-mono"></span></div>',
  '<div class="nr-sed-actions"><label for="nr-source"><span>Source</span><select id="nr-source"></select></label><label for="nr-plot"><span>Plot</span><select id="nr-plot"><option value="groups">By group</option><option value="overlay">Overlay</option></select></label></div>',
- '<p id="nr-source-detail" class="nr-note"></p></div>',
+ '<p id="nr-source-detail" class="nr-note"></p><button id="nr-focus-source" class="btn sm" type="button">Locate selected source</button></div>',
  '<div id="nr-plotbox" class="nr-plotbox"><img id="nr-plotimage" alt="Science image or spectrum" loading="lazy"><p id="nr-empty" hidden></p></div>',
  '<a id="nr-fullimg" class="nr-fullimg" href="#" target="_blank" rel="noopener noreferrer">Open original image</a>',
  '<div id="nr-links" class="nr-resource-links" hidden><a id="nr-overview" target="_blank" rel="noopener noreferrer">Stack overview</a><a id="nr-diagnostic" target="_blank" rel="noopener noreferrer">Time grouping</a></div>',
@@ -243,8 +243,18 @@ function render(){
  $('nr-diagnostic').hidden=!p?.diagnostic_url;$('nr-diagnostic').href=p?.diagnostic_url||'#';
  setText('nr-sourcecount',ids.length+' '+tr('筆可選','available'));
  setText('nr-source-detail',currentSourceInfo()||(sed?tr('選取 Source 查看原始 SED 圖','Choose a source to view SED'):''));
+ const selected=sourceById(state.source);
+ $('nr-focus-source').disabled=!(selected&&Number.isFinite(Number(selected.ra_deg))&&Number.isFinite(Number(selected.dec_deg)));
  const ready=Object.entries(d.bands||{}).filter(([_,v])=>hasImages(v)||hasSeds(v)).map(([k])=>k);
- setText('nr-product-summary',tr('本目標可檢視產品：','Available products: ')+(ready.join(' / ')||tr('目前只有觀測統計','observation counts only')));
+ const availability=[
+  tr('可用波段','Bands')+': '+(ready.join(', ')||tr('尚無','none')),
+  tr('Epoch','Epochs')+': '+n,
+  'Blink: '+((p?.blink_url||n>1)?tr('可用','available'):tr('未提供','missing')),
+  'Difference: '+(p?.difference?.image_url?tr('可用','available'):tr('未提供','missing')),
+  'Source: '+(d.sources?.length||0),
+  'SED: '+(p?.seds?.length||0)
+ ];
+ setText('nr-product-summary',availability.join(' · '));
  let msg='';
  if(!p)msg=tr('此波段尚無輸出檔。可在下方輸入 Manifest URL，或由隊友使用 Export Tool 產生檔案。','No exported files for this band. Load a manifest URL or ask the team to run the export tool.');
  else if(p.kind==='combined')msg=tr('合併波段 Stack：不能視為獨立 D5 或 D6 影像。','Combined-band stack: not an independent D5 or D6 measurement.');
@@ -350,6 +360,7 @@ function localize(){
  setText('nr-epoch-heading',tr('觀測時間組','Observation epochs'));
  setText('nr-image-mode',tr('影像','Images'));setText('nr-sed-mode','SED');
  setText('nr-source-heading',tr('Source Catalog / SED','Source catalog / SED'));
+ setText('nr-focus-source',tr('定位選取 Source','Locate selected source'));
  setText('nr-difference',tr('差分影像','Difference'));setText('nr-manifest-label',tr('載入此目標的 Manifest JSON 網址','Load target manifest JSON URL'));
  setText('nr-fetch-manifest',tr('載入 JSON','Load JSON'));setText('nr-fullimg',tr('開啟原尺寸影像','Open full resolution'));
  setText('nr-overview',tr('Stack 總覽','Stack overview'));setText('nr-diagnostic',tr('時間分組圖','Time grouping'));
@@ -380,6 +391,7 @@ $('nr-blink').onclick=()=>{
 };
 $('nr-difference').onclick=()=>{const p=product();if(!p?.difference?.image_url)return;stop();state.diff=!state.diff;render();};
 $('nr-source').onchange=e=>{state.source=e.target.value;render();};
+$('nr-focus-source').onclick=()=>{const s=sourceById(state.source);if(s)goTo(s.ra_deg,s.dec_deg);};
 $('nr-plot').onchange=e=>{state.plot=e.target.value;render();};
 $('nr-fetch-manifest').onclick=async()=>{
  const url=$('nr-manifest-url').value.trim();if(!url)return;
