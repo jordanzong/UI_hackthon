@@ -223,6 +223,7 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 <link rel="stylesheet" href="./spherex-viewer.css?v=4">
 <link rel="stylesheet" href="./science-run-browser.css?v=8">
 <link rel="stylesheet" href="./sky-map-tools.css?v=3">
+<link rel="stylesheet" href="./user-guide.css?v=1">
 </head>
 <body>
 <div id="app">
@@ -235,6 +236,7 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
       <span class="hyg-release" title="HYG retry and Gaia wide-field build">HYG + Gaia · v2</span>
     </div>
     <div class="top-actions">
+      <button type="button" class="btn sm" id="guide-open" aria-haspopup="dialog" aria-controls="user-guide">HOW TO USE</button>
       <button type="button" class="btn sm" id="lang" aria-label="Switch language">ZH</button>
       <button type="button" class="btn sm" id="collapse" aria-expanded="true" aria-controls="panel">Hide panel</button>
     </div>
@@ -1821,6 +1823,7 @@ resize();
 <script src="./spherex-viewer.js?v=8"></script>
 <script src="./science-run-browser.js?v=8"></script>
 <script src="./sky-map-tools.js?v=3"></script>
+<script src="./user-guide.js?v=1"></script>
 
 </body>
 </html>
