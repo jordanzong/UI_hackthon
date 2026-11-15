@@ -15,7 +15,7 @@ with zipfile.ZipFile(archive) as z:
   k=parts.index('analysis_runs')
   if k<1 or k+1>=len(parts):continue
   tid,run=parts[k-1],parts[k+1]
-  if tid not in ('WISE_0855','Barnards_Star','Epsilon_Indi_B','RW_Aurigae'):continue
+  if tid not in ('WISE_0855','Barnards_Star','Epsilon_Indi_B','RW_Aurigae','R_Draconis'):continue
   relative=parts[k+2:]
   if len(relative)==1 and relative[0].lower().endswith(('.png','.jpg','.jpeg','.gif','.webp','.pdf','.svg')):
    count[relative[0]]+=1;byrun[(tid,run)].add(relative[0])
