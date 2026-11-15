@@ -1694,7 +1694,17 @@ function applyLang(){
   Object.keys(layerTxt).forEach(k=>{layerTxt[k].nodeValue=tr('layerNames')[k];});
   presetBtns.forEach(([b,zh,en])=>{b.textContent=lang==='zh'?zh:en;});
   $('catnote').textContent=tr('catnote')(STARS.length,DSOS.length);
+  // Cached asynchronous notices may have been composed in the previous
+  // language. Never leave those old Chinese strings visible in EN mode.
+  if(lang==='en'){
+    if(/[\u3400-\u9fff]/.test(gaiaNotice||''))gaiaNotice='';
+    if(/[\u3400-\u9fff]/.test(spxNotice||''))spxNotice='';
+  }
   catalogNotice();
+  updateGaiaWideStatus();
+  const allsky=$('allSkyCatalogStatus');
+  if(allsky)allsky.textContent=allSkyLayer?.statusText(lang==='zh')||
+    (lang==='zh'?'HYG 全天星表載入中…':'Loading HYG all-sky stars…');
   say(lastMsg.k,lastMsg.err,lastMsg.a);
   renderSel();requestRender();
 }
