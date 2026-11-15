@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/spherex-science
-          gdown --id "$DRIVE_FILE_ID" -O /tmp/spherex-science/output.zip
+          gdown "https://drive.google.com/uc?id=${DRIVE_FILE_ID}" -O /tmp/spherex-science/output.zip
           test -s /tmp/spherex-science/output.zip
       - name: Safely extract and verify analysis_runs
         run: |
