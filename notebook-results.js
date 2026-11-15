@@ -106,6 +106,14 @@ function target(){return OBS.find(o=>o.id===state.target)||OBS[0];}
 function defaultData(id){return typeof structuredClone==='function'?structuredClone(BUILTIN[id]||{bands:{}}):JSON.parse(JSON.stringify(BUILTIN[id]||{bands:{}}));}
 function data(){return refs.get(state.target)||defaultData(state.target);}
 function product(){return data().bands?.[state.band]||null;}
+/* A science target's verified source catalog is the only SPHEREx sky overlay.
+ * Source/SED summary counts are NOT positions and must not become markers. */
+function syncSkySourceCatalog(id){
+ if(state.target!==id)return;
+ const d=refs.get(id)||defaultData(id);
+ const sources=Array.isArray(d.sources)?d.sources:[];
+ window.SPHERExCatalog?.setSources?.(sources,{origin:'manifest',target_id:id});
+}
 function link(path,base){
  if(typeof path!=='string'||!path.trim())return null;
  const url=new URL(path,base||document.baseURI);
@@ -301,7 +309,7 @@ function selectTarget(id){
  const available=Object.keys(d.bands||{}).filter(k=>hasImages(d.bands[k])||hasSeds(d.bands[k]));
  state.band=available[0]||'all';
  $('nr-target').value=t.id;$('nr-name-query').value='';$('nr-ra').value=fmt(t.ra,8);$('nr-dec').value=fmt(t.dec,8);setText('nr-status','');
- render();fetchStandard(id);return true;
+ render();syncSkySourceCatalog(id);fetchStandard(id);return true;
 }
 function selectBand(id){
  if(!BAND_IDS.includes(id))return false;
@@ -331,7 +339,7 @@ async function loadManifest(url,id=state.target){
   const ready=Object.keys(d.bands).filter(k=>hasImages(d.bands[k])||hasSeds(d.bands[k]));
   if(ready.length&&!ready.includes(state.band))state.band=ready[0];
   manifestInfo(tr('已載入目標資料：','Target manifest loaded: ')+id);
-  render();
+  render();syncSkySourceCatalog(id);
  }
  return d;
 }
@@ -341,6 +349,7 @@ function setManifest(raw,id=state.target,baseURL=document.baseURI){
   const keys=Object.keys(d.bands).filter(k=>hasImages(d.bands[k])||hasSeds(d.bands[k]));
   if(keys.length&&!keys.includes(state.band))state.band=keys[0];
   manifestInfo(tr('已載入應用程式提供的資料。','Application manifest loaded.'));render();
+  syncSkySourceCatalog(id);
  }
  return d;
 }

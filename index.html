@@ -162,6 +162,13 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 #catalogStatus{font:11px/1.6 var(--mono);color:var(--muted);overflow-wrap:anywhere;margin:0;min-height:1.5em}
 #catalogStatus.warn{color:var(--bad)}
 #science-catalogs{gap:12px}
+#science-catalogs .catalog-description{margin:0;color:var(--muted);font:11px/1.65 var(--font)}
+#science-catalogs .catalog-reload{align-self:flex-start;min-width:152px}
+#science-catalogs .catalog-advanced{border-top:1px solid var(--line-soft);padding-top:10px;margin-top:3px}
+#science-catalogs .catalog-advanced>summary{font-size:10px;letter-spacing:.08em}
+#science-catalogs .catalog-advanced>summary::before{content:none;counter-increment:none}
+#science-catalogs .catalog-advanced .catalog-tools{margin-top:9px;grid-template-columns:1fr 1fr;gap:7px}
+#science-catalogs .catalog-advanced .catalog-tools #importSources{grid-column:auto}
 #sel h2{margin:0;font:500 10.5px/1.2 var(--font);letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
 #sel .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 #sel .btns button{min-width:0;font:600 11px/1.25 var(--font);letter-spacing:.1em;text-transform:uppercase;background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:0;padding:10px 7px;cursor:pointer}
@@ -224,15 +231,20 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
         <div class="sec"><details><summary data-i18n="presets">預設目標</summary><div class="chips" id="presets"></div></details></div>
         <div class="sec"><details open><summary data-i18n="layers">圖層</summary><div class="layers" id="layers"></div></details></div>
         <div class="sec" id="science-catalogs">
-          <h2 data-i18n="additionalCatalogs">外部星表 / 科學資料</h2>
-          <div class="catalog-tools">
-            <button class="btn sm" type="button" id="reloadGaia" data-i18n="reloadGaia">重新查詢 Gaia</button>
-            <button class="btn sm" type="button" id="importGaia" data-i18n="importGaia">匯入 Gaia CSV</button>
-            <input id="gaiaFile" type="file" accept=".csv,text/csv" hidden>
-            <button class="btn sm" type="button" id="importSources" data-i18n="importSources">匯入 SPHEREx CSV / JSON</button>
-            <input id="sourceFile" type="file" accept=".csv,.ecsv,.json,text/csv,application/json" hidden>
-          </div>
+          <h2 data-i18n="additionalCatalogs">自動星表 / 科學資料</h2>
+          <p class="catalog-description" data-i18n="gaiaAutoDesc">Gaia DR3 於視野縮至 12° 內時自動查詢。</p>
+          <p class="catalog-description" data-i18n="spxAutoDesc">SPHEREx Source Catalog 隨研究目標自動讀取，尚無已驗證資料的目標不顯示來源。</p>
+          <button class="btn sm catalog-reload" type="button" id="reloadGaia" data-i18n="reloadGaia">重新查詢 Gaia</button>
           <p id="catalogStatus" role="status" aria-live="polite"></p>
+          <details class="catalog-advanced">
+            <summary data-i18n="catalogAdvanced">進階：匯入自訂星表（開發測試）</summary>
+            <div class="catalog-tools">
+              <button class="btn sm" type="button" id="importGaia" data-i18n="importGaia">匯入 Gaia CSV</button>
+              <input id="gaiaFile" type="file" accept=".csv,text/csv" hidden>
+              <button class="btn sm" type="button" id="importSources" data-i18n="importSources">匯入 SPHEREx CSV / JSON</button>
+              <input id="sourceFile" type="file" accept=".csv,.ecsv,.json,text/csv,application/json" hidden>
+            </div>
+          </details>
         </div>
         <p class="fine" id="catnote"></p>
       </div>
@@ -656,7 +668,7 @@ zh:{title:'天球星圖',sub:'J2000 · 赤道座標',goto:'前往座標',ra:'赤
  mag:m=>(m<0?'−':'')+Math.abs(m).toFixed(2)+' 等',
  types:{gal:'星系',neb:'星雲',oc:'疏散星團',gc:'球狀星團',ctr:'銀心'},
  layerNames:{cl:'星座連線',cn:'星座名稱',sn:'恆星名稱',grid:'赤道座標格線',ecl:'黃道',mw:'銀河（示意）',dso:'深空天體',gaia:'Gaia DR3 星點',gaiaLabels:'Gaia 星等標籤',spx:'SPHEREx 來源',spxLabels:'Source ID 標籤',spxPassOnly:'僅顯示品質通過',ret:'中心十字'},
- additionalCatalogs:'外部星表 / 科學資料',reloadGaia:'重新查詢 Gaia',importSources:'匯入 SPHEREx CSV / JSON',importGaia:'匯入 Gaia CSV',
+ additionalCatalogs:'自動星表 / 科學資料',gaiaAutoDesc:'Gaia DR3：視野縮至 12° 內自動查詢，離線時仍保留內建亮星。',spxAutoDesc:'SPHEREx：依研究目標自動載入已驗證 Source Catalog；無資料時不顯示候選源。',catalogAdvanced:'進階：匯入自訂星表（開發測試）',reloadGaia:'重新查詢 Gaia',importSources:'匯入 SPHEREx CSV / JSON',importGaia:'匯入 Gaia CSV',
  needBoth:'赤經與赤緯需要一起輸入。',
  badRA:'赤經無法辨識。可用 83.82、5.588h、05:35:17 或 5h 35m 17s。',
  badDec:'赤緯需介於 −90° 與 +90°，例如 -5.39、-05 23 28。',
@@ -672,7 +684,7 @@ en:{title:'Sky Atlas',sub:'J2000 · Equatorial',goto:'Go to coordinates',ra:'Rig
  mag:m=>'mag '+(m<0?'−':'')+Math.abs(m).toFixed(2),
  types:{gal:'Galaxy',neb:'Nebula',oc:'Open cluster',gc:'Globular cluster',ctr:'Galactic center'},
  layerNames:{cl:'Constellation lines',cn:'Constellation names',sn:'Star names',grid:'Equatorial grid',ecl:'Ecliptic',mw:'Milky Way (schematic)',dso:'Deep-sky objects',gaia:'Gaia DR3 stars',gaiaLabels:'Gaia G labels',spx:'SPHEREx sources',spxLabels:'Source ID labels',spxPassOnly:'PASS quality only',ret:'Center crosshair'},
- additionalCatalogs:'External catalogs / science data',reloadGaia:'Reload Gaia',importSources:'Import SPHEREx CSV / JSON',importGaia:'Import Gaia CSV',
+ additionalCatalogs:'Automatic catalogs / science data',gaiaAutoDesc:'Gaia DR3 loads automatically at FOV ≤ 12°. Built-in bright stars remain available offline.',spxAutoDesc:'SPHEREx sources load automatically for the selected science target when a verified catalog exists.',catalogAdvanced:'Advanced: import custom catalogs (developer testing)',reloadGaia:'Refresh Gaia',importSources:'Import SPHEREx CSV / JSON',importGaia:'Import Gaia CSV',
  needBoth:'Enter both RA and Dec.',
  badRA:'RA not recognized. Try 83.82, 5.588h, 05:35:17 or 5h 35m 17s.',
  badDec:'Dec must be between −90° and +90°, e.g. -5.39 or -05 23 28.',
@@ -755,7 +767,7 @@ function catalogNotice(){
     gaiaBusy?(zh?'讀取中…':'loading…'):
     gaiaFailureText?(zh?'查詢失敗（可重試）':'query failed (retry available)'):
     gaiaNotice||(zh?'待查詢':'awaiting query');
-  const spx=spxNotice||(zh?'未匯入（可載入 CSV/JSON）':'not loaded (CSV/JSON)');
+  const spx=spxNotice||(zh?'等待研究目標資料…':'awaiting science target…');
   catalogStatus.textContent=`Gaia DR3: ${gaia}  |  SPHEREx: ${spx}`;
   catalogStatus.classList.toggle('warn',!!(gaiaFailureText&&L.gaia&&V.fov<=12));
   catalogStatus.title=gaiaFailureText||'';
@@ -859,22 +871,44 @@ function normalizeSPHEREx(input){
     return {...o,kind:'spx',ra:ra*D2R,dec:dec*D2R,n:id,source_id:id,quality_status:String(o.quality_status||'unknown')};
   }).filter(Boolean);
 }
-function setSPHERExSources(input){
-  spherexSources=normalizeSPHEREx(input);
-  spxNotice=(lang==='zh'?'已載入 ':'loaded ')+spherexSources.length+(lang==='zh'?' 筆量測':' measurements');
+let spxCatalogTarget=null,spxCatalogOrigin='none';
+function setSPHERExSources(input,opts={}){
+  const rows=normalizeSPHEREx(input);
+  const previousTarget=spxCatalogTarget;
+  spherexSources=rows;
+  spxCatalogTarget=typeof opts.target_id==='string'?opts.target_id:null;
+  spxCatalogOrigin=opts.origin||'custom';
+  const label=spxCatalogTarget?(' ['+spxCatalogTarget+']'):'';
+  if(rows.length){
+    spxNotice=(lang==='zh'?'已載入 ':'loaded ')+rows.length+
+      (lang==='zh'?' 筆真實來源':' catalog sources')+label;
+  }else{
+    spxNotice=spxCatalogOrigin==='manifest'
+      ?(lang==='zh'?'此目標尚無已驗證 Source Catalog':'No verified Source Catalog for selected target')
+      :(lang==='zh'?'尚無來源資料':'no source catalog');
+  }
+  // Clear a stale source selection if it belonged to a different catalog.
+  if(sel?.hit?.kind==='spx'){
+    const active=rows.find(o=>o.source_id===sel.hit.o.source_id
+      &&Math.abs(o.ra-sel.hit.o.ra)<1e-9&&Math.abs(o.dec-sel.hit.o.dec)<1e-9);
+    if(!active||previousTarget!==spxCatalogTarget){sel=null;renderSel();}
+  }
   catalogNotice();requestRender();
-  return spherexSources.length;
+  return rows.length;
 }
 window.SPHERExCatalog={setSources:setSPHERExSources,
+  getState:()=>({count:spherexSources.length,target_id:spxCatalogTarget,origin:spxCatalogOrigin}),
+  clear:(opts={})=>setSPHERExSources([],{...opts,origin:opts.origin||'manifest'}),
   async loadFromUrl(url){const r=await fetch(url);if(!r.ok)throw Error('HTTP '+r.status);
-    return setSPHERExSources(url.toLowerCase().split('?')[0].endsWith('.csv')?parseCSV(await r.text()):await r.json());
+    const payload=String(url).toLowerCase().split('?')[0].endsWith('.csv')?parseCSV(await r.text()):await r.json();
+    return setSPHERExSources(payload,{origin:'url'});
   }
 };
 $('importSources').onclick=()=>$('sourceFile').click();
 $('sourceFile').addEventListener('change',async e=>{
   const file=e.target.files?.[0];if(!file)return;
   try{const content=await file.text();const rows=file.name.toLowerCase().endsWith('.json')?JSON.parse(content):parseCSV(content);
-    const n=setSPHERExSources(rows);if(!n)throw Error('No valid ra_deg / dec_deg rows');
+    const n=setSPHERExSources(rows,{origin:'manual'});if(!n)throw Error('No valid ra_deg / dec_deg rows');
   }catch(error){spxNotice=(lang==='zh'?'讀取失敗：':'Import failed: ')+String(error.message||error);catalogNotice();}
   e.target.value='';
 });
@@ -1461,7 +1495,7 @@ resize();
 
 <script src="./spherex-demo.js"></script>
 <script src="./spherex-viewer.js"></script>
-<script src="./notebook-results.js?v=2.2"></script>
+<script src="./notebook-results.js?v=2.3"></script>
 <script src="./sky-map-tools.js?v=1"></script>
 
 </body>
