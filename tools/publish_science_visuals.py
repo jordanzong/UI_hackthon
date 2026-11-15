@@ -17,6 +17,7 @@ from PIL import Image
 TARGETS=("WISE_0855","Barnards_Star","Epsilon_Indi_B","RW_Aurigae","R_Draconis")
 IMAGES=("time_grouping_diagnostic.png","group_stacks_sources_epsf.png")
 GIFS=("group_stacks_movers_variables.gif","group_stacks_marked.gif")
+PLAIN_GIF="group_stacks_sources_epsf.gif"
 MAX=45*1024*1024
 
 def archive_members(z):
@@ -28,7 +29,7 @@ def archive_members(z):
         pos=parts.index("analysis_runs")
         if pos<1 or pos+3!=len(parts):continue
         key=(parts[pos-1],parts[pos+1],parts[pos+2])
-        if key[0] not in TARGETS or key[2] not in IMAGES+GIFS:continue
+        if key[0] not in TARGETS or key[2] not in IMAGES+GIFS+(PLAIN_GIF,):continue
         if key in result:raise ValueError("Duplicate ZIP asset "+repr(key))
         result[key]=info
     return result
@@ -99,6 +100,34 @@ def publish(root,archive,targets=TARGETS[:4]):
                         for key in ("mjd","start_mjd","end_mjd","stack_inputs"):
                             if key in source:entry[key]=source[key]
                         frames.append(entry)
+                # The original animation provides a true unannotated counterpart
+                # to every marked Group; neither science measurements nor the
+                # existing standalone Group PNGs are replaced.
+                plain_member=zipindex.get((tid,rid,PLAIN_GIF))
+                if plain_member is None or not 16<=plain_member.file_size<=MAX:
+                    raise ValueError("Missing original GIF "+tid+"/"+rid)
+                plain_raw=z.read(plain_member)
+                plain_frames=[]
+                with Image.open(io.BytesIO(plain_raw)) as plain:
+                    if plain.format!="GIF" or plain.n_frames!=len(group):
+                        raise ValueError("Original / marked Group count mismatch: "+tid+"/"+rid)
+                    for i,source in enumerate(group):
+                        plain.seek(i)
+                        duration=max(80,min(5000,int(plain.info.get("duration",800) or 800)))
+                        filename=f"plain_{i+1:03d}.webp"
+                        plain.convert("RGB").save(dest/filename,"WEBP",lossless=True,method=4)
+                        obj={
+                            "frame_id":str(source.get("frame_id",f"group_{i+1}")),
+                            "label":str(source.get("label",f"Group {i+1}")),
+                            "image_url":"media/viewer_plain_frames/"+filename,
+                            "duration_ms":duration
+                        }
+                        for key in ("mjd","start_mjd","end_mjd","stack_inputs"):
+                            if key in source:obj[key]=source[key]
+                        plain_frames.append(obj)
+                (dest/"group_stacks_plain.gif").write_bytes(plain_raw)
+                p["unmarked_blink_url"]="media/group_stacks_plain.gif"
+                p["plain_viewer_frames"]=plain_frames
                 p["viewer_frames"]=frames
                 p["viewer_frame_source"]="group_stacks_marked.gif"
                 p["diagnostic_url"]="media/time_grouping_diagnostic.png"
@@ -106,7 +135,7 @@ def publish(root,archive,targets=TARGETS[:4]):
                 prepared.append((manifest_path,m,dest))
         if len(prepared)!=9*len(targets):
             raise ValueError("Expected "+str(9*len(targets))+" validated run visuals")
-        # No files modified until all 36 runs have passed.
+        # No files modified until all requested runs have passed.
         for path,m,staged in prepared:
             media=path.parent/"media"
             media.mkdir(parents=True,exist_ok=True)
@@ -116,10 +145,16 @@ def publish(root,archive,targets=TARGETS[:4]):
             for frame in m["bands"][m["band_id"]]["viewer_frames"]:
                 name=Path(frame["image_url"]).name
                 shutil.copyfile(staged/name,out/name)
+            plain_dir=media/"viewer_plain_frames"
+            plain_dir.mkdir(parents=True,exist_ok=True)
+            for frame in m["bands"][m["band_id"]]["plain_viewer_frames"]:
+                name=Path(frame["image_url"]).name
+                shutil.copyfile(staged/name,plain_dir/name)
+            shutil.copyfile(staged/"group_stacks_plain.gif",media/"group_stacks_plain.gif")
             path.write_text(json.dumps(m,ensure_ascii=False,indent=2,
                                        allow_nan=False)+"\n",encoding="utf-8")
-    print("PASS published "+str(len(prepared))+" real STACK PNGs / Time Grouping diagnostics "
-          "and all marked GIF viewer frames; originals not modified")
+    print("PASS published "+str(len(prepared))+" run sets: marked and original GIF, "
+          "paired Viewer frames, genuine STACK and Time Grouping; measurements unchanged")
 
 if __name__=="__main__":
     ap=argparse.ArgumentParser(description=__doc__)
