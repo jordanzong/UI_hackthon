@@ -170,7 +170,7 @@ def gif_frames(gif, output):
     return frames
 
 
-def export_run(run_dir, dest, target_id, band_id, match, extract_gif):
+def export_run(run_dir, dest, target_id, band_id, match, extract_gif, include_gif=True):
     dest.mkdir(parents=True, exist_ok=True)
     metadata = fits_group_metadata(run_dir / "time_grouped_stacks.fits")
     group_meta = {int(g["group_id"]): g for g in metadata}
@@ -179,7 +179,7 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif):
                              "marked" not in p.name, p.name))
     gif_url = None
     frame_paths = []
-    if gifs:
+    if include_gif and gifs:
         gif = gifs[0]
         copied = safe_copy(gif, dest / "media" / gif.name)
         if copied:
@@ -196,12 +196,27 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif):
                 if safe_copy(src, dest_name):
                     frame_paths.append("media/group_frames/" + src.name)
     frames = []
-    for i, filename in enumerate(frame_paths, start=1):
-        entry = {"frame_id": f"group_{i}", "label": f"Group {i}",
+    for i, filename in enumerate(sorted(
+            frame_paths, key=lambda p: int(re.search(r"group[_-]?(\\d+)", p, re.I).group(1))
+            if re.search(r"group[_-]?(\\d+)", p, re.I) else 9999), start=1):
+        indexed = re.search(r"group[_-]?(\\d+)", filename, re.I)
+        group_id = int(indexed.group(1)) if indexed else i
+        entry = {"frame_id": f"group_{group_id}", "label": f"Group {group_id}",
                  "image_url": filename}
-        entry.update({k: v for k, v in group_meta.get(i, {}).items()
+        entry.update({k: v for k, v in group_meta.get(group_id, {}).items()
                       if k not in ("group_id",)})
         frames.append(entry)
+
+    overview_url = None
+    for overview_name in ("group_stacks_sources_epsf.png", "group_stacks_marked.png"):
+        src = run_dir / overview_name
+        if safe_copy(src, dest / "media" / overview_name):
+            overview_url = "media/" + overview_name
+            break
+    diagnostic_url = None
+    if safe_copy(run_dir / "time_grouping_diagnostic.png",
+                 dest / "media" / "time_grouping_diagnostic.png"):
+        diagnostic_url = "media/time_grouping_diagnostic.png"
 
     sources = read_ecsv(run_dir / "source_catalog.ecsv")
     markers = read_markers(run_dir / "markers.json")
@@ -231,12 +246,14 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif):
         "label": run_dir.name,
         "frames": frames,
         "blink_url": gif_url,
+        "overview_url": overview_url,
+        "diagnostic_url": diagnostic_url,
         "seds": seds,
         "source_count": len(sources),
         "candidate_count": len(markers),
-        "notice": ("Marked GIF frames and SED plots are from this exact analysis run. "
-                   "Candidate mover/variable classes are algorithm flags, not verified "
-                   "astrophysical identifications. Image overlays are baked into GIF; "
+        "notice": ("Static group images and SED plots belong to this exact analysis run. "
+                   "Candidate mover/variable flags are algorithm outputs, not verified "
+                   "astrophysical identifications. PNG annotations are baked in; "
                    "no pixel-accurate clickable source boxes are assumed.")
     }
     manifest = {
@@ -265,11 +282,12 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif):
             "manifest_url": f"{run_dir.name}/manifest.json",
             "group_count": len(frames) or len(metadata),
             "source_count": len(sources), "candidate_count": len(markers),
-            "has_gif": bool(gif_url), "sed_count": len(seds),
+            "has_gif": bool(gif_url), "has_frames": bool(frames),
+            "has_overview": bool(overview_url), "sed_count": len(seds),
             "parameters": manifest["parameters"]}
 
 
-def build(input_root, output_root, extract_gif):
+def build(input_root, output_root, extract_gif, include_gif=True):
     # Allow both .../targets and .../<parent>/targets as input.
     source_root = input_root / "targets" if (input_root / "targets").is_dir() else input_root
     output_root.mkdir(parents=True, exist_ok=True)
@@ -295,7 +313,8 @@ def build(input_root, output_root, extract_gif):
                 # Allow experimental combinations (e.g., D5+D6) without
                 # inventing extra standard-band menu entries.
                 run = export_run(candidate, output_root / slug / candidate.name,
-                                 target_id, band_id, parsed, extract_gif)
+                                 target_id, band_id, parsed, extract_gif,
+                                 include_gif=include_gif)
                 run["manifest_url"] = f"{slug}/{run['manifest_url']}"
                 runs.append(run)
         index["targets"].append({
@@ -316,10 +335,13 @@ def main():
                         help="GitHub Pages output directory; normally ./science-runs")
     parser.add_argument("--no-gif-frames", action="store_true",
                         help="don't extract PNG epoch images from marked GIFs")
+    parser.add_argument("--exclude-gif", action="store_true",
+                        help="do not copy or publish GIF files; use existing Group PNGs")
     args = parser.parse_args()
     if not args.input_root.is_dir():
         parser.error("input-root folder not found")
-    build(args.input_root.resolve(), args.output_dir.resolve(), not args.no_gif_frames)
+    build(args.input_root.resolve(), args.output_dir.resolve(),
+          not args.no_gif_frames, include_gif=not args.exclude_gif)
 
 
 if __name__ == "__main__":
