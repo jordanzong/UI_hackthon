@@ -33,7 +33,7 @@ jobs:
       - name: Download team ZIP from shared Google Drive
         run: |
           mkdir -p /tmp/science
-          gdown --fuzzy 'https://drive.google.com/file/d/1e0cN8dgP3J7ONuub_wMk5FFi2rGRo_go/view' -O /tmp/science/output.zip
+          gdown '1e0cN8dgP3J7ONuub_wMk5FFi2rGRo_go' -O /tmp/science/output.zip
           python3 - <<'PY'
           import zipfile
           p='/tmp/science/output.zip'
