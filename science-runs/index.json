@@ -1,0 +1,46 @@
+{
+  "schema_version": "spherex-science-runs-index/v1",
+  "bands": [
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5",
+    "D6",
+    "D1+D2+D3",
+    "D4+D5+D6",
+    "D1+D2+D3+D4+D5+D6"
+  ],
+  "targets": [
+    {
+      "target_id": "WISE_0855",
+      "name": "WISE 0855",
+      "slug": "wise-0855",
+      "runs": []
+    },
+    {
+      "target_id": "Barnards_Star",
+      "name": "Barnard's Star",
+      "slug": "barnards-star",
+      "runs": []
+    },
+    {
+      "target_id": "Epsilon_Indi_B",
+      "name": "Epsilon Indi B",
+      "slug": "epsilon-indi-b",
+      "runs": []
+    },
+    {
+      "target_id": "RW_Aurigae",
+      "name": "RW Aurigae",
+      "slug": "rw-aurigae",
+      "runs": []
+    },
+    {
+      "target_id": "R_Draconis",
+      "name": "R Draconis",
+      "slug": "r-draconis",
+      "runs": []
+    }
+  ]
+}
