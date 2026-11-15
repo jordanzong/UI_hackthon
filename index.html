@@ -874,6 +874,7 @@ function normalizeSPHEREx(input){
 let spxCatalogTarget=null,spxCatalogOrigin='none';
 function setSPHERExSources(input,opts={}){
   const rows=normalizeSPHEREx(input);
+  const previousTarget=spxCatalogTarget;
   spherexSources=rows;
   spxCatalogTarget=typeof opts.target_id==='string'?opts.target_id:null;
   spxCatalogOrigin=opts.origin||'custom';
@@ -888,8 +889,9 @@ function setSPHERExSources(input,opts={}){
   }
   // Clear a stale source selection if it belonged to a different catalog.
   if(sel?.hit?.kind==='spx'){
-    const active=rows.find(o=>o.source_id===sel.hit.o.source_id);
-    if(!active){sel.hit=null;renderSel();}
+    const active=rows.find(o=>o.source_id===sel.hit.o.source_id
+      &&Math.abs(o.ra-sel.hit.o.ra)<1e-9&&Math.abs(o.dec-sel.hit.o.dec)<1e-9);
+    if(!active||previousTarget!==spxCatalogTarget){sel=null;renderSel();}
   }
   catalogNotice();requestRender();
   return rows.length;
