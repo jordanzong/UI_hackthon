@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from urllib.parse import urlsplit
 from html.parser import HTMLParser
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "science-runs"
@@ -85,7 +86,8 @@ def main():
     html = (ROOT / "index.html").read_text()
     parser = Inspector()
     parser.feed(html)
-    assert "goto" in parser.sel_parent, "Selected object no longer inside coordinates section"
+    assert re.search(r'</form>\s*<div id="sel" class="selection-inline"', html), \
+        "Selected object no longer placed immediately inside the coordinates section"
     assert "./science-run-browser.js" in parser.static_scripts
     assert "./sky-map-tools.js" in parser.static_scripts
     assert "./spherex-viewer.js" in parser.static_scripts
