@@ -16,19 +16,535 @@
       "target_id": "WISE_0855",
       "name": "WISE 0855",
       "slug": "wise-0855",
-      "runs": []
+      "runs": [
+        {
+          "run_id": "D1_D2_D3_D4_D5_D6_gap10_spaninf_v1",
+          "band_id": "D1+D2+D3+D4+D5+D6",
+          "manifest_url": "wise-0855/D1_D2_D3_D4_D5_D6_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 36,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 36,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D1_D2_D3_gap10_spaninf_v1",
+          "band_id": "D1+D2+D3",
+          "manifest_url": "wise-0855/D1_D2_D3_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 40,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 40,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D1_gap10_spaninf_v1",
+          "band_id": "D1",
+          "manifest_url": "wise-0855/D1_gap10_spaninf_v1/manifest.json",
+          "group_count": 3,
+          "source_count": 38,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 38,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D2_gap10_spaninf_v1",
+          "band_id": "D2",
+          "manifest_url": "wise-0855/D2_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 39,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 39,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D3_gap10_spaninf_v1",
+          "band_id": "D3",
+          "manifest_url": "wise-0855/D3_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 40,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 40,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D4_D5_D6_gap10_spaninf_v1",
+          "band_id": "D4+D5+D6",
+          "manifest_url": "wise-0855/D4_D5_D6_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 43,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 43,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D4_gap10_spaninf_v1",
+          "band_id": "D4",
+          "manifest_url": "wise-0855/D4_gap10_spaninf_v1/manifest.json",
+          "group_count": 3,
+          "source_count": 45,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 45,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D5_gap10_spaninf_v1",
+          "band_id": "D5",
+          "manifest_url": "wise-0855/D5_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 41,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 41,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D6_gap10_spaninf_v1",
+          "band_id": "D6",
+          "manifest_url": "wise-0855/D6_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 36,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 36,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        }
+      ]
     },
     {
       "target_id": "Barnards_Star",
       "name": "Barnard's Star",
       "slug": "barnards-star",
-      "runs": []
+      "runs": [
+        {
+          "run_id": "D1_D2_D3_D4_D5_D6_gap10_spaninf_v1",
+          "band_id": "D1+D2+D3+D4+D5+D6",
+          "manifest_url": "barnards-star/D1_D2_D3_D4_D5_D6_gap10_spaninf_v1/manifest.json",
+          "group_count": 7,
+          "source_count": 40,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 40,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D1_D2_D3_gap10_spaninf_v1",
+          "band_id": "D1+D2+D3",
+          "manifest_url": "barnards-star/D1_D2_D3_gap10_spaninf_v1/manifest.json",
+          "group_count": 7,
+          "source_count": 40,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 40,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D1_gap10_spaninf_v1",
+          "band_id": "D1",
+          "manifest_url": "barnards-star/D1_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 40,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 40,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D2_gap10_spaninf_v1",
+          "band_id": "D2",
+          "manifest_url": "barnards-star/D2_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 33,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 33,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D3_gap10_spaninf_v1",
+          "band_id": "D3",
+          "manifest_url": "barnards-star/D3_gap10_spaninf_v1/manifest.json",
+          "group_count": 6,
+          "source_count": 39,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 39,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D4_D5_D6_gap10_spaninf_v1",
+          "band_id": "D4+D5+D6",
+          "manifest_url": "barnards-star/D4_D5_D6_gap10_spaninf_v1/manifest.json",
+          "group_count": 7,
+          "source_count": 46,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 46,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D4_gap10_spaninf_v1",
+          "band_id": "D4",
+          "manifest_url": "barnards-star/D4_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 38,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 38,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D5_gap10_spaninf_v1",
+          "band_id": "D5",
+          "manifest_url": "barnards-star/D5_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 41,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 41,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D6_gap10_spaninf_v1",
+          "band_id": "D6",
+          "manifest_url": "barnards-star/D6_gap10_spaninf_v1/manifest.json",
+          "group_count": 6,
+          "source_count": 48,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 48,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        }
+      ]
     },
     {
       "target_id": "Epsilon_Indi_B",
       "name": "Epsilon Indi B",
       "slug": "epsilon-indi-b",
-      "runs": []
+      "runs": [
+        {
+          "run_id": "D1_D2_D3_D4_D5_D6_gap10_spaninf_v1",
+          "band_id": "D1+D2+D3+D4+D5+D6",
+          "manifest_url": "epsilon-indi-b/D1_D2_D3_D4_D5_D6_gap10_spaninf_v1/manifest.json",
+          "group_count": 6,
+          "source_count": 23,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 23,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D1_D2_D3_gap10_spaninf_v1",
+          "band_id": "D1+D2+D3",
+          "manifest_url": "epsilon-indi-b/D1_D2_D3_gap10_spaninf_v1/manifest.json",
+          "group_count": 6,
+          "source_count": 21,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 21,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D1_gap10_spaninf_v1",
+          "band_id": "D1",
+          "manifest_url": "epsilon-indi-b/D1_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 18,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 18,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D2_gap10_spaninf_v1",
+          "band_id": "D2",
+          "manifest_url": "epsilon-indi-b/D2_gap10_spaninf_v1/manifest.json",
+          "group_count": 6,
+          "source_count": 19,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 19,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D3_gap10_spaninf_v1",
+          "band_id": "D3",
+          "manifest_url": "epsilon-indi-b/D3_gap10_spaninf_v1/manifest.json",
+          "group_count": 7,
+          "source_count": 22,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 22,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D4_D5_D6_gap10_spaninf_v1",
+          "band_id": "D4+D5+D6",
+          "manifest_url": "epsilon-indi-b/D4_D5_D6_gap10_spaninf_v1/manifest.json",
+          "group_count": 6,
+          "source_count": 28,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 28,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D4_gap10_spaninf_v1",
+          "band_id": "D4",
+          "manifest_url": "epsilon-indi-b/D4_gap10_spaninf_v1/manifest.json",
+          "group_count": 4,
+          "source_count": 24,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 24,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D5_gap10_spaninf_v1",
+          "band_id": "D5",
+          "manifest_url": "epsilon-indi-b/D5_gap10_spaninf_v1/manifest.json",
+          "group_count": 7,
+          "source_count": 33,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 33,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        },
+        {
+          "run_id": "D6_gap10_spaninf_v1",
+          "band_id": "D6",
+          "manifest_url": "epsilon-indi-b/D6_gap10_spaninf_v1/manifest.json",
+          "group_count": 7,
+          "source_count": 44,
+          "candidate_count": 0,
+          "has_gif": true,
+          "has_animation": true,
+          "has_marked_gif": false,
+          "has_frames": true,
+          "has_overview": true,
+          "sed_count": 44,
+          "parameters": {
+            "gap_days": 10.0,
+            "span_days": null,
+            "version": "v1"
+          }
+        }
+      ]
     },
     {
       "target_id": "RW_Aurigae",

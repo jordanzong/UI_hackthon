@@ -1,0 +1,92 @@
+name: Publish SPHEREx Three-Target Science Results
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/science-three-targets-gif-staged
+    paths:
+      - '.github/workflows/publish-three-targets.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: science-results-import-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/science-three-targets-gif-staged
+          fetch-depth: 0
+
+      - name: Prepare science media exporter
+        run: |
+          python3 -m pip install --disable-pip-version-check --quiet gdown Pillow astropy
+          python3 -m py_compile tools/build_science_run_manifests.py
+
+      - name: Download team ZIP from shared Google Drive
+        run: |
+          mkdir -p /tmp/science
+          gdown '1e0cN8dgP3J7ONuub_wMk5FFi2rGRo_go' -O /tmp/science/output.zip
+          python3 - <<'PY'
+          import zipfile
+          p='/tmp/science/output.zip'
+          with zipfile.ZipFile(p) as z:
+              damaged=z.testzip()
+              assert damaged is None, f"ZIP corruption: {damaged}"
+              names=z.namelist()
+              for target in ('WISE_0855','Barnards_Star','Epsilon_Indi_B'):
+                  assert any(n.startswith(f'output/{target}/analysis_runs/') for n in names), target
+              print("Verified ZIP entries:",len(names))
+          PY
+          unzip -q /tmp/science/output.zip -d /tmp/science/extracted
+
+      - name: Publish real Group PNG, SED, original GIF and run-scoped manifests
+        run: |
+          python3 tools/build_science_run_manifests.py \
+            --input-root /tmp/science/extracted/output \
+            --output-dir ./science-runs \
+            --no-gif-frames
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('science-runs')
+          index=json.loads((root/'index.json').read_text())
+          counts={t['target_id']:len(t['runs']) for t in index['targets']}
+          assert counts=={
+             'WISE_0855':9,
+             'Barnards_Star':9,
+             'Epsilon_Indi_B':9,
+             'RW_Aurigae':0,
+             'R_Draconis':0
+          }, counts
+          runs=[(t,r) for t in index['targets'] for r in t['runs']]
+          assert len(runs)==27
+          for t,r in runs:
+              assert r['has_animation'],(t['target_id'],r['run_id'],'missing ordinary GIF')
+              assert not r['has_marked_gif'],(t['target_id'],r['run_id'],'unexpected marked GIF')
+              assert r['has_frames'] and r['sed_count']>0,(t['target_id'],r['run_id'])
+              m=json.loads((root/r['manifest_url']).read_text())
+              p=m['bands'][r['band_id']]
+              assert p['animation_url'] and p['marked_gif_url'] is None
+          print('Published 27 real analysis runs for 3 targets, marked GIF pending.')
+          PY
+
+      - name: Commit published media to this feature branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add science-runs
+          if git diff --cached --quiet; then
+            echo 'No science asset changes'
+            exit 0
+          fi
+          git commit -m 'data(science): publish 27 real three-target runs, plain GIF and SED/Group PNGs'
+          git pull --rebase origin feature/science-three-targets-gif-staged
+          git push origin HEAD:feature/science-three-targets-gif-staged

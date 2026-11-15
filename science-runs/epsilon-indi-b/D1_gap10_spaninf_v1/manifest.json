@@ -1,0 +1,357 @@
+{
+  "schema_version": "spherex-analysis-run/v1",
+  "target_id": "Epsilon_Indi_B",
+  "run_id": "D1_gap10_spaninf_v1",
+  "band_id": "D1",
+  "parameters": {
+    "gap_days": 10.0,
+    "span_days": null,
+    "version": "v1"
+  },
+  "bands": {
+    "D1": {
+      "kind": "analysis-run",
+      "label": "D1_gap10_spaninf_v1",
+      "frames": [
+        {
+          "frame_id": "group_1",
+          "label": "Group 1",
+          "image_url": "media/group_frames/group_01_sources_epsf.png",
+          "mjd": 60791.5533155,
+          "start_mjd": 60790.262463,
+          "end_mjd": 60792.844168,
+          "stack_inputs": 4
+        },
+        {
+          "frame_id": "group_2",
+          "label": "Group 2",
+          "image_url": "media/group_frames/group_02_sources_epsf.png",
+          "mjd": 60959.9023695,
+          "start_mjd": 60951.718879,
+          "end_mjd": 60968.08586,
+          "stack_inputs": 20
+        },
+        {
+          "frame_id": "group_3",
+          "label": "Group 3",
+          "image_url": "media/group_frames/group_03_sources_epsf.png",
+          "mjd": 60991.008023999995,
+          "start_mjd": 60990.158478,
+          "end_mjd": 60991.85757,
+          "stack_inputs": 4
+        },
+        {
+          "frame_id": "group_4",
+          "label": "Group 4",
+          "image_url": "media/group_frames/group_04_sources_epsf.png",
+          "mjd": 61156.2812185,
+          "start_mjd": 61148.84479,
+          "end_mjd": 61163.717647,
+          "stack_inputs": 20
+        }
+      ],
+      "blink_url": "media/group_stacks_sources_epsf.gif",
+      "animation_url": "media/group_stacks_sources_epsf.gif",
+      "marked_gif_url": null,
+      "marker_gif_status": "pending",
+      "overview_url": "media/group_stacks_sources_epsf.png",
+      "diagnostic_url": "media/time_grouping_diagnostic.png",
+      "seds": [
+        {
+          "source_id": "1",
+          "plots": {
+            "groups": "media/sed_plots/source_001_group_sed.png",
+            "evolution": "media/sed_plots/source_001_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "2",
+          "plots": {
+            "groups": "media/sed_plots/source_002_group_sed.png",
+            "evolution": "media/sed_plots/source_002_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "3",
+          "plots": {
+            "groups": "media/sed_plots/source_003_group_sed.png",
+            "evolution": "media/sed_plots/source_003_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "4",
+          "plots": {
+            "groups": "media/sed_plots/source_004_group_sed.png",
+            "evolution": "media/sed_plots/source_004_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "5",
+          "plots": {
+            "groups": "media/sed_plots/source_005_group_sed.png",
+            "evolution": "media/sed_plots/source_005_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "6",
+          "plots": {
+            "groups": "media/sed_plots/source_006_group_sed.png",
+            "evolution": "media/sed_plots/source_006_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "7",
+          "plots": {
+            "groups": "media/sed_plots/source_007_group_sed.png",
+            "evolution": "media/sed_plots/source_007_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "8",
+          "plots": {
+            "groups": "media/sed_plots/source_008_group_sed.png",
+            "evolution": "media/sed_plots/source_008_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "9",
+          "plots": {
+            "groups": "media/sed_plots/source_009_group_sed.png",
+            "evolution": "media/sed_plots/source_009_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "10",
+          "plots": {
+            "groups": "media/sed_plots/source_010_group_sed.png",
+            "evolution": "media/sed_plots/source_010_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "11",
+          "plots": {
+            "groups": "media/sed_plots/source_011_group_sed.png",
+            "evolution": "media/sed_plots/source_011_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "12",
+          "plots": {
+            "groups": "media/sed_plots/source_012_group_sed.png",
+            "evolution": "media/sed_plots/source_012_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "13",
+          "plots": {
+            "groups": "media/sed_plots/source_013_group_sed.png",
+            "evolution": "media/sed_plots/source_013_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "14",
+          "plots": {
+            "groups": "media/sed_plots/source_014_group_sed.png",
+            "evolution": "media/sed_plots/source_014_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "15",
+          "plots": {
+            "groups": "media/sed_plots/source_015_group_sed.png",
+            "evolution": "media/sed_plots/source_015_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "16",
+          "plots": {
+            "groups": "media/sed_plots/source_016_group_sed.png",
+            "evolution": "media/sed_plots/source_016_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "17",
+          "plots": {
+            "groups": "media/sed_plots/source_017_group_sed.png",
+            "evolution": "media/sed_plots/source_017_sed_evolution.png"
+          }
+        },
+        {
+          "source_id": "18",
+          "plots": {
+            "groups": "media/sed_plots/source_018_group_sed.png",
+            "evolution": "media/sed_plots/source_018_sed_evolution.png"
+          }
+        }
+      ],
+      "source_count": 18,
+      "candidate_count": 0,
+      "notice": "Ordinary GIF and native group/SED images belong to this exact run. Candidate mover/variable flags are algorithm outputs, not verified astrophysical identifications. PNG annotations are baked in; no pixel-accurate clickable source boxes are assumed. Only separately named marked GIF files count as marked."
+    }
+  },
+  "sources": [
+    {
+      "source_id": "1",
+      "ra_deg": 331.00357700350133,
+      "dec_deg": -56.7638115412332,
+      "best_snr": 387.56504088954756,
+      "n_groups_detected": 4.0
+    },
+    {
+      "source_id": "2",
+      "ra_deg": 331.09793606170297,
+      "dec_deg": -56.80107615628816,
+      "best_snr": 175.8362448826436,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "3",
+      "ra_deg": 331.02139057467593,
+      "dec_deg": -56.813719530062855,
+      "best_snr": 340.1324494326021,
+      "n_groups_detected": 4.0
+    },
+    {
+      "source_id": "4",
+      "ra_deg": 331.0060670165611,
+      "dec_deg": -56.81266838648225,
+      "best_snr": 311.0760520820511,
+      "n_groups_detected": 4.0
+    },
+    {
+      "source_id": "5",
+      "ra_deg": 331.04237769880615,
+      "dec_deg": -56.7990455512767,
+      "best_snr": 258.03140889730986,
+      "n_groups_detected": 4.0
+    },
+    {
+      "source_id": "6",
+      "ra_deg": 331.0135560360806,
+      "dec_deg": -56.80232561575973,
+      "best_snr": 273.4494524812141,
+      "n_groups_detected": 4.0
+    },
+    {
+      "source_id": "7",
+      "ra_deg": 331.0367144711437,
+      "dec_deg": -56.81476845111119,
+      "best_snr": 219.80176034698164,
+      "n_groups_detected": 4.0
+    },
+    {
+      "source_id": "8",
+      "ra_deg": 331.0392697450996,
+      "dec_deg": -56.76030330797646,
+      "best_snr": 272.87978193856037,
+      "n_groups_detected": 4.0
+    },
+    {
+      "source_id": "9",
+      "ra_deg": 331.04455848719533,
+      "dec_deg": -56.82616039921777,
+      "best_snr": 68.5811013030361,
+      "n_groups_detected": 2.0
+    },
+    {
+      "source_id": "10",
+      "ra_deg": 331.01784083612574,
+      "dec_deg": -56.838689355607144,
+      "best_snr": 168.8060415557387,
+      "n_groups_detected": 4.0
+    },
+    {
+      "source_id": "11",
+      "ra_deg": 330.98829772249655,
+      "dec_deg": -56.78062520270994,
+      "best_snr": 59.3433867752717,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "12",
+      "ra_deg": 331.06190153418237,
+      "dec_deg": -56.80072808081135,
+      "best_snr": 205.81039849934012,
+      "n_groups_detected": 4.0
+    },
+    {
+      "source_id": "13",
+      "ra_deg": 331.12825271906974,
+      "dec_deg": -56.799274891046714,
+      "best_snr": 27.802946791747292,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "14",
+      "ra_deg": 331.1230878086194,
+      "dec_deg": -56.7870179882424,
+      "best_snr": 14.111875156563432,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "15",
+      "ra_deg": 331.06064917878643,
+      "dec_deg": -56.78523204205826,
+      "best_snr": 6.1933104741609455,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "16",
+      "ra_deg": 330.9945626089686,
+      "dec_deg": -56.75478405175968,
+      "best_snr": 151.73395762125512,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "17",
+      "ra_deg": 331.08517630896995,
+      "dec_deg": -56.76343267500601,
+      "best_snr": 69.35517521513711,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "18",
+      "ra_deg": 331.0239279505955,
+      "dec_deg": -56.74138616157901,
+      "best_snr": 32.57687963492787,
+      "n_groups_detected": 2.0
+    }
+  ],
+  "candidates": [],
+  "group_metadata": [
+    {
+      "group_id": 1,
+      "mjd": 60791.5533155,
+      "start_mjd": 60790.262463,
+      "end_mjd": 60792.844168,
+      "stack_inputs": 4
+    },
+    {
+      "group_id": 2,
+      "mjd": 60959.9023695,
+      "start_mjd": 60951.718879,
+      "end_mjd": 60968.08586,
+      "stack_inputs": 20
+    },
+    {
+      "group_id": 3,
+      "mjd": 60991.008023999995,
+      "start_mjd": 60990.158478,
+      "end_mjd": 60991.85757,
+      "stack_inputs": 4
+    },
+    {
+      "group_id": 4,
+      "mjd": 61156.2812185,
+      "start_mjd": 61148.84479,
+      "end_mjd": 61163.717647,
+      "stack_inputs": 20
+    }
+  ],
+  "files_present": {
+    "source_catalog_ecsv": true,
+    "photometry_ecsv": true,
+    "time_grouped_stacks_fits": true,
+    "markers_json": false
+  }
+}

@@ -46,8 +46,10 @@ class ScienceRunExportTest(unittest.TestCase):
             self.assertEqual(manifest["sources"][0]["candidate_types"], ["mover"])
             self.assertEqual(manifest["sources"][0]["candidate_status"],
                              "algorithm_candidate_unverified")
-            self.assertEqual(manifest["bands"]["D1"]["blink_url"],
+            self.assertIsNone(manifest["bands"]["D1"]["blink_url"])
+            self.assertEqual(manifest["bands"]["D1"]["marked_gif_url"],
                              "media/group_stacks_marked.gif")
+            self.assertEqual(manifest["bands"]["D1"]["marker_gif_status"], "available")
             plots = manifest["bands"]["D1"]["seds"][0]["plots"]
             self.assertIn("groups", plots)
             self.assertIn("evolution", plots)
@@ -73,6 +75,70 @@ class ScienceRunExportTest(unittest.TestCase):
             self.assertEqual(sum(x["band_id"] == "D1+D2+D3" for x in runs), 1)
             self.assertTrue(all(x["manifest_url"].startswith("wise-0855/")
                                 for x in runs))
+
+
+    def test_png_only_import_excludes_existing_gif(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "input"
+            run = root / "Epsilon_Indi_B" / "analysis_runs" / "D2_gap10_spaninf_v1"
+            (run / "group_stack_frames").mkdir(parents=True)
+            (run / "sed_plots").mkdir()
+            (run / "group_stacks_sources_epsf.gif").write_bytes(GIF_1PX)
+            (run / "group_stacks_sources_epsf.png").write_bytes(PNG_1PX)
+            (run / "time_grouping_diagnostic.png").write_bytes(PNG_1PX)
+            for number in (3, 1, 2):
+                (run / "group_stack_frames" / f"group_{number:02d}_sources_epsf.png").write_bytes(PNG_1PX)
+            (run / "source_catalog.ecsv").write_text(
+                "source_id ra_deg dec_deg\n1 331.04 -56.78\n", encoding="utf-8")
+            (run / "sed_plots" / "source_001_group_sed.png").write_bytes(PNG_1PX)
+            out = Path(tmp) / "published"
+            index = build(root, out, extract_gif=False, include_gif=False)
+            entry = next(t for t in index["targets"] if t["target_id"] == "Epsilon_Indi_B")
+            self.assertEqual(len(entry["runs"]), 1)
+            self.assertFalse(entry["runs"][0]["has_gif"])
+            self.assertTrue(entry["runs"][0]["has_frames"])
+            self.assertTrue(entry["runs"][0]["has_overview"])
+            base = out / "epsilon-indi-b" / "D2_gap10_spaninf_v1"
+            data = json.loads((base / "manifest.json").read_text())
+            product = data["bands"]["D2"]
+            self.assertIsNone(product["blink_url"])
+            self.assertEqual([f["frame_id"] for f in product["frames"]],
+                             ["group_1", "group_2", "group_3"])
+            self.assertEqual(product["overview_url"], "media/group_stacks_sources_epsf.png")
+            self.assertEqual(product["diagnostic_url"], "media/time_grouping_diagnostic.png")
+            self.assertFalse(list(base.rglob("*.gif")))
+
+    def test_ordinary_gif_now_marked_gif_later(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "output"
+            run = root / "WISE_0855" / "analysis_runs" / "D3_gap10_spaninf_v1"
+            (run / "sed_plots").mkdir(parents=True)
+            (run / "group_stack_frames").mkdir()
+            (run / "group_stacks_sources_epsf.gif").write_bytes(GIF_1PX)
+            (run / "group_stack_frames" / "group_01_sources_epsf.png").write_bytes(PNG_1PX)
+            (run / "sed_plots" / "source_001_group_sed.png").write_bytes(PNG_1PX)
+            (run / "source_catalog.ecsv").write_text(
+                "source_id ra_deg dec_deg\\n1 133.789 -7.242\\n", encoding="utf-8")
+            dest = Path(tmp) / "site"
+            index = build(root, dest, extract_gif=False)
+            target = next(t for t in index["targets"] if t["target_id"] == "WISE_0855")
+            self.assertEqual(len(target["runs"]), 1)
+            self.assertTrue(target["runs"][0]["has_animation"])
+            self.assertFalse(target["runs"][0]["has_marked_gif"])
+            manifest = json.loads((dest / target["runs"][0]["manifest_url"]).read_text())
+            p = manifest["bands"]["D3"]
+            self.assertEqual(p["animation_url"], "media/group_stacks_sources_epsf.gif")
+            self.assertEqual(p["marker_gif_status"], "pending")
+            self.assertIsNone(p["marked_gif_url"])
+            self.assertEqual(len(p["frames"]), 1)
+            self.assertEqual(len(p["seds"]), 1)
+            (run / "group_stacks_marked.gif").write_bytes(GIF_1PX)
+            build(root, dest, extract_gif=False)
+            manifest = json.loads((dest / target["runs"][0]["manifest_url"]).read_text())
+            p = manifest["bands"]["D3"]
+            self.assertEqual(p["animation_url"], "media/group_stacks_sources_epsf.gif")
+            self.assertEqual(p["marked_gif_url"], "media/group_stacks_marked.gif")
+            self.assertEqual(p["marker_gif_status"], "available")
 
 
 if __name__ == "__main__":

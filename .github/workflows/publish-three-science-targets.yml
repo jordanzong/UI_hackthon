@@ -1,0 +1,129 @@
+name: Publish Three SPHEREx Targets (PNG + SED, no GIF)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/science-three-targets-no-gif
+    paths:
+      - '.github/workflows/publish-three-science-targets.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-three-science-targets
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SOURCE_DRIVE_FILE_ID: 1e0cN8dgP3J7ONuub_wMk5FFi2rGRo_go
+      SOURCE_ZIP_SHA256: e9f0b1854868e07701b99cd3587d5818692a8a2dc51f4178f6abd7d0975c6e45
+    steps:
+      - name: Checkout integration branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/science-three-targets-no-gif
+          fetch-depth: 0
+
+      - name: Install only required parser/deployment packages
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install gdown astropy
+
+      - name: Download exact team ZIP from shared Google Drive
+        run: |
+          gdown --id "$SOURCE_DRIVE_FILE_ID" --output /tmp/spherex-team-output.zip
+          echo "$SOURCE_ZIP_SHA256  /tmp/spherex-team-output.zip" | sha256sum -c -
+
+      - name: Extract real science assets but EXCLUDE all GIF files
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+          from zipfile import ZipFile
+          source=Path('/tmp/spherex-team-output.zip')
+          output=Path('/tmp/spherex-backend')
+          allowed={'WISE_0855','Barnards_Star','Epsilon_Indi_B'}
+          accepted=0
+          with ZipFile(source) as z:
+              for entry in z.infolist():
+                  path=PurePosixPath(entry.filename)
+                  parts=path.parts
+                  if entry.is_dir() or len(parts)<5:
+                      continue
+                  if parts[0]!='output' or parts[1] not in allowed or parts[2]!='analysis_runs':
+                      continue
+                  if '..' in parts or path.is_absolute():
+                      raise ValueError('Unexpected ZIP path '+entry.filename)
+                  if path.suffix.lower() not in {'.png','.ecsv','.fits','.json'}:
+                      continue
+                  # Only ordinary files from expected backend export
+                  mode=(entry.external_attr>>16)
+                  if mode & 0o170000 == 0o120000:
+                      raise ValueError('ZIP contains symbolic link '+entry.filename)
+                  dest=output.joinpath(*parts)
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  with z.open(entry) as src, dest.open('wb') as dst:
+                      import shutil
+                      shutil.copyfileobj(src,dst)
+                  accepted+=1
+          print('Extracted validated PNG/ECSV/FITS/JSON entries:',accepted)
+          if accepted<2100:
+              raise RuntimeError('The ZIP does not contain the expected three-target outputs')
+          PY
+
+      - name: Export scoped manifests and original PNGs (zero GIF)
+        run: |
+          python3 tools/build_science_run_manifests.py \
+            --input-root /tmp/spherex-backend/output \
+            --output-dir ./science-runs \
+            --exclude-gif \
+            --no-gif-frames
+
+      - name: Verify 27 genuine runs, 3 ready targets and zero published GIFs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('science-runs')
+          data=json.loads((root/'index.json').read_text())
+          expected={'WISE_0855','Barnards_Star','Epsilon_Indi_B'}
+          actual={t['target_id']:len(t['runs']) for t in data['targets']}
+          print('Actual run counts:',actual)
+          if len(data['targets'])!=5 or len(data['bands'])!=9:
+              raise RuntimeError('Schema mismatch')
+          if any(actual.get(t)!=9 for t in expected):
+              raise RuntimeError('Expected all nine runs for each of three targets')
+          if any(actual.get(t)!=0 for t in set(actual)-expected):
+              raise RuntimeError('Unexpected unverified data for remaining two targets')
+          if list(root.rglob('*.gif')):
+              raise RuntimeError('GIF unexpectedly published')
+          group_pngs=list(root.rglob('media/group_frames/*.png'))
+          sed_pngs=list(root.rglob('media/sed_plots/*.png'))
+          print('Group PNGs:',len(group_pngs),'SED PNGs:',len(sed_pngs))
+          if len(group_pngs)!=136 or len(sed_pngs)!=1910:
+              raise RuntimeError('Real PNG data count mismatch')
+          for target in data['targets']:
+              for run in target['runs']:
+                  path=root/run['manifest_url']
+                  m=json.loads(path.read_text())
+                  p=m['bands'][run['band_id']]
+                  if p['blink_url'] is not None or not p['frames'] or not p['seds']:
+                      raise RuntimeError('Incomplete PNG-only analysis run: '+str(path))
+          PY
+
+      - name: Commit only generated static science results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add science-runs
+          if git diff --cached --quiet; then
+            echo "No changes to published science products"
+          else
+            git commit -m "data(science): publish 27 real analysis runs with PNG frames and SEDs only"
+            git pull --rebase origin feature/science-three-targets-no-gif
+            git push origin HEAD:feature/science-three-targets-no-gif
+          fi
