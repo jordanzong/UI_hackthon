@@ -58,9 +58,15 @@ function sync(view){
  if(!state.manifest||view.fov>30){state.active=[];return;}
  const rad=Math.min(50,Math.max(1.5,
   view.fov*.5*Math.sqrt(1+view.aspect*view.aspect)*1.2));
- const wanted=state.manifest.tiles.filter(t=>
-   sepDeg(view.ra,view.dec,Number(t.ra_center_deg)*D2R,
-          Number(t.dec_center_deg)*D2R)<=rad+18);
+ const wanted=state.manifest.tiles.filter(t=>{
+   const dc=Math.abs(Number(t.dec_center_deg));
+   // 30°×15° tiles are physically much narrower near celestial poles.
+   // Conservative spherical cell radius avoids fetching all polar RA cells.
+   const raHalf=15*Math.cos(Math.max(0,dc-7.5)*D2R);
+   const cellRadius=Math.hypot(raHalf,7.5)+.8;
+   return sepDeg(view.ra,view.dec,Number(t.ra_center_deg)*D2R,
+                 Number(t.dec_center_deg)*D2R)<=rad+cellRadius;
+ });
  state.active=wanted.map(t=>t.id);
  for(const t of wanted){
   if(state.pending.size>=5)break;
@@ -109,10 +115,10 @@ function search(text,max=12){
  const q=norm(text);if(q.length<2)return[];
  const found=[];
  for(const list of groups())for(const s of list){
-  if(!s.proper)continue;
+  if(!s.proper&&!q.startsWith('hyg'))continue;
   const name=norm(s.proper),hyg=norm(s.source_id);
   if(name.includes(q)||hyg.includes(q)){
-   found.push({id:s.id,kind:'hyg',label:s.proper,
+   found.push({id:s.id,kind:'hyg',label:s.proper||s.source_id,
      ra_deg:s.ra*R2D,dec_deg:s.dec*R2D,fov_deg:Math.max(2,4),
      mag:s.mag,rank:name===q||hyg===q?0:name.startsWith(q)?1:2});
   }
