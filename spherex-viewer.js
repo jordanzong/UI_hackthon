@@ -11,7 +11,7 @@ function el(tag,attrs={},text){const n=document.createElement(tag);for(const[k,v
 const launch=el('button',{id:'spx-launch',type:'button','aria-expanded':'false','aria-controls':'spx-viewer'},'✦ SPHEREx Viewer');
 const panel=el('aside',{id:'spx-viewer',role:'region','aria-label':'SPHEREx Observation Viewer'});
 panel.innerHTML=[
-'<div class="spx-head"><div><h2>SPHEREx Observation Viewer</h2><p class="spx-sub">Published Science Runs · Time Groups · SED companion</p></div><button type="button" id="spx-close" aria-label="Close">×</button></div>',
+'<div class="spx-head"><div><h2>SPHEREx Observation Viewer</h2><p class="spx-sub">Marked GIF Frames · Prev / Blink / Next · Live Sky</p></div><button type="button" id="spx-close" aria-label="Close">×</button></div>',
 '<div class="spx-body">',
 '<div class="spx-visual"><div id="spx-imagebox"><img id="spx-image" alt="SPHEREx published observation preview" draggable="false"><div id="spx-markers"></div><div id="spx-empty">請在 Science Results 選擇已發布 Run，再按 Open Viewer。</div></div>',
 '<label class="spx-brightness-rail" for="spx-brightness"><span class="spx-brightness-caption">BRIGHTNESS</span><input id="spx-brightness" type="range" min="1" max="10" value="3" step="0.5" aria-label="Display brightness (visual only)" aria-orientation="vertical"><output id="spx-brightness-value" for="spx-brightness">3×</output><span class="spx-brightness-note">VISUAL ONLY</span></label></div>',
@@ -62,7 +62,7 @@ function normalize(raw,base){
  return {...raw,frames,difference,sources:Array.isArray(raw.sources)?raw.sources:[],
   status:String(raw.status??(frames.length?'ready':'no_data'))};
 }
-function stop(){clearInterval(app.timer);app.timer=null;app.playing=false;$('spx-play').textContent='▶ Blink';$('spx-play').setAttribute('aria-pressed','false');}
+function stop(){clearTimeout(app.timer);app.timer=null;app.playing=false;$('spx-play').textContent='▶ Blink';$('spx-play').setAttribute('aria-pressed','false');}
 function focusSkyContext(){
  const center=app.data?.center;
  const ra=Number(center?.ra_deg),dec=Number(center?.dec_deg);
@@ -139,7 +139,12 @@ function render(){
  markers.replaceChildren();
  if(payload?.image_url){
    image.style.display='block';$('spx-empty').hidden=true;
-   image.onload=()=>{status(ja('影像已載入','Image loaded')+' · '+(app.index+1)+'/'+data.frames.length);drawMarkers();};
+   image.onload=()=>{
+     status((data.frame_origin==='marked-gif'?
+       ja('標記 GIF 影格','Marked GIF frame'):ja('影像已載入','Image loaded'))+
+       ' · '+(app.index+1)+'/'+data.frames.length);
+     drawMarkers();
+   };
    image.onerror=()=>{status(ja('影像讀取失敗：檢查網址或跨來源限制','Image failed: check URL and CORS'),true);};
    image.src=payload.image_url;
    if(image.complete&&image.naturalWidth)drawMarkers();
@@ -148,7 +153,9 @@ function render(){
    status(ja('尚無觀測影像','No observation images'));
  }
  $('spx-epoch').textContent=app.diff?'November − May':(fr?.label||'Epoch —')+(num(fr?.mjd)?' · MJD '+fmt(fr.mjd,3):'');
- $('spx-wave').textContent=num(fr?.wavelength_um)?'λ '+fmt(fr.wavelength_um,5)+' μm':'λ —';
+ $('spx-wave').textContent=data?.frame_origin==='marked-gif'
+  ?'Marked GIF · '+(app.index+1)+' / '+(data?.frames?.length||0)
+  :num(fr?.wavelength_um)?'λ '+fmt(fr.wavelength_um,5)+' μm':'λ —';
  const note=data?.notice||(data?.status==='coverage_unavailable'?ja('目標座標不在共同有效遮罩；空白不代表未偵測','Target outside common valid mask; blank does not mean undetected'):'');
  $('spx-caveat').hidden=!note;$('spx-caveat').textContent=note;
  if(!app.selection)$('spx-source-detail').textContent=data?.sources?.length?
@@ -164,7 +171,16 @@ function play(){
  if((app.data?.frames?.length||0)<2)return;
  app.playing=true;app.diff=false;
  $('spx-play').textContent='❚❚ Pause';$('spx-play').setAttribute('aria-pressed','true');
- changeFrame(app.index+1);app.timer=setInterval(()=>changeFrame(app.index+1),800);
+ const tick=()=>{
+  if(!app.playing)return;
+  const ms=Number(current()?.duration_ms)||800;
+  app.timer=setTimeout(()=>{
+   if(!app.playing)return;
+   changeFrame(app.index+1);
+   tick();
+  },Math.max(80,Math.min(ms,5000)));
+ };
+ tick();
 }
 launch.onclick=()=>open(panel.hidden);
 $('spx-close').onclick=()=>open(false);
