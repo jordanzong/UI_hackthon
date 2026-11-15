@@ -155,6 +155,9 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 @media (pointer:coarse){input[type=text],select{font-size:16px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+/* Public map FOV range is 2°–180°; no sub-degree zoom is available. */
+#fov-range{display:block;color:var(--muted);font:10px/1.4 var(--mono);margin-top:4px}
+
 /* Science extensions: keep the uploaded mission-control design and original control IDs. */
 .catalog-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 .catalog-tools .btn{min-width:0;white-space:normal;line-height:1.35;min-height:36px;letter-spacing:.04em;text-indent:0;padding:9px 7px}
@@ -234,8 +237,9 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
             <label class="field"><span data-i18n="dec">赤緯 Dec</span>
               <input type="text" id="dec" placeholder="−05° 23′ 28″ 或 -5.39" data-i18n-ph="phDec" spellcheck="false"></label>
             <label class="field"><span data-i18n="fov">天區大小 FOV（畫面短邊的視角）</span>
-              <div class="row"><input type="text" id="fov" value="60" inputmode="decimal" spellcheck="false">
-              <select id="unit" aria-label="視場單位" data-i18n-aria="unitAria"><option value="1">°</option><option value="60">′</option><option value="3600">″</option></select></div></label>
+              <div class="row"><input type="text" id="fov" value="60" inputmode="decimal" aria-describedby="fov-range" spellcheck="false">
+              <select id="unit" aria-label="視場單位" data-i18n-aria="unitAria"><option value="1">°</option></select></div>
+              <small id="fov-range">FOV：2°–180°</small></label>
             <div class="btns"><button class="btn primary" type="submit" data-i18n="go">前往</button><button type="button" class="btn" id="readc" data-i18n="readc">讀取畫面中心</button></div>
             <p id="msg" role="status"></p>
           </form>
@@ -301,7 +305,7 @@ const V={ra:0,dec:0,fov:60,sd:0,cd:1,S:1,cx:0,cy:0,W:0,H:0};
 function updateScale(){const R=Math.min(V.W,V.H)||1;V.S=(R/2)/(2*Math.tan(V.fov*D2R/4));}
 function setSize(W,H){V.W=W;V.H=H;V.cx=W/2;V.cy=H/2;updateScale();}
 function setView(ra,dec,fov){
-  V.ra=normRad(ra);V.dec=clamp(dec,-1.5707953,1.5707953);V.fov=clamp(fov,0.001,180);
+  V.ra=normRad(ra);V.dec=clamp(dec,-1.5707953,1.5707953);V.fov=clamp(fov,2,180);
   V.sd=Math.sin(V.dec);V.cd=Math.cos(V.dec);updateScale();
 }
 function project(ra,dec,o){
@@ -374,7 +378,7 @@ function parseDec(str){
 function parseFov(str,unitDiv){
   const s=cleanStr(str);const n=nums(s);if(n.length!==1)return NaN;
   const deg=n[0]/unitDiv;
-  return(deg>=0.0005&&deg<=180)?deg:NaN;
+  return(deg>=2&&deg<=180)?deg:NaN;
 }
 
 /* ---- formatting ---- */
@@ -694,7 +698,7 @@ zh:{title:'天球星圖',sub:'J2000 · 赤道座標',goto:'前往座標',ra:'赤
  needBoth:'赤經與赤緯需要一起輸入。',
  badRA:'赤經無法辨識。可用 83.82、5.588h、05:35:17 或 5h 35m 17s。',
  badDec:'赤緯需介於 −90° 與 +90°，例如 -5.39、-05 23 28。',
- badFov:'天區大小需介於 2″ 與 180° 之間，且只能填一個數字。',
+ badFov:'天區大小需介於 2° 與 180° 之間，且只能填一個數字。',
  okGo:(a,b)=>'已前往 '+a+'、'+b+'。',okFov:'已更新天區大小。',filled:'已填入畫面中心座標。',
  catnote:(n,m)=>'內建 '+n+' 顆亮星、'+m+' 個深空天體；縮至 12° 內時嘗試載入 Gaia DR3（有亮度/筆數限制，非完整星表）。Gaia G 星等不代表 SPHEREx 紅外偵測。銀河為示意。'},
 en:{title:'Sky Atlas',sub:'J2000 · Equatorial',goto:'Go to coordinates',ra:'Right ascension (RA)',dec:'Declination (Dec)',fov:'Field of view (across the shorter screen side)',auto:'Auto',hours:'h',degs:'°',
@@ -710,7 +714,7 @@ en:{title:'Sky Atlas',sub:'J2000 · Equatorial',goto:'Go to coordinates',ra:'Rig
  needBoth:'Enter both RA and Dec.',
  badRA:'RA not recognized. Try 83.82, 5.588h, 05:35:17 or 5h 35m 17s.',
  badDec:'Dec must be between −90° and +90°, e.g. -5.39 or -05 23 28.',
- badFov:'FOV must be a single number between 2″ and 180°.',
+ badFov:'FOV must be a single number between 2° and 180°.',
  okGo:(a,b)=>'Moved to '+a+', '+b+'.',okFov:'Field of view updated.',filled:'Filled in the view center.',
  catnote:(n,m)=>'Built-in '+n+' bright stars and '+m+' DSOs; Gaia DR3 queries are attempted below 12° FOV (magnitude and row limits apply). Gaia G is not SPHEREx infrared photometry. Milky Way is schematic.'}
 };
@@ -796,7 +800,7 @@ function parseCSV(text){
 function catalogNotice(){
   const zh=lang==='zh';
   const gaia=!L.gaia?(zh?'已關閉':'off'):
-    V.fov>12?(zh?'需放大至 12° 內':'zoom to 12° or less'):
+    V.fov>12?(zh?'需縮至 12° 內載入 Gaia DR3':'Gaia DR3 requires FOV ≤12°'):
     gaiaBusy?(zh?'讀取中…':'loading…'):
     gaiaFailureText?(gaiaLocal.stars.length
       ?(zh?'本地 '+gaiaLocal.stars.length+' 筆（線上查詢失敗）':'local '+gaiaLocal.stars.length+' stars (online query failed)')
@@ -816,9 +820,9 @@ function catalogNotice(){
     else if(!meta)note=zh?'Gaia CSV 清單載入中…':'Loading Gaia CSV manifest…';
     else if(gaiaLocal.stars.length)
       note=(active?.name||gaiaLocal.active)+': '+gaiaLocal.stars.length+
-        (zh?' 筆真實 Gaia 星點':' real Gaia sources')+
+        (zh?' 筆真實 Gaia 星點（僅覆蓋中心 0.2°，非完整視野）':' real Gaia sources (0.2° cone only, not entire FOV)')+
         (active?.truncated?(zh?'（達筆數上限，非完整星表）':' (truncated at row limit)'):'');
-    else if(V.fov>1)note=zh?'5 個天區已有 CSV；縮放至 1° 內或從上方選目標。':'CSV available for 5 fields; zoom to ≤1° or select a field.';
+    else if(V.fov>12)note=zh?'Gaia CSV 為 0.2° 區域星表；FOV 2°–12° 才顯示。':'Gaia CSV covers 0.2° cones; displayed at 2°–12° FOV only.';
     else if(gaiaLocal.active&&gaiaLocal.pending.has(gaiaLocal.active))
       note=zh?'正在讀取本地 Gaia CSV…':'Loading local Gaia CSV…';
     else if(gaiaLocal.active)note=zh?'正在準備 Gaia CSV…':'Preparing local Gaia CSV…';
@@ -884,7 +888,9 @@ function initGaiaLocal(){
  }).catch(e=>{gaiaLocal.loadError=String(e.message||e);catalogNotice();});
 }
 function syncGaiaLocal(view){
- if(!L.gaia||V.fov>1||manualGaia){
+ // Public Sky Atlas uses 2°–180° FOV. Static CSVs are only 0.2° cones,
+ // so show verified sources in intersecting views (2°–12°) as partial data.
+ if(!L.gaia||V.fov>12||manualGaia){
    if(gaiaLocal.stars.length||gaiaLocal.active){gaiaLocal.stars=[];gaiaLocal.active='';}
    return;
  }
@@ -936,7 +942,7 @@ $('gaiaCacheGo').onclick=()=>{
  const f=gaiaLocal.manifest?.fields?.find(x=>x.target_id===id);
  if(!f)return;
  window.SkyAtlas?.goToCoordinates?.({
-   ra_deg:Number(f.center.ra_deg),dec_deg:Number(f.center.dec_deg),fov_deg:0.1
+   ra_deg:Number(f.center.ra_deg),dec_deg:Number(f.center.dec_deg),fov_deg:2
  });
 };
 /* Error messages distinguish HTTP errors from blocked cross-origin fetches.
@@ -1020,7 +1026,7 @@ function scheduleGaia(){
   if(manualGaia){catalogNotice();return;}
   if(V.W&&V.H)syncGaiaLocal(gaiaView());
   const currentView=gaiaView();
-  if(L.gaia&&V.fov<=1&&gaiaLocalCoversView(currentView)){
+  if(L.gaia&&V.fov<=12&&gaiaLocalCoversView(currentView)){
     // A complete local catalog already covers this field and magnitude range.
     // Never force public browsers to make a cross-origin TAP request here.
     clearTimeout(gaiaTimer);gaiaTimer=null;
@@ -1110,7 +1116,7 @@ function drawGaia(){
   if(!L.gaia||V.fov>12)return;
   const faint=gaiaMagLimit(V.fov);
   ctx.save();ctx.fillStyle='rgba(193,215,255,.80)';
-  if(L.gaiaLabels&&V.fov<=0.45)ctx.font='10px '+getComputedStyle(document.body).getPropertyValue('--mono');
+  if(L.gaiaLabels&&V.fov<=2.5)ctx.font='10px '+getComputedStyle(document.body).getPropertyValue('--mono');
   let labels=0;
   for(const s of availableGaiaStars()){
     if(s.mag>faint||!project(s.ra,s.dec,P))continue;
@@ -1118,7 +1124,7 @@ function drawGaia(){
     const radius=clamp(0.55+(faint-s.mag)*0.12,0.55,2.6);
     ctx.globalAlpha=clamp(.30+(faint-s.mag)*.11,.3,.92);
     ctx.beginPath();ctx.arc(P.x,P.y,radius,0,TAU);ctx.fill();
-    if(L.gaiaLabels&&V.fov<=0.45&&s.mag<=14&&labels<60){
+    if(L.gaiaLabels&&V.fov<=2.5&&s.mag<=14&&labels<60){
       const label='G '+s.mag.toFixed(1),lx=P.x+radius+3,ly=P.y-3,w=ctx.measureText(label).width;
       if(freeSpot(lx,ly-9,w,12)){ctx.globalAlpha=.86;halo(label,lx,ly,'#abbfe0');labels++;}
     }
@@ -1128,7 +1134,7 @@ function drawGaia(){
 function drawSPHEREx(){
   if(!L.spx)return;
   ctx.save();ctx.lineWidth=1.4;
-  if(L.spxLabels&&V.fov<=1)ctx.font='11px '+getComputedStyle(document.body).getPropertyValue('--mono');
+  if(L.spxLabels&&V.fov<=2.5)ctx.font='11px '+getComputedStyle(document.body).getPropertyValue('--mono');
   let labels=0;
   for(const s of spherexSources){
     if(L.spxPassOnly&&s.quality_status.toLowerCase()!=='pass')continue;
@@ -1137,7 +1143,7 @@ function drawSPHEREx(){
     ctx.strokeStyle=pass?'#57dfff':'#ffb347';
     ctx.setLineDash(pass?[]:[2,3]);
     ctx.beginPath();ctx.arc(P.x,P.y,4.5,0,TAU);ctx.stroke();ctx.setLineDash([]);
-    if(L.spxLabels&&V.fov<=1&&labels<65){
+    if(L.spxLabels&&V.fov<=2.5&&labels<65){
       const label=String(s.source_id||s.n).slice(0,14),lx=P.x+7,ly=P.y-6,w=ctx.measureText(label).width;
       if(freeSpot(lx,ly-10,w,13)){halo(label,lx,ly,pass?'#78dff5':'#ffc688');labels++;}
     }
@@ -1430,7 +1436,7 @@ function flyTo(ra,dec,fov){
   cancelAnim();
   if(reduceMotion){setView(ra,dec,fov);requestRender();return;}
   const s={ra:V.ra,dec:V.dec,lf:Math.log(V.fov)};
-  const dRa=angDiff(ra,s.ra),dDec=dec-s.dec,dLf=Math.log(clamp(fov,0.001,180))-s.lf;
+  const dRa=angDiff(ra,s.ra),dDec=dec-s.dec,dLf=Math.log(clamp(fov,2,180))-s.lf;
   const t0=performance.now(),dur=750;
   const step=now=>{
     const t=Math.min(1,(now-t0)/dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
@@ -1616,7 +1622,7 @@ function focusSkyObject(result){
  let o=null,hit=null,ra=null,dec=null,fov=4;
  if(kind==='star'){o=STARS.find(v=>v.k===id);hit=o?{kind:'star',o}:null;}
  else if(kind==='dso'){o=DSOS.find(v=>v.id===id);hit=o?{kind:'dso',o}:null;}
- else if(kind==='gaia'){o=gaiaStars.find(v=>v.source_id===id);hit=o?{kind:'gaia',o}:null;}
+ else if(kind==='gaia'){o=availableGaiaStars().find(v=>v.source_id===id);hit=o?{kind:'gaia',o}:null;}
  else if(kind==='spx'){o=spherexSources.find(v=>v.source_id===id);hit=o?{kind:'spx',o}:null;}
  else if(kind==='constellation'){o=CONS.find(v=>v.zh===id);}
  else if(kind==='preset'){const p=PRESETS[Number(id)];if(p)o={ra:p[2]*15*D2R,dec:p[3]*D2R};}
@@ -1628,7 +1634,7 @@ function focusSkyObject(result){
  ra=o.ra??o.cra;dec=o.dec??o.cdec;
  fov=Number(result.fov_deg);
  if(!Number.isFinite(ra)||!Number.isFinite(dec)||!Number.isFinite(fov))return false;
- fov=clamp(fov,.001,180);
+ fov=clamp(fov,2,180);
  sel={ra,dec,hit};fillInputs(ra,dec);renderSel();
  flyTo(ra,dec,fov);requestRender();
  if(hit?.kind==='spx')window.dispatchEvent(new CustomEvent('spherex:select-source',{detail:{source:o}}));
@@ -1655,7 +1661,7 @@ window.SkyAtlas={
   goToCoordinates({ra_deg,dec_deg,fov_deg}={}){
     const ra=Number(ra_deg),dec=Number(dec_deg),fov=Number(fov_deg);
     if(!Number.isFinite(ra)||ra<0||ra>=360||!Number.isFinite(dec)||dec< -90||dec>90)return false;
-    const actualFov=Number.isFinite(fov)&&fov>0&&fov<=180?fov:V.fov;
+    const actualFov=Number.isFinite(fov)&&fov>0?clamp(fov,2,180):V.fov;
     $('unit').value='1';$('fov').value=String(actualFov);
     sel={ra:ra*D2R,dec:dec*D2R,hit:null};fillInputs(sel.ra,sel.dec);renderSel();
     flyTo(sel.ra,sel.dec,actualFov);requestRender();return true;
@@ -1682,8 +1688,8 @@ resize();
 
 <script src="./spherex-demo.js"></script>
 <script src="./spherex-viewer.js"></script>
-<script src="./notebook-results.js?v=2.3"></script>
-<script src="./sky-map-tools.js?v=1"></script>
+<script src="./notebook-results.js?v=2.4"></script>
+<script src="./sky-map-tools.js?v=2"></script>
 
 </body>
 </html>

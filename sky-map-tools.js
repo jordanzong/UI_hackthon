@@ -90,7 +90,7 @@ function viewportLink(){
  const url=new URL(window.location.href);
  url.searchParams.set('ra',v.ra_deg.toFixed(6));
  url.searchParams.set('dec',v.dec_deg.toFixed(6));
- url.searchParams.set('fov',Math.max(.001,v.fov_deg).toFixed(6));
+ url.searchParams.set('fov',Math.max(2,v.fov_deg).toFixed(6));
  return url.href;
 }
 $('atlas-share').onclick=async()=>{
@@ -110,7 +110,7 @@ function restoreQuery(){
  const p=new URLSearchParams(window.location.search);
  if(!['ra','dec','fov'].every(k=>p.has(k)))return;
  const a=Number(p.get('ra')),d=Number(p.get('dec')),f=Number(p.get('fov'));
- if([a,d,f].every(Number.isFinite)&&a>=0&&a<360&&d>=-90&&d<=90&&f>=.001&&f<=180){
+ if([a,d,f].every(Number.isFinite)&&a>=0&&a<360&&d>=-90&&d<=90&&f>=2&&f<=180){
   requestAnimationFrame(()=>{
    atlas.goToCoordinates({ra_deg:a,dec_deg:d,fov_deg:f});
    say(tr('已從網址還原視野。','View restored from URL.'));
