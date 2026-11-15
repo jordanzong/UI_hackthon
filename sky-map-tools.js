@@ -8,21 +8,27 @@ if(!atlas?.searchObjects||!atlas?.focusObject||!panel)return;
 const section=document.createElement('section');
 section.id='atlas-tools';section.className='sec';
 section.innerHTML=[
- '<h2 id="atlas-search-title">搜尋天體 / Sky search</h2>',
- '<label for="atlas-query" class="atlas-tool-label" id="atlas-name-label">名稱、Messier 編號或 Source ID</label>',
- '<div class="atlas-query-row"><input id="atlas-query" type="search" autocomplete="off" aria-controls="atlas-results" aria-expanded="false" spellcheck="false" placeholder="Sirius · M31 · Gaia DR3 ID"><button id="atlas-find" type="button" class="btn sm">搜尋</button></div>',
+ '<h2 id="atlas-search-title">Sky search</h2>',
+ '<label for="atlas-query" class="atlas-tool-label" id="atlas-name-label">Name, Messier number or Source ID</label>',
+ '<div class="atlas-query-row"><input id="atlas-query" type="search" autocomplete="off" aria-controls="atlas-results" aria-expanded="false" spellcheck="false" placeholder="Sirius · M31 · Gaia DR3 ID"><button id="atlas-find" type="button" class="btn sm">Search</button></div>',
  '<div id="atlas-results" role="listbox" aria-label="Search results" hidden></div>',
  '<p id="atlas-feedback" class="fine" role="status" aria-live="polite"></p>',
+ '<div id="atlas-presets-slot"></div>',
  '<div class="atlas-utility-grid">',
-   '<label class="atlas-utility" for="atlas-gaia-depth"><span id="atlas-depth-label">Gaia 星點密度</span><select id="atlas-gaia-depth"><option value="auto">Auto</option><option value="bright">Bright</option><option value="deep">Deep</option></select></label>',
-   '<div class="atlas-utility"><span id="atlas-share-label">分享目前視野</span><button id="atlas-share" class="btn sm" type="button">複製連結</button></div>',
+   '<label class="atlas-utility" for="atlas-gaia-depth"><span id="atlas-depth-label">Gaia star depth</span><select id="atlas-gaia-depth"><option value="auto">Auto</option><option value="bright">Bright</option><option value="deep">Deep</option></select></label>',
+   '<div class="atlas-utility"><span id="atlas-share-label">Share current view</span><button id="atlas-share" class="btn sm" type="button">Copy link</button></div>',
  '</div>',
- '<p id="atlas-depth-hint" class="fine">Gaia DR3 僅在 FOV ≤ 12° 時查詢，最多 3000 筆，需連線。</p>',
+ '<p id="atlas-depth-hint" class="fine">Gaia DR3 queries at FOV ≤ 12° (up to 3,000 rows; network required).</p>',
  '<p id="atlas-link-output" class="fine" hidden></p>'
 ].join('');
-const sel=document.getElementById('sel');panel.insertBefore(section,sel||panel.firstChild);
+const coordinateSection=document.getElementById('goto')?.closest('.sec');
+panel.insertBefore(section,coordinateSection?.nextElementSibling||null);
+const staged=document.getElementById('preset-staging');
+const presetDetails=staged?.querySelector('details');
+if(presetDetails)document.getElementById('atlas-presets-slot').append(presetDetails);
+staged?.remove();
 const $=id=>document.getElementById(id);
-const zh=()=>String(document.documentElement.lang||'zh').startsWith('zh');
+const zh=()=>String(document.documentElement.lang||'en').startsWith('zh');
 const tr=(a,b)=>zh()?a:b;
 const kindLabel=k=>({
  star:tr('恆星','Star'),dso:tr('深空天體','Deep sky'),
@@ -90,7 +96,7 @@ function viewportLink(){
  const url=new URL(window.location.href);
  url.searchParams.set('ra',v.ra_deg.toFixed(6));
  url.searchParams.set('dec',v.dec_deg.toFixed(6));
- url.searchParams.set('fov',Math.max(2,v.fov_deg).toFixed(6));
+ url.searchParams.set('fov',Math.max(0.2,v.fov_deg).toFixed(6));
  return url.href;
 }
 $('atlas-share').onclick=async()=>{
@@ -110,7 +116,7 @@ function restoreQuery(){
  const p=new URLSearchParams(window.location.search);
  if(!['ra','dec','fov'].every(k=>p.has(k)))return;
  const a=Number(p.get('ra')),d=Number(p.get('dec')),f=Number(p.get('fov'));
- if([a,d,f].every(Number.isFinite)&&a>=0&&a<360&&d>=-90&&d<=90&&f>=2&&f<=180){
+ if([a,d,f].every(Number.isFinite)&&a>=0&&a<360&&d>=-90&&d<=90&&f>=0.2&&f<=180){
   requestAnimationFrame(()=>{
    atlas.goToCoordinates({ra_deg:a,dec_deg:d,fov_deg:f});
    say(tr('已從網址還原視野。','View restored from URL.'));

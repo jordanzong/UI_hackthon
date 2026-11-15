@@ -1,0 +1,55 @@
+name: Validate Science Analysis Run Exporter
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/science-analysis-runs
+    paths:
+      - 'tools/build_science_run_manifests.py'
+      - 'tools/test_science_run_exporter.py'
+      - 'tools/update_marked_gifs.py'
+      - 'tools/test_marked_gif_update.py'
+      - 'tools/dedupe_marked_gifs.py'
+      - 'tools/test_dedupe_marked_gifs.py'
+      - 'science-run-browser.js'
+      - 'science-run-browser.css'
+      - 'index.html'
+      - 'sky-map-tools.js'
+      - 'sky-map-tools.css'
+      - 'spherex-viewer.js'
+      - 'spherex-viewer.css'
+      - 'tools/test_ui_consolidation.py'
+      - 'tools/publish_science_visuals.py'
+      - 'science-runs/index.json'
+      - '.github/workflows/test-science-runs.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-exporter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Python syntax
+        run: python3 -m py_compile tools/build_science_run_manifests.py tools/test_science_run_exporter.py tools/update_marked_gifs.py tools/test_marked_gif_update.py tools/publish_science_visuals.py
+      - name: Run isolated synthetic-fixture tests (no scientific data is published)
+        run: python3 tools/test_science_run_exporter.py
+      - name: Test marked-GIF-only update and rollback protections
+        run: python3 tools/test_marked_gif_update.py
+      - name: Test marked-GIF duplication guard with synthetic files
+        run: |
+          python3 -m pip install "Pillow>=10"
+          python3 tools/test_dedupe_marked_gifs.py
+      - name: Validate front-end JavaScript syntax
+        run: |
+          node --check science-run-browser.js
+          node --check spherex-viewer.js
+          node --check sky-map-tools.js
+      - name: Audit published real science products and removed legacy assets
+        run: python3 tools/test_ui_consolidation.py
+      - name: Check all five targets and nine expected bandpasses
+        run: |
+          node -e "const s=require('./science-runs/index.json');if(s.targets.length!==5||s.bands.length!==9)process.exit(1);if(s.targets.some(t=>!Array.isArray(t.runs)))process.exit(2);"

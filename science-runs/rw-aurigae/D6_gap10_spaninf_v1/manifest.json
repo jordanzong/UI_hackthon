@@ -1,0 +1,546 @@
+{
+  "schema_version": "spherex-analysis-run/v1",
+  "target_id": "RW_Aurigae",
+  "run_id": "D6_gap10_spaninf_v1",
+  "band_id": "D6",
+  "parameters": {
+    "gap_days": 10.0,
+    "span_days": null,
+    "version": "v1"
+  },
+  "bands": {
+    "D6": {
+      "kind": "analysis-run",
+      "label": "D6_gap10_spaninf_v1",
+      "frames": [
+        {
+          "frame_id": "group_1",
+          "label": "Group 1",
+          "image_url": "media/group_frames/group_01_sources_epsf.png",
+          "mjd": 60933.954767,
+          "start_mjd": 60929.677476,
+          "end_mjd": 60938.232058,
+          "stack_inputs": 19
+        },
+        {
+          "frame_id": "group_2",
+          "label": "Group 2",
+          "image_url": "media/group_frames/group_02_sources_epsf.png",
+          "mjd": 61096.641489500005,
+          "start_mjd": 61091.719616,
+          "end_mjd": 61101.563363,
+          "stack_inputs": 19
+        },
+        {
+          "frame_id": "group_3",
+          "label": "Group 3",
+          "image_url": "media/group_frames/group_03_sources_epsf.png",
+          "mjd": 61298.096744,
+          "start_mjd": 61296.297591,
+          "end_mjd": 61299.895897,
+          "stack_inputs": 18
+        }
+      ],
+      "blink_url": "media/group_stacks_marked.gif",
+      "gif_annotation": "marked-unclassified",
+      "sed_photometry_scope": "all-six-bands",
+      "seds": [
+        {
+          "source_id": "1",
+          "plots": {
+            "groups": "media/sed_plots/source_001_group_sed.webp",
+            "evolution": "media/sed_plots/source_001_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "2",
+          "plots": {
+            "groups": "media/sed_plots/source_002_group_sed.webp",
+            "evolution": "media/sed_plots/source_002_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "3",
+          "plots": {
+            "groups": "media/sed_plots/source_003_group_sed.webp",
+            "evolution": "media/sed_plots/source_003_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "4",
+          "plots": {
+            "groups": "media/sed_plots/source_004_group_sed.webp",
+            "evolution": "media/sed_plots/source_004_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "5",
+          "plots": {
+            "groups": "media/sed_plots/source_005_group_sed.webp",
+            "evolution": "media/sed_plots/source_005_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "6",
+          "plots": {
+            "groups": "media/sed_plots/source_006_group_sed.webp",
+            "evolution": "media/sed_plots/source_006_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "7",
+          "plots": {
+            "groups": "media/sed_plots/source_007_group_sed.webp",
+            "evolution": "media/sed_plots/source_007_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "8",
+          "plots": {
+            "groups": "media/sed_plots/source_008_group_sed.webp",
+            "evolution": "media/sed_plots/source_008_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "9",
+          "plots": {
+            "groups": "media/sed_plots/source_009_group_sed.webp",
+            "evolution": "media/sed_plots/source_009_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "10",
+          "plots": {
+            "groups": "media/sed_plots/source_010_group_sed.webp",
+            "evolution": "media/sed_plots/source_010_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "11",
+          "plots": {
+            "groups": "media/sed_plots/source_011_group_sed.webp",
+            "evolution": "media/sed_plots/source_011_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "12",
+          "plots": {
+            "groups": "media/sed_plots/source_012_group_sed.webp",
+            "evolution": "media/sed_plots/source_012_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "13",
+          "plots": {
+            "groups": "media/sed_plots/source_013_group_sed.webp",
+            "evolution": "media/sed_plots/source_013_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "14",
+          "plots": {
+            "groups": "media/sed_plots/source_014_group_sed.webp",
+            "evolution": "media/sed_plots/source_014_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "15",
+          "plots": {
+            "groups": "media/sed_plots/source_015_group_sed.webp",
+            "evolution": "media/sed_plots/source_015_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "16",
+          "plots": {
+            "groups": "media/sed_plots/source_016_group_sed.webp",
+            "evolution": "media/sed_plots/source_016_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "17",
+          "plots": {
+            "groups": "media/sed_plots/source_017_group_sed.webp",
+            "evolution": "media/sed_plots/source_017_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "18",
+          "plots": {
+            "groups": "media/sed_plots/source_018_group_sed.webp",
+            "evolution": "media/sed_plots/source_018_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "19",
+          "plots": {
+            "groups": "media/sed_plots/source_019_group_sed.webp",
+            "evolution": "media/sed_plots/source_019_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "20",
+          "plots": {
+            "groups": "media/sed_plots/source_020_group_sed.webp",
+            "evolution": "media/sed_plots/source_020_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "21",
+          "plots": {
+            "groups": "media/sed_plots/source_021_group_sed.webp",
+            "evolution": "media/sed_plots/source_021_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "22",
+          "plots": {
+            "groups": "media/sed_plots/source_022_group_sed.webp",
+            "evolution": "media/sed_plots/source_022_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "23",
+          "plots": {
+            "groups": "media/sed_plots/source_023_group_sed.webp",
+            "evolution": "media/sed_plots/source_023_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "24",
+          "plots": {
+            "groups": "media/sed_plots/source_024_group_sed.webp",
+            "evolution": "media/sed_plots/source_024_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "25",
+          "plots": {
+            "groups": "media/sed_plots/source_025_group_sed.webp",
+            "evolution": "media/sed_plots/source_025_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "26",
+          "plots": {
+            "groups": "media/sed_plots/source_026_group_sed.webp",
+            "evolution": "media/sed_plots/source_026_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "27",
+          "plots": {
+            "groups": "media/sed_plots/source_027_group_sed.webp",
+            "evolution": "media/sed_plots/source_027_sed_evolution.webp"
+          }
+        },
+        {
+          "source_id": "28",
+          "plots": {
+            "groups": "media/sed_plots/source_028_group_sed.webp",
+            "evolution": "media/sed_plots/source_028_sed_evolution.webp"
+          }
+        }
+      ],
+      "source_count": 28,
+      "candidate_count": 0,
+      "notice": "Updated real marked GIF for this exact target/run. Algorithm labels are unverified candidates; source/photometry coordinates unchanged.",
+      "viewer_frames": [
+        {
+          "frame_id": "group_1",
+          "label": "Group 1",
+          "image_url": "media/viewer_marked_frames/group_001.webp",
+          "duration_ms": 900,
+          "mjd": 60933.954767,
+          "start_mjd": 60929.677476,
+          "end_mjd": 60938.232058,
+          "stack_inputs": 19
+        },
+        {
+          "frame_id": "group_2",
+          "label": "Group 2",
+          "image_url": "media/viewer_marked_frames/group_002.webp",
+          "duration_ms": 900,
+          "mjd": 61096.641489500005,
+          "start_mjd": 61091.719616,
+          "end_mjd": 61101.563363,
+          "stack_inputs": 19
+        },
+        {
+          "frame_id": "group_3",
+          "label": "Group 3",
+          "image_url": "media/viewer_marked_frames/group_003.webp",
+          "duration_ms": 900,
+          "mjd": 61298.096744,
+          "start_mjd": 61296.297591,
+          "end_mjd": 61299.895897,
+          "stack_inputs": 18
+        }
+      ],
+      "viewer_frame_source": "group_stacks_marked.gif",
+      "diagnostic_url": "media/time_grouping_diagnostic.png",
+      "stack_url": "media/group_stacks_sources_epsf.png",
+      "unmarked_blink_url": "media/group_stacks_plain.gif",
+      "plain_viewer_frames": [
+        {
+          "frame_id": "group_1",
+          "label": "Group 1",
+          "image_url": "media/viewer_plain_frames/plain_001.webp",
+          "duration_ms": 900,
+          "mjd": 60933.954767,
+          "start_mjd": 60929.677476,
+          "end_mjd": 60938.232058,
+          "stack_inputs": 19
+        },
+        {
+          "frame_id": "group_2",
+          "label": "Group 2",
+          "image_url": "media/viewer_plain_frames/plain_002.webp",
+          "duration_ms": 900,
+          "mjd": 61096.641489500005,
+          "start_mjd": 61091.719616,
+          "end_mjd": 61101.563363,
+          "stack_inputs": 19
+        },
+        {
+          "frame_id": "group_3",
+          "label": "Group 3",
+          "image_url": "media/viewer_plain_frames/plain_003.webp",
+          "duration_ms": 900,
+          "mjd": 61298.096744,
+          "start_mjd": 61296.297591,
+          "end_mjd": 61299.895897,
+          "stack_inputs": 18
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "source_id": "1",
+      "ra_deg": 76.95940837169708,
+      "dec_deg": 30.40140430812781,
+      "best_snr": 2492.844935480397,
+      "n_groups_detected": 2.0
+    },
+    {
+      "source_id": "2",
+      "ra_deg": 76.97825826091444,
+      "dec_deg": 30.374954123153916,
+      "best_snr": 407.3055785715164,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "3",
+      "ra_deg": 76.93056673875557,
+      "dec_deg": 30.410332457428666,
+      "best_snr": 148.06941079713673,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "4",
+      "ra_deg": 76.98390716851915,
+      "dec_deg": 30.395690800751666,
+      "best_snr": 108.52854405466024,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "5",
+      "ra_deg": 76.97004555042781,
+      "dec_deg": 30.430902944958344,
+      "best_snr": 55.07569252396877,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "6",
+      "ra_deg": 76.94138463732736,
+      "dec_deg": 30.4381338125818,
+      "best_snr": 41.78537917028744,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "7",
+      "ra_deg": 76.99587200092344,
+      "dec_deg": 30.41330129298042,
+      "best_snr": 35.88319036542333,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "8",
+      "ra_deg": 76.94999809924569,
+      "dec_deg": 30.378789203398963,
+      "best_snr": 27.733060328146482,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "9",
+      "ra_deg": 76.95452206983474,
+      "dec_deg": 30.373875030601916,
+      "best_snr": 22.366391443001863,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "10",
+      "ra_deg": 76.9953999098359,
+      "dec_deg": 30.36378631108658,
+      "best_snr": 21.048483430051242,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "11",
+      "ra_deg": 76.98446761355767,
+      "dec_deg": 30.426437685157044,
+      "best_snr": 19.174109062821476,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "12",
+      "ra_deg": 76.96573470758929,
+      "dec_deg": 30.36243852395474,
+      "best_snr": 17.697570266215177,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "13",
+      "ra_deg": 76.9976612415187,
+      "dec_deg": 30.379248581367374,
+      "best_snr": 15.832276987549042,
+      "n_groups_detected": 3.0
+    },
+    {
+      "source_id": "14",
+      "ra_deg": 76.98748932065298,
+      "dec_deg": 30.363427096360923,
+      "best_snr": 12.052878816908924,
+      "n_groups_detected": 2.0
+    },
+    {
+      "source_id": "15",
+      "ra_deg": 77.00011269136687,
+      "dec_deg": 30.428854668603574,
+      "best_snr": 11.717218149313613,
+      "n_groups_detected": 2.0
+    },
+    {
+      "source_id": "16",
+      "ra_deg": 76.9947408022431,
+      "dec_deg": 30.423490522813026,
+      "best_snr": 10.877960819029145,
+      "n_groups_detected": 2.0
+    },
+    {
+      "source_id": "17",
+      "ra_deg": 76.97286969239599,
+      "dec_deg": 30.441272228140424,
+      "best_snr": 9.254530709125344,
+      "n_groups_detected": 2.0
+    },
+    {
+      "source_id": "18",
+      "ra_deg": 76.9552616317288,
+      "dec_deg": 30.40292246493448,
+      "best_snr": 2998.0571293245757,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "19",
+      "ra_deg": 76.98871110892118,
+      "dec_deg": 30.4061492517146,
+      "best_snr": 27.3154390837026,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "20",
+      "ra_deg": 76.9256585584536,
+      "dec_deg": 30.418642874691535,
+      "best_snr": 11.035019741393624,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "21",
+      "ra_deg": 76.91283113420789,
+      "dec_deg": 30.426592589714726,
+      "best_snr": 10.567159646146466,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "22",
+      "ra_deg": 76.92847707214854,
+      "dec_deg": 30.429012097358232,
+      "best_snr": 6.3130049407339035,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "23",
+      "ra_deg": 76.98711247555731,
+      "dec_deg": 30.366823199930206,
+      "best_snr": 17.22814253824596,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "24",
+      "ra_deg": 76.91492439840837,
+      "dec_deg": 30.407913178854365,
+      "best_snr": 11.615162570453137,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "25",
+      "ra_deg": 77.00086438143688,
+      "dec_deg": 30.386220587170396,
+      "best_snr": 10.849224935311057,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "26",
+      "ra_deg": 76.9191846604417,
+      "dec_deg": 30.38762641251121,
+      "best_snr": 8.919684053543945,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "27",
+      "ra_deg": 76.94501049257549,
+      "dec_deg": 30.370028969028358,
+      "best_snr": 6.501981770642502,
+      "n_groups_detected": 1.0
+    },
+    {
+      "source_id": "28",
+      "ra_deg": 76.93257347899967,
+      "dec_deg": 30.3745827660486,
+      "best_snr": 6.437606929521875,
+      "n_groups_detected": 1.0
+    }
+  ],
+  "candidates": [],
+  "group_metadata": [
+    {
+      "group_id": 1,
+      "mjd": 60933.954767,
+      "start_mjd": 60929.677476,
+      "end_mjd": 60938.232058,
+      "stack_inputs": 19
+    },
+    {
+      "group_id": 2,
+      "mjd": 61096.641489500005,
+      "start_mjd": 61091.719616,
+      "end_mjd": 61101.563363,
+      "stack_inputs": 19
+    },
+    {
+      "group_id": 3,
+      "mjd": 61298.096744,
+      "start_mjd": 61296.297591,
+      "end_mjd": 61299.895897,
+      "stack_inputs": 18
+    }
+  ],
+  "files_present": {
+    "source_catalog_ecsv": true,
+    "photometry_ecsv": true,
+    "time_grouped_stacks_fits": true,
+    "markers_json": false
+  }
+}
