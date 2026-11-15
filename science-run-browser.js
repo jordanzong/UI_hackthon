@@ -10,7 +10,7 @@ if(!panel)return;
 // One canonical Science Results section replaces both previous science panels.
 const scienceSection=document.createElement('section');
 scienceSection.className='sec';scienceSection.id='nr-explorer';
-scienceSection.innerHTML='<details id="nr-details" open><summary id="nr-heading">科學分析 / Science Results</summary><div class="nr-body"></div></details>';
+scienceSection.innerHTML='<details id="nr-details" open><summary id="nr-heading">Science Results</summary><div class="nr-body"></div></details>';
 // Put science discovery first; the section counter now labels it 01.
 panel.insertBefore(scienceSection,panel.firstElementChild);
 const root=scienceSection.querySelector('.nr-body');
@@ -40,12 +40,12 @@ el.id='science-run-browser';el.setAttribute('aria-label','Analysis Run Browser')
 el.innerHTML=[
  '<div class="srb-heading"><strong>VERIFIED ANALYSIS RUNS <small>SCIENCE DATA</small></strong>',
  '<span id="srb-counter">0 / 45</span></div>',
- '<p class="srb-sub">5 Targets × 9 Bandpass · 每組分析獨立載入，不共用 Source ID</p>',
- '<label class="srb-label" for="srb-target">Target / 研究目標</label><select id="srb-target"></select>',
+ '<p class="srb-sub">5 Targets × 9 Bandpasses · Source IDs are specific to each analysis run</p>',
+ '<label class="srb-label" for="srb-target">Target / Science target</label><select id="srb-target"></select>',
  '<div class="srb-target-where"><label>RA (°)<input id="srb-ra" type="number" min="0" max="360" step="any"></label><label>Dec (°)<input id="srb-dec" type="number" min="-90" max="90" step="any"></label></div>',
- '<button id="srb-go" type="button" class="btn sm srb-go">前往天球座標 / Go to sky</button>',
+ '<button id="srb-go" type="button" class="btn sm srb-go">Go to sky coordinates</button>',
  '<p id="srb-lookup" class="srb-status" role="status" aria-live="polite"></p>',
- '<label class="srb-label" for="srb-band">Bandpass / 時間分組使用波段</label><select id="srb-band"></select>',
+ '<label class="srb-label" for="srb-band">Bandpass / time-grouping selection</label><select id="srb-band"></select>',
  '<label class="srb-label" for="srb-version">Analysis Run (gap / span / version)</label>',
  '<select id="srb-version"></select>',
  '<p id="srb-status" class="srb-status" role="status" aria-live="polite"></p>',
@@ -61,10 +61,10 @@ el.innerHTML=[
  '<select id="srb-source"></select><label class="srb-label" for="srb-plot">SED figure</label>',
  '<select id="srb-plot"><option value="evolution">Epoch-to-epoch evolution</option>',
  '<option value="groups">By time group</option></select>',
- '<button id="srb-locate" type="button" class="btn sm">定位此 Run 的 Source / Locate Source</button><p id="srb-source-info" class="srb-caption"></p></div>',
+ '<button id="srb-locate" type="button" class="btn sm">Locate source in sky</button><p id="srb-source-info" class="srb-caption"></p></div>',
  '<div class="srb-frame"><img id="srb-image" alt="Verified SPHEREx analysis output" loading="lazy">',
  '<p id="srb-empty" hidden></p></div>',
- '<a id="srb-open" href="#" target="_blank" rel="noopener noreferrer">Open original image</a>',
+ '<a id="srb-open" class="btn primary" href="#" target="_blank" rel="noopener noreferrer">OPEN FULL-SIZE IMAGE</a>',
  '<p id="srb-caption" class="srb-caption"></p>',
  '</div>',
  '<p class="srb-foot">Missing outputs remain unavailable. A marked GIF is a rendered visualization;',
@@ -155,8 +155,7 @@ async function refreshRun(){
  const run=runsFor(state.target,state.band).find(x=>x.run_id===state.run);
  if(!run){
   const targetInfo=state.index?.targets?.find(x=>x.target_id===state.target);
-  const revision=targetInfo?.publication_status==='photometry_under_revision'||
-                 state.target==='R_Draconis';
+  const revision=targetInfo?.publication_status==='photometry_under_revision';
   drawMissing(revision
    ?tr('R Draconis 測光結果正在修正，目前不提供分析影像或 SED。',
        'R Draconis photometry is under revision; analysis images and SED are withheld.')
@@ -185,9 +184,13 @@ async function refreshRun(){
   const viewerFrames=(Array.isArray(p.viewer_frames)?p.viewer_frames:[]).map(f=>({
     ...f,image_url:resolved(f.image_url,url)
   }));
+  const plainFrames=(Array.isArray(p.plain_viewer_frames)?p.plain_viewer_frames:[]).map(f=>({
+    ...f,image_url:resolved(f.image_url,url)
+  }));
   const validated={
-   ...raw,product:{...p,frames,seds,viewer_frames:viewerFrames,
+   ...raw,product:{...p,frames,seds,viewer_frames:viewerFrames,plain_viewer_frames:plainFrames,
     blink_url:resolved(p.blink_url,url),
+    unmarked_blink_url:resolved(p.unmarked_blink_url,url),
     diagnostic_url:resolved(p.diagnostic_url,url),
     stack_url:resolved(p.stack_url,url)},
    manifest_url:url,sources:Array.isArray(raw.sources)?raw.sources:[],
@@ -356,6 +359,7 @@ $('srb-viewer').onclick=()=>{
  const p=m.product;
  // Original Group frames remain unchanged. Viewer uses marked GIF frames only.
  const images=p.viewer_frames.filter(f=>!!f.image_url);
+ const plainImages=p.plain_viewer_frames.filter(f=>!!f.image_url);
  const frames=images.length?images:(p.blink_url?[{
   frame_id:'marked_gif',label:'Marked GIF animation',image_url:p.blink_url
  }]:[]);
@@ -365,7 +369,7 @@ $('srb-viewer').onclick=()=>{
   field_id:state.target+'_'+state.run,status:'ready',
   target_name:targetName(state.target),
   center:t?{ra_deg:t.ra_deg,dec_deg:t.dec_deg}:undefined,
-  frames,sources:m.sources,
+  frames,plain_frames:plainImages,sources:m.sources,
   frame_origin:'marked-gif',
   notice:'Analysis Run: '+state.run+
    '. Viewer frames are extracted from the authentic marked GIF; original Group PNGs remain available. '+
