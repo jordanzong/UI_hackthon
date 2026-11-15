@@ -1,0 +1,24 @@
+/* Sky-map search, Gaia depth and permalink; independent of science backend. */
+#atlas-tools{gap:9px}
+#atlas-tools .atlas-tool-label,#atlas-tools .atlas-utility>span{
+  color:var(--muted);font:500 10.5px/1.5 var(--font);letter-spacing:.11em;text-transform:uppercase}
+#atlas-tools .atlas-query-row,#atlas-tools .atlas-utility-grid{display:flex;gap:7px;min-width:0}
+#atlas-tools #atlas-query{width:100%;min-width:0;flex:1;background:transparent;color:var(--fg);
+ border:0;border-bottom:1px solid var(--line);border-radius:0;padding:10px 3px;
+ font:12px/1.4 var(--mono)}
+#atlas-tools #atlas-query:focus{outline:0;border-bottom-color:var(--accent)}
+#atlas-tools #atlas-query::placeholder{color:var(--muted)}
+#atlas-tools #atlas-find{flex:0 0 62px;text-indent:0;letter-spacing:0;padding:8px 6px}
+#atlas-results{border:1px solid var(--line-soft);background:#0c1320;max-height:260px;overflow:auto;display:flex;flex-direction:column}
+#atlas-results[hidden]{display:none}
+#atlas-results .atlas-match{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;
+ padding:8px 10px;background:transparent;border:0;border-bottom:1px solid var(--line-soft);cursor:pointer;color:var(--fg);font:13px/1.25 var(--font)}
+#atlas-results .atlas-match:last-child{border-bottom:0}
+#atlas-results .atlas-match:hover,#atlas-results .atlas-match:focus-visible{background:rgba(255,180,84,.1);outline:1px solid var(--accent);outline-offset:-1px}
+#atlas-results .atlas-match-meta{font:10px/1.4 var(--mono);color:var(--muted);overflow-wrap:anywhere}
+#atlas-tools .atlas-utility-grid{align-items:end;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#atlas-tools .atlas-utility{display:flex;flex-direction:column;gap:6px;min-width:0}
+#atlas-tools #atlas-gaia-depth{width:100%;border:1px solid var(--line);padding:9px 20px 9px 9px;background-color:var(--surface)}
+#atlas-tools #atlas-share{font:600 10px/1.4 var(--font);text-indent:0;letter-spacing:.04em;padding:9px 4px;white-space:normal}
+#atlas-link-output{word-break:break-all;border-left:2px solid var(--accent);padding-left:8px}
+@media (max-width:410px){#atlas-tools .atlas-utility-grid{grid-template-columns:1fr}}
