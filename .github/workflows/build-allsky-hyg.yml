@@ -1,0 +1,39 @@
+name: Build HYG Whole-Sky Star Catalog
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/allsky-default-stars
+    paths:
+      - '.github/workflows/build-allsky-hyg.yml'
+      - 'tools/build_allsky_hyg.py'
+
+permissions:
+  contents: write
+
+jobs:
+  build-static-sky:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout working branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/allsky-default-stars
+          persist-credentials: true
+
+      - name: Download and verify HYG v4.1 from Astronexus
+        run: python3 tools/build_allsky_hyg.py
+
+      - name: Commit derived CC BY-SA 4.0 catalog assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add catalogs/allsky
+          if ! git diff --cached --quiet; then
+            git commit -m "data(allsky): bundle validated HYG J2000 star atlas tiles"
+            git push
+          else
+            echo "HYG catalog unchanged"
+          fi
