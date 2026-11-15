@@ -8,7 +8,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "science-runs"
-EXPECTED = ("WISE_0855", "Barnards_Star", "Epsilon_Indi_B", "RW_Aurigae")
+BASE_TARGETS = ("WISE_0855", "Barnards_Star", "Epsilon_Indi_B", "RW_Aurigae")
 OLD = (
     "spherex-demo.js", "notebook-results.js", "notebook-results.css",
     "hyg-preview-20261115.html", "sky-verify-20261115b.html",
@@ -52,11 +52,14 @@ def main():
     index = json.loads((DATA / "index.json").read_text())
     targets = {t["target_id"]: t for t in index["targets"]}
     assert len(targets) == 5 and len(index["bands"]) == 9
-    assert sum(len(t["runs"]) for t in targets.values()) == 36
-    assert not targets["R_Draconis"]["runs"]
-    assert targets["R_Draconis"]["publication_status"] == "photometry_under_revision"
+    ready_r = len(targets["R_Draconis"]["runs"]) == 9
+    expected = BASE_TARGETS + (("R_Draconis",) if ready_r else ())
+    expected_total = len(expected) * 9
+    assert sum(len(t["runs"]) for t in targets.values()) == expected_total
+    assert targets["R_Draconis"]["publication_status"] == (
+        "ready" if ready_r else "photometry_under_revision")
     gif = sed = frames = marked_frames = diagnostics = stacks = 0
-    for target_id in EXPECTED:
+    for target_id in expected:
         t = targets[target_id]
         assert len(t["runs"]) == 9, "Incomplete published runs: " + target_id
         for run in t["runs"]:
@@ -87,13 +90,13 @@ def main():
                 for path in s["plots"].values():
                     asset(manifest_file.parent, path)
                     sed += 1
-    assert gif == 36 and sed > 0 and frames > 0
+    assert gif == expected_total and sed > 0 and frames > 0
     assert marked_frames == frames, "Marked Viewer is missing Group epochs"
-    assert diagnostics == stacks == 36, "Run visualization data incomplete"
+    assert diagnostics == stacks == expected_total, "Run visualization data incomplete"
     assert not list(DATA.rglob("group_stacks_sources_epsf.gif")), (
         "Redundant unmarked GIF was reintroduced into published science data"
     )
-    assert len(list(DATA.rglob("group_stacks_marked.gif"))) == 36, (
+    assert len(list(DATA.rglob("group_stacks_marked.gif"))) == expected_total, (
         "Expected one marked GIF per published Run"
     )
     for name in ("catalogs/allsky/manifest.json", "catalogs/gaia/manifest.json",
@@ -151,8 +154,8 @@ def main():
         assert bad not in viewer, "Legacy import/demo remains: " + bad
     print("PASS: %d marked GIFs, %d original Group frames, %d marked Viewer frames, "
           "%d STACK figures, %d Time Grouping figures, %d SED images; "
-          "36 scoped runs, real HYG/Gaia catalogs preserved."
-          % (gif, frames, marked_frames, stacks, diagnostics, sed))
+          "%d scoped runs, real HYG/Gaia catalogs preserved."
+          % (gif, frames, marked_frames, stacks, diagnostics, sed, expected_total))
 
 if __name__ == "__main__":
     main()
