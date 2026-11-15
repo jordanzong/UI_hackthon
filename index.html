@@ -1622,7 +1622,7 @@ function focusSkyObject(result){
  let o=null,hit=null,ra=null,dec=null,fov=4;
  if(kind==='star'){o=STARS.find(v=>v.k===id);hit=o?{kind:'star',o}:null;}
  else if(kind==='dso'){o=DSOS.find(v=>v.id===id);hit=o?{kind:'dso',o}:null;}
- else if(kind==='gaia'){o=gaiaStars.find(v=>v.source_id===id);hit=o?{kind:'gaia',o}:null;}
+ else if(kind==='gaia'){o=availableGaiaStars().find(v=>v.source_id===id);hit=o?{kind:'gaia',o}:null;}
  else if(kind==='spx'){o=spherexSources.find(v=>v.source_id===id);hit=o?{kind:'spx',o}:null;}
  else if(kind==='constellation'){o=CONS.find(v=>v.zh===id);}
  else if(kind==='preset'){const p=PRESETS[Number(id)];if(p)o={ra:p[2]*15*D2R,dec:p[3]*D2R};}
