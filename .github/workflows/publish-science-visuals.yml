@@ -47,9 +47,7 @@ jobs:
           idx=json.loads((root/"index.json").read_text())
           count=0
           for t in idx["targets"]:
-              if t["target_id"]=="R_Draconis":
-                  assert not t["runs"]
-                  continue
+              assert len(t["runs"])==9, t["target_id"]
               for r in t["runs"]:
                   path=root/r["manifest_url"]
                   m=json.loads(path.read_text())
@@ -60,7 +58,7 @@ jobs:
                   for f in p["viewer_frames"]+p["plain_viewer_frames"]+p["frames"]:
                       assert (path.parent/f["image_url"]).is_file()
                   count+=1
-          assert count==36
+          assert count==45
           print("PASS 45 diagnostics, 45 STACK, marked and plain Viewer frames, original Group frames retained")
           PY
       - name: Publish verified additive media
