@@ -47,7 +47,7 @@ async function init(){
  }catch(e){state.error=String(e.message||e).slice(0,170);requestDraw();}
 }
 function magLimit(fov){
- return fov>40?6.5:fov>24?8.0:fov>12?9.2:fov>5?10.3:11.5;
+ return fov>30?6.5:fov>24?8.0:fov>12?9.2:fov>5?10.3:11.5;
 }
 function groups(){
  const out=[state.bright];
