@@ -64,8 +64,8 @@ function focus(index){
  ?tr('此處為參考座標，並非偵測證據。','Reference coordinate; not a detection.')
  :''));
  if(window.matchMedia('(max-width:720px)').matches){
-  const p=document.getElementById('panel');if(p)p.dataset.collapsed='true';
-  const collapse=document.getElementById('collapse');collapse?.setAttribute('aria-expanded','false');
+  const p=document.getElementById('panel');
+  if(p&&p.dataset.collapsed!=='true')document.getElementById('collapse')?.click();
  }
 }
 $('atlas-query').addEventListener('input',show);
