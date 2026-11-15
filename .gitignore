@@ -1,0 +1,25 @@
+# Local Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Frontend tooling
+node_modules/
+playwright-report/
+test-results/
+.DS_Store
+Thumbs.db
+
+# Local science input/extractions: never commit source ZIPs or raw notebook scratch
+*.zip
+data/
+new_output/
+output/
+tmp/
+*.log
+
+# Local editor caches
+.vscode/
+.idea/
