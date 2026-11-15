@@ -1,0 +1,78 @@
+name: Publish Run Stack, Time Grouping and Viewer Frames
+on:
+  workflow_dispatch:
+    inputs:
+      drive_file_id:
+        description: "new_output.zip source file ID"
+        required: true
+        default: "15yFXpqRr6gSqpA7dWFbe_nODoOTQvId0"
+  push:
+    branches:
+      - feature/science-analysis-runs
+    paths:
+      - "tools/publish_science_visuals.py"
+      - ".github/workflows/publish-science-visuals.yml"
+permissions:
+  contents: write
+concurrency:
+  group: publish-spherex-science
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install scientific image dependencies
+        run: python3 -m pip install "Pillow>=10" "gdown>=5"
+      - name: Download exact science source ZIP
+        env:
+          DRIVE_FILE_ID: ${{ inputs.drive_file_id || '15yFXpqRr6gSqpA7dWFbe_nODoOTQvId0' }}
+        run: |
+          set -euo pipefail
+          gdown "https://drive.google.com/uc?id=$DRIVE_FILE_ID" -O /tmp/spherex_visuals.zip
+          test -s /tmp/spherex_visuals.zip
+      - name: Extract verified original figures and marked animation frames
+        run: |
+          python3 tools/publish_science_visuals.py \
+            --archive /tmp/spherex_visuals.zip \
+            --science-dir ./science-runs
+      - name: Check complete science inventory
+        run: |
+          python3 tools/test_ui_consolidation.py
+          python3 - <<'PY'
+          import pathlib,json
+          root=pathlib.Path("science-runs")
+          idx=json.loads((root/"index.json").read_text())
+          count=0
+          for t in idx["targets"]:
+              if t["target_id"]=="R_Draconis":
+                  assert not t["runs"]
+                  continue
+              for r in t["runs"]:
+                  path=root/r["manifest_url"]
+                  m=json.loads(path.read_text())
+                  p=m["bands"][r["band_id"]]
+                  assert len(p["viewer_frames"])==len(p["frames"])>0
+                  for key in ("diagnostic_url","stack_url"):
+                      assert (path.parent/p[key]).is_file()
+                  for f in p["viewer_frames"]+p["frames"]:
+                      assert (path.parent/f["image_url"]).is_file()
+                  count+=1
+          assert count==36
+          print("PASS 36 diagnostics, 36 STACK, marked viewer and original group frames")
+          PY
+      - name: Publish verified additive media
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add science-runs/
+          if git diff --cached --quiet; then
+            echo "Already published"
+          else
+            git commit -m "data: add authentic STACK and Time Grouping plus marked Viewer frames"
+            git fetch origin feature/science-analysis-runs
+            git rebase FETCH_HEAD
+            git push origin HEAD:feature/science-analysis-runs
+          fi
