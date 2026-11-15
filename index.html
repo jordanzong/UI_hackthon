@@ -161,6 +161,10 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 .catalog-tools #importSources{grid-column:span 2}
 #catalogStatus{font:11px/1.6 var(--mono);color:var(--muted);overflow-wrap:anywhere;margin:0;min-height:1.5em}
 #catalogStatus.warn{color:var(--bad)}
+#science-catalogs .catalog-error-details{margin:0;color:var(--bad);
+  font:11px/1.6 var(--mono);overflow-wrap:anywhere;
+  border-left:2px solid var(--bad);padding:3px 0 3px 10px}
+#science-catalogs .catalog-error-details[hidden]{display:none}
 #science-catalogs{gap:12px}
 #science-catalogs .catalog-description{margin:0;color:var(--muted);font:11px/1.65 var(--font)}
 #science-catalogs .catalog-reload{align-self:flex-start;min-width:152px}
@@ -236,6 +240,7 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
           <p class="catalog-description" data-i18n="spxAutoDesc">SPHEREx Source Catalog 隨研究目標自動讀取，尚無已驗證資料的目標不顯示來源。</p>
           <button class="btn sm catalog-reload" type="button" id="reloadGaia" data-i18n="reloadGaia">重新查詢 Gaia</button>
           <p id="catalogStatus" role="status" aria-live="polite"></p>
+          <p id="gaiaErrorDetails" class="catalog-error-details" role="status" aria-live="polite" hidden></p>
           <details class="catalog-advanced">
             <summary data-i18n="catalogAdvanced">進階：匯入自訂星表（開發測試）</summary>
             <div class="catalog-tools">
@@ -730,9 +735,11 @@ const DSO_COL={gal:'#85d2c8',neb:'#66cdb9',oc:'#b6debe',gc:'#82bdcc',ctr:'#e8eef
    Gaia DR3 is retrieved from public TAP archives when zoomed in; no fabricated
    stars are inserted on network errors. SPHEREx measurements are imported or
    supplied by a future API; they are not treated as a complete source catalog. */
+/* TAP services do not have identical table namespaces.
+ * ESA exposes gaiadr3.gaia_source; MAST exposes dbo.gaia_source. */
 const GAIA_TAP=[
-  'https://gea.esac.esa.int/tap-server/tap/sync',
-  'https://mast.stsci.edu/vo-tap/api/v0.1/gaiadr3/sync'
+  {name:'ESA Gaia Archive',url:'https://gea.esac.esa.int/tap-server/tap/sync',table:'gaiadr3.gaia_source'},
+  {name:'MAST Gaia DR3',url:'https://mast.stsci.edu/vo-tap/api/v0.1/gaiadr3/sync',table:'dbo.gaia_source'}
 ];
 const GAIA_LIMIT=3000;
 let gaiaDepth='auto',gaiaQueryEpoch=0;
@@ -771,6 +778,16 @@ function catalogNotice(){
   catalogStatus.textContent=`Gaia DR3: ${gaia}  |  SPHEREx: ${spx}`;
   catalogStatus.classList.toggle('warn',!!(gaiaFailureText&&L.gaia&&V.fov<=12));
   catalogStatus.title=gaiaFailureText||'';
+  const diagnostics=$('gaiaErrorDetails');
+  if(diagnostics){
+    const failed=!!(gaiaFailureText&&L.gaia&&V.fov<=12);
+    diagnostics.hidden=!failed;
+    diagnostics.textContent=failed
+      ?(zh?'Gaia 診斷：':'Gaia details: ')+gaiaFailureText+
+        (zh?'。可按「重新查詢 Gaia」，或檢查瀏覽器網路 / CORS。':
+          '. Try Refresh Gaia, or check browser Network / CORS settings.')
+      :'';
+  }
 }
 function gaiaMagLimit(fov){
  const automatic=fov>8?9.5:fov>3?12:fov>1?14:fov>0.25?17:fov>0.08?18.5:20;
@@ -793,30 +810,53 @@ function normalizeGaia(rows){
     return{kind:'gaia',ra:ra*D2R,dec:dec*D2R,mag,source_id:String(o.source_id??''),n:'Gaia DR3'};
   }).filter(Boolean);
 }
-async function tapRequest(endpoint,query){
-  const q=new URLSearchParams({REQUEST:'doQuery',LANG:'ADQL',FORMAT:'csv',QUERY:query,MAXREC:String(GAIA_LIMIT)});
+/* Error messages distinguish HTTP errors from blocked cross-origin fetches.
+ * A generic TypeError cannot prove CORS; network/DNS and extensions can also
+ * reject cross-origin requests. */
+function gaiaErrorReason(error){
+  if(error?.name==='AbortError')return 'timeout (20 s)';
+  const msg=String(error?.message||error||'unknown error');
+  if(error instanceof TypeError||/Failed to fetch|NetworkError|Load failed/i.test(msg))
+    return 'browser network/CORS blocked or service unreachable';
+  return msg.slice(0,130);
+}
+async function tapRequest(service,query){
+  const q=new URLSearchParams({
+    REQUEST:'doQuery',LANG:'ADQL',FORMAT:'csv',QUERY:query,MAXREC:String(GAIA_LIMIT)
+  });
   const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),14000);
+  const timer=setTimeout(()=>controller.abort(),20000);
   try{
-    const resp=await fetch(endpoint+'?'+q,{signal:controller.signal});
+    const resp=await fetch(service.url+'?'+q.toString(),{
+      signal:controller.signal,
+      headers:{Accept:'text/csv, text/plain;q=0.9, */*;q=0.1'}
+    });
     if(!resp.ok)throw Error('HTTP '+resp.status);
     const raw=await resp.text();
-    if(/^\s*</.test(raw))throw Error('TAP returned XML/HTML error');
+    if(/^\s*</.test(raw))throw Error('TAP returned XML/HTML (possibly a service query error)');
     const rows=parseCSV(raw);
-    if(!rows.length)throw Error('Empty or invalid TAP response');
-    if(!('ra' in rows[0])||!('dec' in rows[0]))throw Error('Unsupported TAP columns');
+    if(!rows.length)throw Error('Empty/invalid CSV');
+    if(!('ra' in rows[0])||!('dec' in rows[0]))
+      throw Error('Unexpected TAP columns: '+Object.keys(rows[0]).slice(0,5).join(', '));
     return rows;
   }finally{clearTimeout(timer);}
 }
-async function loadGaia(view){
+function gaiaADQL(view,table){
   const ra=view.ra*R2D,dec=view.dec*R2D;
-  const sql=`SELECT TOP ${GAIA_LIMIT} source_id, ra, dec, phot_g_mean_mag FROM gaiadr3.gaia_source WHERE 1=CONTAINS(POINT('ICRS',ra,dec),CIRCLE('ICRS',${ra.toFixed(7)},${dec.toFixed(7)},${view.radius.toFixed(6)})) AND phot_g_mean_mag < ${view.mag.toFixed(1)} ORDER BY phot_g_mean_mag ASC`;
-  let err;
-  for(const endpoint of GAIA_TAP){
-    try{return normalizeGaia(await tapRequest(endpoint,sql));}
-    catch(e){err=e;}
+  return `SELECT TOP ${GAIA_LIMIT} source_id, ra, dec, phot_g_mean_mag FROM ${table} WHERE 1=CONTAINS(POINT('ICRS',ra,dec),CIRCLE('ICRS',${ra.toFixed(7)},${dec.toFixed(7)},${view.radius.toFixed(6)})) AND phot_g_mean_mag < ${view.mag.toFixed(1)} ORDER BY phot_g_mean_mag ASC`;
+}
+async function loadGaia(view){
+  const issues=[];
+  for(const service of GAIA_TAP){
+    try{
+      const sql=gaiaADQL(view,service.table);
+      const rows=await tapRequest(service,sql);
+      return normalizeGaia(rows);
+    }catch(e){
+      issues.push(service.name+': '+gaiaErrorReason(e));
+    }
   }
-  throw err||Error('Gaia TAP unavailable');
+  throw Error(issues.join(' | ')||'Gaia TAP unavailable');
 }
 async function performGaiaQuery(){
   gaiaTimer=null;
@@ -840,7 +880,7 @@ async function performGaiaQuery(){
     if(stars.length>=GAIA_LIMIT)gaiaNotice+=(lang==='zh'?'（已達筆數上限）':' (row cap reached)');
   }catch(e){
     if(requestEpoch!==gaiaQueryEpoch)return;
-    gaiaFailureText=String(e&&e.message||e).slice(0,160);
+    gaiaFailureText=String(e&&e.message||e).slice(0,380);
     gaiaLastFailure=view;
     gaiaStars=[];
   }finally{
