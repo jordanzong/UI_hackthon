@@ -58,7 +58,7 @@ def main():
     assert sum(len(t["runs"]) for t in targets.values()) == expected_total
     assert targets["R_Draconis"]["publication_status"] == (
         "ready" if ready_r else "photometry_under_revision")
-    gif = sed = frames = marked_frames = diagnostics = stacks = 0
+    gif = sed = frames = marked_frames = plain_frames = original_gifs = diagnostics = stacks = 0
     for target_id in expected:
         t = targets[target_id]
         assert len(t["runs"]) == 9, "Incomplete published runs: " + target_id
@@ -81,6 +81,13 @@ def main():
                 asset(manifest_file.parent, f["image_url"])
                 assert f["duration_ms"] >= 80
                 marked_frames += 1
+            asset(manifest_file.parent,p["unmarked_blink_url"])
+            original_gifs += 1
+            assert len(p["plain_viewer_frames"]) == len(p["viewer_frames"])
+            for f in p["plain_viewer_frames"]:
+                asset(manifest_file.parent,f["image_url"])
+                assert f["duration_ms"] >= 80
+                plain_frames += 1
             asset(manifest_file.parent, p["diagnostic_url"])
             asset(manifest_file.parent, p["stack_url"])
             diagnostics += 1
@@ -91,7 +98,8 @@ def main():
                     asset(manifest_file.parent, path)
                     sed += 1
     assert gif == expected_total and sed > 0 and frames > 0
-    assert marked_frames == frames, "Marked Viewer is missing Group epochs"
+    assert marked_frames == plain_frames == frames, "Marked/plain Viewer frames mismatch"
+    assert original_gifs == expected_total, "Missing unmarked GIF for some Runs"
     assert diagnostics == stacks == expected_total, "Run visualization data incomplete"
     assert not list(DATA.rglob("group_stacks_sources_epsf.gif")), (
         "Redundant unmarked GIF was reintroduced into published science data"
@@ -142,6 +150,22 @@ def main():
     assert 'main.append(panel)' in viewer and 'focusSkyContext()' in viewer
     assert 'SkyAtlas?.goToCoordinates?' in viewer
     assert 'target_name:targetName(state.target)' in browser
+    assert "plain_frames:plainImages" in browser
+    assert "app.annotated=e.target.checked" in viewer
+    assert 'value="1" step="0.5"' in viewer
+    assert 'id="spx-education"' in viewer
+    assert (ROOT/"user-guide.js").is_file()
+    assert (ROOT/"user-guide.css").is_file()
+    assert 'id="guide-open"' in html
+    assert '<html lang="en">' in html and "let lang='en';" in html
+    assert "lang=sv==='zh'?'zh':'en'" in html
+    assert not re.search(r"[\u3400-\u9fff]",html.split("<script>")[0]), (
+        "English bootstrap HTML must not contain Chinese"
+    )
+    assert not re.search(r"[\u3400-\u9fff]",
+        html.split("en:{title:",1)[1].split("\n};\nlet lang=",1)[0]), (
+        "English translation dictionary contains Chinese"
+    )
     for tab in ("srb-gif","srb-stack","srb-sed","srb-diagnostic","srb-viewer"):
         assert 'id="'+tab+'"' in browser, "Missing science tab: "+tab
     assert "p.viewer_frames.filter" in browser
