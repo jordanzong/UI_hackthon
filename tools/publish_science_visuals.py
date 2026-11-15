@@ -14,7 +14,7 @@ import zipfile
 from pathlib import Path
 from PIL import Image
 
-TARGETS=("WISE_0855","Barnards_Star","Epsilon_Indi_B","RW_Aurigae")
+TARGETS=("WISE_0855","Barnards_Star","Epsilon_Indi_B","RW_Aurigae","R_Draconis")
 IMAGES=("time_grouping_diagnostic.png","group_stacks_sources_epsf.png")
 GIFS=("group_stacks_movers_variables.gif","group_stacks_marked.gif")
 MAX=45*1024*1024
@@ -43,7 +43,7 @@ def read_image(z,member,label):
         image.verify()
     return data
 
-def publish(root,archive):
+def publish(root,archive,targets=TARGETS[:4]):
     root=Path(root).resolve()
     idx=json.loads((root/"index.json").read_text(encoding="utf-8"))
     prepared=[]
@@ -52,10 +52,7 @@ def publish(root,archive):
         zipindex=archive_members(z)
         for target in idx["targets"]:
             tid=target["target_id"]
-            if tid=="R_Draconis":
-                if target["runs"]:raise ValueError("R Draconis under photometry revision")
-                continue
-            if tid not in TARGETS:continue
+            if tid not in targets:continue
             if len(target["runs"])!=9:raise ValueError("Expected nine runs for "+tid)
             for run in target["runs"]:
                 rid=run["run_id"]
@@ -107,7 +104,8 @@ def publish(root,archive):
                 p["diagnostic_url"]="media/time_grouping_diagnostic.png"
                 p["stack_url"]="media/group_stacks_sources_epsf.png"
                 prepared.append((manifest_path,m,dest))
-        if len(prepared)!=36:raise ValueError("Expected 36 validated run visuals")
+        if len(prepared)!=9*len(targets):
+            raise ValueError("Expected "+str(9*len(targets))+" validated run visuals")
         # No files modified until all 36 runs have passed.
         for path,m,staged in prepared:
             media=path.parent/"media"
@@ -120,12 +118,13 @@ def publish(root,archive):
                 shutil.copyfile(staged/name,out/name)
             path.write_text(json.dumps(m,ensure_ascii=False,indent=2,
                                        allow_nan=False)+"\n",encoding="utf-8")
-    print("PASS published 36 real STACK PNGs, 36 Time Grouping diagnostics "
+    print("PASS published "+str(len(prepared))+" real STACK PNGs / Time Grouping diagnostics "
           "and all marked GIF viewer frames; originals not modified")
 
 if __name__=="__main__":
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--archive",type=Path,required=True)
     ap.add_argument("--science-dir",type=Path,default=Path("science-runs"))
+    ap.add_argument("--targets",nargs="+",default=list(TARGETS[:4]),choices=TARGETS)
     a=ap.parse_args()
-    publish(a.science_dir,a.archive)
+    publish(a.science_dir,a.archive,targets=tuple(a.targets))
