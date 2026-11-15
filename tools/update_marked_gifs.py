@@ -11,7 +11,7 @@ from collections import defaultdict
 from pathlib import Path
 
 TARGETS = ("WISE_0855", "Barnards_Star", "Epsilon_Indi_B", "RW_Aurigae")
-GIF = re.compile(r"group_stacks.*marked.*\.gif$", re.I)
+GIF = re.compile(r"group_stacks.*(?:marked|movers_variables).*\.gif$", re.I)
 
 def sid(value):
     s = str(value).strip()
