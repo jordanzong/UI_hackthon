@@ -67,3 +67,7 @@
   #top #nr-open{font-size:0;min-width:38px}
   #top #nr-open::after{content:"DATA";font:600 10px/1.2 var(--mono)}
 }
+
+#nr-explorer .nr-fullimg{display:inline-block;color:#98c4da;font:500 11px/1.4 var(--font);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
+#nr-explorer .nr-fullimg:hover{color:var(--accent)}
+#nr-explorer .nr-fullimg[hidden]{display:none}
