@@ -149,6 +149,19 @@ An already fetched JSON object may be installed using:
 window.SPHERExNotebookResults.setManifest(json, "RW_Aurigae", document.baseURI);
 ~~~
 
+
+## Exact All_Band (1).ipynb workflow for the other targets
+
+The local-notebook outputs are **not** embedded in the notebook attachment: the FITS/ECSV files must be collected from the machine that executed it. To produce them for each target:
+
+1. In **Cell F3** set `TARGET_TO_ANALYZE` to `'Barnards_Star'`, `'RW_Aurigae'` or `'R_Draconis'` (one at a time).
+2. Run **F3 → B → B1 → B2 → C → D → E** in order, verifying the selected target in every output. Keep each run in its own `RUN_DIR`.
+3. Collect `RUN_DIR/time_grouped_stacks.fits`, `RUN_DIR/group_stack_frames/group_*.png`, `RUN_DIR/group_stacks.gif`, `RUN_DIR/source_catalog.ecsv`, `RUN_DIR/allbands_epsf_photometry.ecsv` and `RUN_DIR/sed_plots/*.png`.
+4. The inspected notebook does **not** produce a validated Difference image for every target. Only add `difference` after a separate PSF-/WCS-matched difference analysis with a verified common-valid mask.
+5. Use the export tool with target-specific real filenames and MJD metadata. Do not substitute sample MJDs from `tools/example_target_products.json`.
+
+For WISE 0855 the additional 2025 May/Nov D2 field previews were already committed in the separate `spherex-demo.js` asset. The WISE notebook SED source IDs and these two-frame matched-source indices have **not been cross-linked**, so a complete per-source cross-dataset catalog still requires scientific verification.
+
 ## Verification before merging
 
 1. All 5 targets remain selectable and RA/Dec navigation works.
