@@ -8,4 +8,4 @@ This folder is the **current entrypoint** for project documentation.
 
 **Current status (2026-11-15):** five targets × nine runs = 45; marked and unmarked Viewer frame sequences are available for each run. R Draconis is no longer withheld. The current UI is EN-first with an optional ZH mode.
 
-Do not follow old commands in \`history/\` as active release instructions without checking the current implementation.
+Do not follow old commands in `history/` as active release instructions without checking the current implementation.

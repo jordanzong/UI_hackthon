@@ -23,6 +23,11 @@ on:
       - 'tools/publish_science_visuals.py'
       - 'science-runs/index.json'
       - '.github/workflows/test-science-runs.yml'
+      - '.github/workflows/publish-science-visuals.yml'
+      - 'README.md'
+      - 'docs/**'
+      - 'tools/README.md'
+      - '.gitignore'
 
 permissions:
   contents: read

@@ -25,4 +25,4 @@ These notes were moved here **without altering their substantive contents**. The
 
 ### Historical GitHub Actions
 
-Under [workflows/](workflows/README.md): preserved old one-off and migration workflows, **not executable** by GitHub Actions from that directory. Active workflows remain in \`.github/workflows/\`.
+Under [workflows/](workflows/README.md): preserved old one-off and migration workflows, **not executable** by GitHub Actions from that directory. Active workflows remain in `.github/workflows/`.
