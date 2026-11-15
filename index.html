@@ -220,8 +220,8 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 #sel.selection-inline h2{color:var(--accent)}
 #preset-staging[hidden]{display:none}
 </style>
-<link rel="stylesheet" href="./spherex-viewer.css?v=4">
-<link rel="stylesheet" href="./science-run-browser.css?v=8">
+<link rel="stylesheet" href="./spherex-viewer.css?v=10">
+<link rel="stylesheet" href="./science-run-browser.css?v=10">
 <link rel="stylesheet" href="./sky-map-tools.css?v=3">
 <link rel="stylesheet" href="./user-guide.css?v=1">
 </head>
@@ -743,7 +743,7 @@ let lang='en';
 try{const sv=localStorage.getItem('sky-lang');lang=sv==='zh'?'zh':'en';}catch(e){lang='en';}
 if(lang!=='zh'&&lang!=='en')lang='en';
 const tr=k=>T[lang][k];
-const consName=c=>lang==='zh'?c.zh:(EN_CONS[c.zh]||c.zh);
+const consName=c=>lang==='zh'?c.zh:(EN_CONS[c.zh]||'Constellation');
 const dsoName=o=>lang==='zh'?o.n:(EN_DSO[o.id]?(o.id===EN_DSO[o.id]?o.id:o.id+' '+EN_DSO[o.id]):o.id);
 let lastMsg={k:'msgInit',err:false,a:null};
 
@@ -1820,9 +1820,9 @@ resize();
 </script>
 
 <script src="./allsky-stars.js?v=20261115C"></script>
-<script src="./spherex-viewer.js?v=8"></script>
-<script src="./science-run-browser.js?v=8"></script>
-<script src="./sky-map-tools.js?v=3"></script>
+<script src="./spherex-viewer.js?v=10"></script>
+<script src="./science-run-browser.js?v=10"></script>
+<script src="./sky-map-tools.js?v=10"></script>
 <script src="./user-guide.js?v=1"></script>
 
 </body>
