@@ -1,0 +1,35 @@
+name: Browser-check English UI and Viewer
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/science-analysis-runs
+    paths:
+      - index.html
+      - sky-map-tools.js
+      - science-run-browser.js
+      - spherex-viewer.js
+      - user-guide.js
+      - tools/test_ui_browser.mjs
+      - .github/workflows/test-browser-ui.yml
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Chromium test runner
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Start local GitHub Pages preview
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/sky-atlas-http.log 2>&1 &
+          sleep 2
+      - name: Test English text and real Viewer actions
+        run: node tools/test_ui_browser.mjs
