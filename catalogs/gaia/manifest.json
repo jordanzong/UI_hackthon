@@ -1,0 +1,81 @@
+{
+  "catalog": "Gaia DR3",
+  "coordinate_frame": "ICRS",
+  "position_epoch": "J2016.0 (Gaia DR3 catalog epoch; no proper-motion propagation)",
+  "retrieved_utc": "2026-11-15T08:51:42.955025+00:00",
+  "radius_deg": 0.2,
+  "g_mag_lt": 18.5,
+  "max_rows": 2500,
+  "fields": [
+    {
+      "target_id": "WISE_0855",
+      "name": "WISE 0855",
+      "file": "wise-0855.csv",
+      "center": {
+        "ra_deg": 133.7894831,
+        "dec_deg": -7.24294039
+      },
+      "radius_deg": 0.2,
+      "mag_limit": 18.5,
+      "row_count": 432,
+      "truncated": false,
+      "provider": "ARI Gaia DR3"
+    },
+    {
+      "target_id": "Barnards_Star",
+      "name": "Barnard's Star",
+      "file": "barnards-star.csv",
+      "center": {
+        "ra_deg": 269.45207696,
+        "dec_deg": 4.69336497
+      },
+      "radius_deg": 0.2,
+      "mag_limit": 18.5,
+      "row_count": 2500,
+      "truncated": true,
+      "provider": "ARI Gaia DR3"
+    },
+    {
+      "target_id": "Epsilon_Indi_B",
+      "name": "Epsilon Indi B",
+      "file": "epsilon-indi-b.csv",
+      "center": {
+        "ra_deg": 331.04414659,
+        "dec_deg": -56.7828442
+      },
+      "radius_deg": 0.2,
+      "mag_limit": 18.5,
+      "row_count": 271,
+      "truncated": false,
+      "provider": "ARI Gaia DR3"
+    },
+    {
+      "target_id": "RW_Aurigae",
+      "name": "RW Aurigae",
+      "file": "rw-aurigae.csv",
+      "center": {
+        "ra_deg": 76.95652603,
+        "dec_deg": 30.40143817
+      },
+      "radius_deg": 0.2,
+      "mag_limit": 18.5,
+      "row_count": 1559,
+      "truncated": false,
+      "provider": "ARI Gaia DR3"
+    },
+    {
+      "target_id": "R_Draconis",
+      "name": "R Draconis",
+      "file": "r-draconis.csv",
+      "center": {
+        "ra_deg": 248.16761083,
+        "dec_deg": 66.75497942
+      },
+      "radius_deg": 0.2,
+      "mag_limit": 18.5,
+      "row_count": 236,
+      "truncated": false,
+      "provider": "ARI Gaia DR3"
+    }
+  ]
+}
