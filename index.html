@@ -185,6 +185,7 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 </style>
 <link rel="stylesheet" href="./spherex-viewer.css">
 <link rel="stylesheet" href="./notebook-results.css?v=2.1">
+<link rel="stylesheet" href="./sky-map-tools.css?v=1">
 </head>
 <body>
 <div id="app">
@@ -818,6 +819,10 @@ async function performGaiaQuery(){
     const stars=await loadGaia(view);
     if(requestEpoch!==gaiaQueryEpoch)return; // Older requests must not overwrite new view settings.
     gaiaCache.unshift({...view,stars});if(gaiaCache.length>4)gaiaCache.pop();
+    // View may move while the request is pending: cache the answer but do
+    // not paint a stale sky region over the current center or magnitude cut.
+    const current=gaiaView();
+    if(!isCovered(view,current.ra,current.dec,current.radius,current.mag)){gaiaStars=[];return;}
     gaiaStars=stars;gaiaNotice=(lang==='zh'?'已載入 ':'loaded ')+stars.length+(lang==='zh'?' 筆':' stars');
     gaiaLastFailure=null;
     if(stars.length>=GAIA_LIMIT)gaiaNotice+=(lang==='zh'?'（已達筆數上限）':' (row cap reached)');
@@ -1457,6 +1462,7 @@ resize();
 <script src="./spherex-demo.js"></script>
 <script src="./spherex-viewer.js"></script>
 <script src="./notebook-results.js?v=2.2"></script>
+<script src="./sky-map-tools.js?v=1"></script>
 
 </body>
 </html>
