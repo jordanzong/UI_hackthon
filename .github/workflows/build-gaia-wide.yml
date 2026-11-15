@@ -1,0 +1,52 @@
+name: Build Gaia DR3 Wide-Field Backgrounds
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/allsky-stability-density
+    paths:
+      - '.github/workflows/build-gaia-wide.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  download-wide-gaia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GAIA_OUTPUT_FOLDER: gaia-wide
+      GAIA_RADIUS_DEG: "2.1"
+      GAIA_MAG_LIMIT: "15.5"
+      GAIA_MAX_ROWS: "10000"
+    steps:
+      - name: Checkout working branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/allsky-stability-density
+          fetch-depth: 0
+
+      - name: Download and validate wide-field Gaia DR3
+        id: build
+        continue-on-error: true
+        run: python3 tools/fetch_gaia_dr3_fields.py
+
+      - name: Commit successful real Gaia source files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add catalogs/gaia-wide
+          if ! git diff --cached --quiet; then
+            git commit -m "data(gaia): cache verified 2.1 degree Gaia DR3 fields"
+            git pull --rebase origin feature/allsky-stability-density
+            git push
+          else
+            echo "No new wide-field catalogs"
+          fi
+
+      - name: Signal incomplete coverage
+        if: steps.build.outcome != 'success'
+        run: |
+          echo "Some Gaia wide-field queries failed; see logs and manifest for successful fields"
+          exit 1

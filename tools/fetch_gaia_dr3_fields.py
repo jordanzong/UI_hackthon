@@ -21,7 +21,10 @@ import urllib.parse
 import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "catalogs" / "gaia"
+CATALOG_FOLDER = os.getenv("GAIA_OUTPUT_FOLDER", "gaia")
+if CATALOG_FOLDER not in {"gaia", "gaia-wide"}:
+    raise ValueError("Unexpected Gaia cache destination")
+OUTPUT = ROOT / "catalogs" / CATALOG_FOLDER
 TARGETS = [
     {"id": "WISE_0855", "slug": "wise-0855", "name": "WISE 0855", "ra_deg": 133.78948310, "dec_deg": -7.24294039},
     {"id": "Barnards_Star", "slug": "barnards-star", "name": "Barnard's Star", "ra_deg": 269.45207696, "dec_deg": 4.69336497},
@@ -32,7 +35,7 @@ TARGETS = [
 RADIUS_DEG = float(os.getenv("GAIA_RADIUS_DEG", "0.20"))
 MAG_LIMIT = float(os.getenv("GAIA_MAG_LIMIT", "18.5"))
 MAX_ROWS = int(os.getenv("GAIA_MAX_ROWS", "2500"))
-if not (0.01 <= RADIUS_DEG <= 1 and 8 <= MAG_LIMIT <= 21 and 10 <= MAX_ROWS <= 10000):
+if not (0.01 <= RADIUS_DEG <= 2.5 and 8 <= MAG_LIMIT <= 21 and 10 <= MAX_ROWS <= 10000):
     raise ValueError("Unsafe cone, magnitude or row-count settings")
 
 SERVICES = [
@@ -73,7 +76,7 @@ def query_csv(service, target):
                  "Accept": "text/csv, text/plain;q=0.9",
                  "User-Agent": "SPHEREx-Science-Atlas-Gaia-Cache/1.0"},
     )
-    with urllib.request.urlopen(req, timeout=90) as response:
+    with urllib.request.urlopen(req, timeout=150) as response:
         if response.status != 200:
             raise RuntimeError(f"HTTP {response.status}")
         raw = response.read(4_000_000)
