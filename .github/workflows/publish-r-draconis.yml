@@ -1,0 +1,66 @@
+name: Publish Revised R Draconis Science Runs
+on:
+  workflow_dispatch:
+    inputs:
+      drive_file_id:
+        description: "Latest science ZIP with corrected R Draconis photometry"
+        required: true
+        default: "1YPrM1Yz2KgeDlVZ7ZtBToSfKDZkY_YBr"
+  push:
+    branches:
+      - feature/science-analysis-runs
+    paths:
+      - tools/publish_r_draconis.py
+      - .github/workflows/publish-r-draconis.yml
+permissions:
+  contents: write
+concurrency:
+  group: publish-spherex-science
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install "Pillow>=10" "astropy>=6" "gdown>=5"
+      - name: Download revised science archive
+        env:
+          DRIVE_FILE_ID: ${{ inputs.drive_file_id || '1YPrM1Yz2KgeDlVZ7ZtBToSfKDZkY_YBr' }}
+        run: |
+          set -euo pipefail
+          gdown "https://drive.google.com/uc?id=$DRIVE_FILE_ID" -O /tmp/r_dra_output.zip
+          test -s /tmp/r_dra_output.zip
+      - name: Publish nine source-verified R Draconis runs
+        run: |
+          python3 tools/publish_r_draconis.py \
+            --archive /tmp/r_dra_output.zip \
+            --science-dir science-runs
+      - name: Validate 45 analysis runs and every scientific asset
+        run: |
+          python3 tools/test_ui_consolidation.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('science-runs')
+          index=json.loads((root/'index.json').read_text())
+          assert sum(len(t['runs']) for t in index['targets'])==45
+          dra=next(t for t in index['targets'] if t['target_id']=='R_Draconis')
+          assert dra['publication_status']=='ready' and len(dra['runs'])==9
+          for r in dra['runs']:
+              p=root/r['manifest_url']
+              m=json.loads(p.read_text())
+              b=m['bands'][r['band_id']]
+              assert b['seds'] and b['frames'] and b['viewer_frames']
+          print('PASS: R Draconis corrected; 45 published runs')
+          PY
+      - name: Commit only R Draconis media, manifests and the index
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add science-runs/
+          git commit -m "data(science): publish corrected R Draconis nine runs"
+          git fetch origin feature/science-analysis-runs
+          git rebase FETCH_HEAD
+          git push origin HEAD:feature/science-analysis-runs
