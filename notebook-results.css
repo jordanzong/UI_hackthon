@@ -71,3 +71,17 @@
 #nr-explorer .nr-fullimg{display:inline-block;color:#98c4da;font:500 11px/1.4 var(--font);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
 #nr-explorer .nr-fullimg:hover{color:var(--accent)}
 #nr-explorer .nr-fullimg[hidden]{display:none}
+
+
+/* Per-target products: added below existing Mission Control styles */
+#nr-explorer .nr-manifest{padding-top:12px;border-top:1px solid var(--line-soft);display:flex;flex-direction:column;gap:8px}
+#nr-explorer .nr-manifest-actions{display:flex;min-width:0;gap:6px}
+#nr-explorer #nr-manifest-url{flex:1;min-width:0;background:transparent;color:var(--fg);font:11px/1.5 var(--mono);border:0;border-bottom:1px solid var(--line);border-radius:0;padding:8px 4px}
+#nr-explorer #nr-manifest-url:focus{outline:0;border-color:var(--accent)}
+#nr-explorer .nr-manifest-actions .btn{flex:0 0 auto}
+#nr-explorer #nr-source-detail{white-space:pre-wrap;overflow-wrap:anywhere}
+#nr-explorer #nr-difference[aria-pressed="true"],
+#nr-explorer #nr-image-mode[aria-pressed="true"],
+#nr-explorer #nr-sed-mode[aria-pressed="true"]{background:rgba(255,180,84,.13);color:var(--accent);border-color:var(--accent)}
+#nr-explorer #nr-difference:disabled,#nr-explorer #nr-sed-mode:disabled,#nr-explorer #nr-image-mode:disabled{opacity:.42;cursor:not-allowed}
+#nr-explorer #nr-mode-area .nr-actions>*{flex:1}
