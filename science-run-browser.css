@@ -100,3 +100,41 @@
 #science-run-browser .srb-frame{min-height:180px;max-height:500px}
 #science-run-browser .srb-frame img{max-height:500px}
 #science-run-browser .srb-heading strong{letter-spacing:.045em}
+
+/* ---- UX pass: intro, 5×9 run matrix, tabs, collapsible data notes ---- */
+#science-run-browser .srb-intro{display:flex;flex-direction:column;gap:10px;margin:0 0 4px;padding:0 0 12px;border-bottom:1px solid var(--line-soft)}
+#science-run-browser #srb-intro-text{margin:0;color:var(--fg);font:13px/1.6 var(--font)}
+#science-run-browser #srb-recommend{align-self:stretch;text-indent:0;white-space:normal;line-height:1.35}
+#science-run-browser .srb-heading strong{font-size:10.5px}
+#science-run-browser [hidden]{display:none!important}
+#srb-matrix{display:grid;grid-template-columns:minmax(64px,auto) repeat(var(--srb-cols,9),minmax(0,1fr));gap:3px;align-items:stretch}
+#srb-matrix .srb-mx-corner{color:var(--muted);font:500 9px/1.2 var(--mono);align-self:end;padding-bottom:4px;white-space:nowrap}
+#srb-matrix .srb-mx-col{color:var(--muted);font:500 9px/1.2 var(--mono);text-align:center;padding:2px 0 4px;white-space:nowrap;overflow:hidden;letter-spacing:-.02em}
+#srb-matrix .srb-mx-row{display:flex;align-items:center;color:var(--fg);font:500 11px/1.2 var(--font);padding-right:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#srb-matrix .srb-mx-row.selected{color:var(--accent)}
+#srb-matrix .srb-mx-row.revision{color:var(--muted)}
+#srb-matrix .srb-mx-row.revision::after{content:"*";margin-left:2px;color:var(--accent)}
+#srb-matrix .srb-mx-cell{appearance:none;min-width:0;aspect-ratio:1;max-height:30px;padding:0;margin:0;border:1px solid var(--data-line);background:var(--data-fill);
+ color:var(--fg);font:500 10px/1 var(--mono);cursor:pointer;border-radius:0;transition:background-color .12s,border-color .12s}
+#srb-matrix .srb-mx-cell:hover:not(:disabled){background:var(--data-fill-strong);border-color:var(--data)}
+#srb-matrix .srb-mx-cell:disabled{border:1px dashed var(--line-soft);background:transparent;cursor:default}
+#srb-matrix .srb-mx-cell.selected{background:var(--accent);border-color:var(--accent);color:var(--on);font-weight:700}
+#srb-matrix .srb-mx-cell:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#science-run-browser #srb-legend{font-size:10.5px}
+#science-run-browser .srb-selected{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:end;padding-top:6px;border-top:1px solid var(--line-soft)}
+#science-run-browser #srb-selected-name{grid-column:1/-1;color:var(--accent);font:600 13px/1.3 var(--font)}
+#science-run-browser .srb-selected .srb-target-where{gap:6px}
+#science-run-browser .srb-selected .srb-go{align-self:end;min-height:34px}
+#science-run-browser .srb-tabs{display:flex;border-bottom:1px solid var(--line);gap:0}
+#science-run-browser .srb-tabs [role=tab]{appearance:none;flex:1 1 0;min-width:0;background:transparent;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;
+ color:var(--muted);font:600 11px/1.3 var(--font);padding:9px 2px 8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#science-run-browser .srb-tabs [role=tab]:hover:not(:disabled){color:var(--fg)}
+#science-run-browser .srb-tabs [role=tab][aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+#science-run-browser .srb-tabs [role=tab]:disabled{color:var(--muted);background:transparent;opacity:.5;text-decoration:line-through;cursor:not-allowed}
+#science-run-browser .srb-tabs [role=tab]:focus-visible{outline:1px solid var(--accent);outline-offset:-2px}
+#science-run-browser .srb-media-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#science-run-browser #srb-viewer{flex:1 1 auto;text-indent:0}
+#science-run-browser .srb-info{border-top:1px solid var(--line-soft);padding-top:10px}
+#science-run-browser .srb-info>summary{font:500 11px/1.3 var(--font);letter-spacing:0;text-transform:none;color:var(--muted)}
+#science-run-browser .srb-info>summary::before{content:none;counter-increment:none}
+#science-run-browser .srb-info ul{margin:0;padding-left:16px;color:var(--muted);font:11px/1.6 var(--font);display:flex;flex-direction:column;gap:4px}
