@@ -96,5 +96,8 @@ jobs:
             echo "Marked GIFs already up to date"
           else
             git commit -m "data: publish marked GIFs for four scientific targets"
+            # Incorporate newer changes to this branch before publishing assets.
+            git fetch origin feature/science-analysis-runs
+            git rebase FETCH_HEAD
             git push origin HEAD:feature/science-analysis-runs
           fi
