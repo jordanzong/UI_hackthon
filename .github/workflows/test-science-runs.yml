@@ -8,6 +8,9 @@ on:
     paths:
       - 'tools/build_science_run_manifests.py'
       - 'tools/test_science_run_exporter.py'
+      - 'science-run-browser.js'
+      - 'science-run-browser.css'
+      - 'science-runs/index.json'
       - '.github/workflows/test-science-runs.yml'
 
 permissions:
@@ -27,3 +30,6 @@ jobs:
         run: |
           node --check science-run-browser.js
           node --check notebook-results.js
+      - name: Check all five targets and nine expected bandpasses
+        run: |
+          node -e "const s=require('./science-runs/index.json');if(s.targets.length!==5||s.bands.length!==9)process.exit(1);if(s.targets.some(t=>!Array.isArray(t.runs)))process.exit(2);"
