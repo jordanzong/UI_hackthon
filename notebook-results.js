@@ -323,7 +323,7 @@ function goTo(ra,dec){
  if(!Number.isFinite(a)||a<0||a>=360||!Number.isFinite(d)||Math.abs(d)>90){
   setText('nr-status',tr('RA 須在 0–360°，Dec 須在 −90–90°。','RA must be 0–360°, Dec −90–90°.'));return false;
  }
- const ok=window.SkyAtlas?.goToCoordinates?.({ra_deg:a,dec_deg:d,fov_deg:0.1});
+ const ok=window.SkyAtlas?.goToCoordinates?.({ra_deg:a,dec_deg:d,fov_deg:2});
  setText('nr-status',ok?tr('已定位；不會自動產生 FITS 影像。','Sky centered; no new FITS generated.'):tr('無法操作星圖。','Sky navigation unavailable.'));
  return !!ok;
 }
