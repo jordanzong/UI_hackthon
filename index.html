@@ -158,6 +158,9 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 /* Public map FOV range is 2°–180°; no sub-degree zoom is available. */
 #fov-range{display:block;color:var(--muted);font:10px/1.4 var(--mono);margin-top:4px}
 
+#allSkyCatalogStatus{color:var(--fg);font:11px/1.55 var(--mono);overflow-wrap:anywhere}
+#science-catalogs .allsky-license{margin:0;color:var(--muted);font:10px/1.6 var(--font)}
+#science-catalogs .allsky-license a{color:var(--accent);text-decoration:underline}
 /* Science extensions: keep the uploaded mission-control design and original control IDs. */
 .catalog-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 .catalog-tools .btn{min-width:0;white-space:normal;line-height:1.35;min-height:36px;letter-spacing:.04em;text-indent:0;padding:9px 7px}
@@ -260,6 +263,8 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
               <button type="button" class="btn sm" id="gaiaCacheGo" disabled data-i18n="gaiaCacheGo">前往</button>
             </div>
             <p id="gaiaCacheStatus" role="status" aria-live="polite"></p>
+            <p id="allSkyCatalogStatus" role="status" aria-live="polite">HYG 全天星表載入中…</p>
+            <p class="allsky-license">全天基礎恆星：<a href="https://github.com/astronexus/HYG-Database" target="_blank" rel="noopener noreferrer">HYG v4.1</a> · V 星等 · CC BY-SA 4.0。Gaia DR3 資料會獨立顯示。</p>
           </div>
           <p id="gaiaErrorDetails" class="catalog-error-details" role="status" aria-live="polite" hidden></p>
           <details class="catalog-advanced">
@@ -683,7 +688,7 @@ const $=id=>document.getElementById(id);
 const cv=$('sky'),ctx=cv.getContext('2d'),stage=$('stage');
 let DPR=1,dirty=false,anim=null,sel=null;
 const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const L={cl:true,cn:true,sn:true,grid:true,ecl:false,mw:true,dso:true,gaia:true,gaiaLabels:false,spx:true,spxLabels:false,spxPassOnly:false,ret:true};
+const L={cl:true,cn:true,sn:true,grid:true,ecl:false,mw:true,dso:true,hyg:true,gaia:true,gaiaLabels:false,spx:true,spxLabels:false,spxPassOnly:false,ret:true};
 const T={
 zh:{title:'天球星圖',sub:'J2000 · 赤道座標',goto:'前往座標',ra:'赤經 RA',dec:'赤緯 Dec',fov:'天區大小 FOV（畫面短邊的視角）',auto:'自動',hours:'時',degs:'度',
  phRA:'05h 35m 17s 或 83.82',phDec:'−05° 23′ 28″ 或 -5.39',raUnitAria:'赤經單位',unitAria:'視場單位',go:'前往',readc:'讀取畫面中心',
@@ -693,7 +698,7 @@ zh:{title:'天球星圖',sub:'J2000 · 赤道座標',goto:'前往座標',ra:'赤
  selCenter:'置中',selCopy:'複製座標',copied:'已複製。',copyFail:'無法自動複製，請手動選取上方座標。',
  mag:m=>(m<0?'−':'')+Math.abs(m).toFixed(2)+' 等',
  types:{gal:'星系',neb:'星雲',oc:'疏散星團',gc:'球狀星團',ctr:'銀心'},
- layerNames:{cl:'星座連線',cn:'星座名稱',sn:'恆星名稱',grid:'赤道座標格線',ecl:'黃道',mw:'銀河（示意）',dso:'深空天體',gaia:'Gaia DR3 星點',gaiaLabels:'Gaia 星等標籤',spx:'SPHEREx 來源',spxLabels:'Source ID 標籤',spxPassOnly:'僅顯示品質通過',ret:'中心十字'},
+ layerNames:{cl:'星座連線',cn:'星座名稱',sn:'恆星名稱',grid:'赤道座標格線',ecl:'黃道',mw:'銀河（示意）',dso:'深空天體',hyg:'全天 HYG 真實恆星',gaia:'Gaia DR3 星點',gaiaLabels:'Gaia 星等標籤',spx:'SPHEREx 來源',spxLabels:'Source ID 標籤',spxPassOnly:'僅顯示品質通過',ret:'中心十字'},
  additionalCatalogs:'自動星表 / 科學資料',gaiaAutoDesc:'Gaia DR3：視野縮至 12° 內自動查詢，離線時仍保留內建亮星。',spxAutoDesc:'SPHEREx：依研究目標自動載入已驗證 Source Catalog；無資料時不顯示候選源。',catalogAdvanced:'進階：匯入自訂星表（開發測試）',gaiaCacheJump:'Gaia CSV：前往已快取天區',gaiaCacheGo:'前往',reloadGaia:'重新查詢 Gaia',importSources:'匯入 SPHEREx CSV / JSON',importGaia:'匯入 Gaia CSV',
  needBoth:'赤經與赤緯需要一起輸入。',
  badRA:'赤經無法辨識。可用 83.82、5.588h、05:35:17 或 5h 35m 17s。',
@@ -709,7 +714,7 @@ en:{title:'Sky Atlas',sub:'J2000 · Equatorial',goto:'Go to coordinates',ra:'Rig
  selCenter:'Center on it',selCopy:'Copy coordinates',copied:'Copied.',copyFail:'Could not copy automatically. Please select the coordinates above.',
  mag:m=>'mag '+(m<0?'−':'')+Math.abs(m).toFixed(2),
  types:{gal:'Galaxy',neb:'Nebula',oc:'Open cluster',gc:'Globular cluster',ctr:'Galactic center'},
- layerNames:{cl:'Constellation lines',cn:'Constellation names',sn:'Star names',grid:'Equatorial grid',ecl:'Ecliptic',mw:'Milky Way (schematic)',dso:'Deep-sky objects',gaia:'Gaia DR3 stars',gaiaLabels:'Gaia G labels',spx:'SPHEREx sources',spxLabels:'Source ID labels',spxPassOnly:'PASS quality only',ret:'Center crosshair'},
+ layerNames:{cl:'Constellation lines',cn:'Constellation names',sn:'Star names',grid:'Equatorial grid',ecl:'Ecliptic',mw:'Milky Way (schematic)',dso:'Deep-sky objects',hyg:'All-sky HYG stars',gaia:'Gaia DR3 stars',gaiaLabels:'Gaia G labels',spx:'SPHEREx sources',spxLabels:'Source ID labels',spxPassOnly:'PASS quality only',ret:'Center crosshair'},
  additionalCatalogs:'Automatic catalogs / science data',gaiaAutoDesc:'Gaia DR3 loads automatically at FOV ≤ 12°. Built-in bright stars remain available offline.',spxAutoDesc:'SPHEREx sources load automatically for the selected science target when a verified catalog exists.',catalogAdvanced:'Advanced: import custom catalogs (developer testing)',gaiaCacheJump:'Gaia CSV: jump to a cached field',gaiaCacheGo:'Go',reloadGaia:'Refresh Gaia',importSources:'Import SPHEREx CSV / JSON',importGaia:'Import Gaia CSV',
  needBoth:'Enter both RA and Dec.',
  badRA:'RA not recognized. Try 83.82, 5.588h, 05:35:17 or 5h 35m 17s.',
@@ -768,6 +773,7 @@ let gaiaStars=[],spherexSources=[];
 /* Gaia DR3 static field cache: verified TAP CSVs committed by GitHub Actions.
  * These are limited 0.2-degree cones, not a substitute for whole-sky Gaia. */
 const gaiaLocal={manifest:null,attempted:false,loadError:'',files:new Map(),pending:new Set(),active:'',stars:[]};
+let allSkyLayer=null; // Real HYG v4.1 J2000, visual V; separate from Gaia DR3 G.
 function availableGaiaStars(){
  if(!gaiaLocal.stars.length)return gaiaStars;
  if(!gaiaStars.length)return gaiaLocal.stars;
@@ -1649,6 +1655,9 @@ function setGaiaDepth(mode){
  return true;
 }
 window.SkyAtlas={
+  registerAllSkyLayer(layer){allSkyLayer=layer;requestRender();},
+  requestRedraw:requestRender,
+  getAllSkyCatalogStatus:()=>allSkyLayer?.status()||{ready:false,error:'not initialized'},
   searchObjects:skyObjectSearch,focusObject:focusSkyObject,setGaiaDepth,getGaiaDepth:()=>gaiaDepth,
   getGaiaCatalogStatus:()=>({
     online_count:gaiaStars.length,static_count:gaiaLocal.stars.length,
@@ -1686,6 +1695,7 @@ resize();
 })();
 </script>
 
+<script src="./allsky-stars.js?v=1"></script>
 <script src="./spherex-demo.js"></script>
 <script src="./spherex-viewer.js"></script>
 <script src="./notebook-results.js?v=2.4"></script>
