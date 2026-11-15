@@ -87,7 +87,7 @@ class ScienceRunExportTest(unittest.TestCase):
             for number in (3, 1, 2):
                 (run / "group_stack_frames" / f"group_{number:02d}_sources_epsf.png").write_bytes(PNG_1PX)
             (run / "source_catalog.ecsv").write_text(
-                "source_id ra_deg dec_deg\\n1 331.04 -56.78\\n", encoding="utf-8")
+                "source_id ra_deg dec_deg\n1 331.04 -56.78\n", encoding="utf-8")
             (run / "sed_plots" / "source_001_group_sed.png").write_bytes(PNG_1PX)
             out = Path(tmp) / "published"
             index = build(root, out, extract_gif=False, include_gif=False)
