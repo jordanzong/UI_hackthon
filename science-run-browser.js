@@ -182,8 +182,14 @@ async function refreshRun(){
     ...s,source_id:String(s.source_id),
     plots:Object.fromEntries(Object.entries(s.plots||{}).map(([k,path])=>[k,resolved(path,url)]))
   }));
+  const viewerFrames=(Array.isArray(p.viewer_frames)?p.viewer_frames:[]).map(f=>({
+    ...f,image_url:resolved(f.image_url,url)
+  }));
   const validated={
-   ...raw,product:{...p,frames,seds,blink_url:resolved(p.blink_url,url)},
+   ...raw,product:{...p,frames,seds,viewer_frames:viewerFrames,
+    blink_url:resolved(p.blink_url,url),
+    diagnostic_url:resolved(p.diagnostic_url,url),
+    stack_url:resolved(p.stack_url,url)},
    manifest_url:url,sources:Array.isArray(raw.sources)?raw.sources:[],
    candidates:Array.isArray(raw.candidates)?raw.candidates:[]
   };
@@ -216,12 +222,20 @@ function render(){
  if(!m){$('srb-media').hidden=true;return;}
  const p=m.product,availableImages=!!p.blink_url||p.frames.some(f=>f.image_url);
  const ids=sourceIds(p),hasSED=ids.length>0;
+ const hasStack=!!p.stack_url,hasDiagnostic=!!p.diagnostic_url;
  $('srb-media').hidden=false;
  if(!availableImages&&state.mode==='gif'&&hasSED)state.mode='sed';
  if(!hasSED&&state.mode==='sed'&&availableImages)state.mode='gif';
+ if(state.mode==='stack'&&!hasStack)state.mode='gif';
+ if(state.mode==='diagnostic'&&!hasDiagnostic)state.mode='gif';
  $('srb-gif').disabled=!availableImages;
+ $('srb-stack').disabled=!hasStack;
  $('srb-sed').disabled=!hasSED;
- $('srb-viewer').disabled=!availableImages;
+ $('srb-diagnostic').disabled=!hasDiagnostic;
+ $('srb-viewer').disabled=!(p.blink_url||p.viewer_frames.length);
+ for(const [id,mode] of [['srb-gif','gif'],['srb-stack','stack'],
+                         ['srb-sed','sed'],['srb-diagnostic','diagnostic']])
+  $(id).setAttribute('aria-pressed',String(state.mode===mode));
  $('srb-groups').hidden=state.mode!=='gif'||!p.frames.length;
  $('srb-sources').hidden=state.mode!=='sed'||!hasSED;
  const groupSelect=$('srb-group');groupSelect.replaceChildren();
@@ -254,7 +268,14 @@ function render(){
   :tr('沒有已驗證的來源座標。','No source coordinates supplied.');
  $('srb-plot').value=state.plot;
  let url=null,caption='',sourceCaption='';
- if(state.mode==='sed'){
+ if(state.mode==='diagnostic'){
+  url=p.diagnostic_url;
+  caption='Time Grouping Diagnostic · '+targetName(state.target)+' · '+state.band+' · '+state.run;
+ }else if(state.mode==='stack'){
+  url=p.stack_url;
+  caption='STACK · '+targetName(state.target)+' · '+state.band+' · '+state.run+
+   ' · '+tr('原始 Stack 總覽','Original stack overview');
+ }else if(state.mode==='sed'){
   const source=p.seds.find(s=>String(s.source_id)===state.source);
   const candidate=m.candidates.find(c=>String(c.source_id)===state.source);
   url=source?.plots?.[state.plot]||null;
@@ -325,15 +346,18 @@ $('srb-gif').onclick=()=>{
  state.mode='gif';state.group=state.manifest?.product?.blink_url?'gif':0;render();
 };
 $('srb-sed').onclick=()=>{state.mode='sed';render();};
+$('srb-stack').onclick=()=>{state.mode='stack';render();};
+$('srb-diagnostic').onclick=()=>{state.mode='diagnostic';render();};
 $('srb-group').onchange=e=>{state.group=e.target.value==='gif'?'gif':Number(e.target.value);render();};
 $('srb-source').onchange=e=>{state.source=e.target.value;render();};
 $('srb-plot').onchange=e=>{state.plot=e.target.value;render();};
 $('srb-viewer').onclick=()=>{
  const m=state.manifest;if(!m||!window.SPHERExViewer?.setData)return;
  const p=m.product;
- const images=p.frames.filter(f=>!!f.image_url);
+ // Original Group frames remain unchanged. Viewer uses marked GIF frames only.
+ const images=p.viewer_frames.filter(f=>!!f.image_url);
  const frames=images.length?images:(p.blink_url?[{
-  frame_id:'marked_gif',label:'Marked GIF composite',image_url:p.blink_url
+  frame_id:'marked_gif',label:'Marked GIF animation',image_url:p.blink_url
  }]:[]);
  if(!frames.length)return;
  const t=window.SPHERExNotebookResults?.targets?.find(x=>x.id===state.target);
@@ -342,7 +366,9 @@ $('srb-viewer').onclick=()=>{
   target_name:targetName(state.target),
   center:t?{ra_deg:t.ra_deg,dec_deg:t.dec_deg}:undefined,
   frames,sources:m.sources,
+  frame_origin:'marked-gif',
   notice:'Analysis Run: '+state.run+
+   '. Viewer frames are extracted from the authentic marked GIF; original Group PNGs remain available. '+
    '. Algorithm mover/variable flags are candidates, not confirmed objects. '+
    (p.gif_annotation==='algorithm-candidates'?
       'Algorithm candidate labels in GIF are baked-in. ':
