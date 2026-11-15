@@ -11,7 +11,8 @@ if(!panel)return;
 const scienceSection=document.createElement('section');
 scienceSection.className='sec';scienceSection.id='nr-explorer';
 scienceSection.innerHTML='<details id="nr-details" open><summary id="nr-heading">科學分析 / Science Results</summary><div class="nr-body"></div></details>';
-panel.insertBefore(scienceSection,document.getElementById('layers')?.closest('.sec')||null);
+// Put science discovery first; the section counter now labels it 01.
+panel.insertBefore(scienceSection,panel.firstElementChild);
 const root=scienceSection.querySelector('.nr-body');
 const BANDS=[
  'D1','D2','D3','D4','D5','D6',
@@ -32,7 +33,7 @@ const META=[
 const state={
  target:'WISE_0855',
  band:'D1',run:'',manifest:null,index:null,mode:'gif',source:'',
- group:'gif',plot:'groups',failure:'',loading:false,request:0
+ group:'gif',plot:'evolution',failure:'',loading:false,request:0
 };
 const el=document.createElement('section');
 el.id='science-run-browser';el.setAttribute('aria-label','Analysis Run Browser');
@@ -57,8 +58,8 @@ el.innerHTML=[
  '<select id="srb-group"></select></div>',
  '<div id="srb-sources" hidden><label class="srb-label" for="srb-source">Source ID (within this Run)</label>',
  '<select id="srb-source"></select><label class="srb-label" for="srb-plot">SED figure</label>',
- '<select id="srb-plot"><option value="groups">By time group</option>',
- '<option value="evolution">Epoch-to-epoch evolution</option></select>',
+ '<select id="srb-plot"><option value="evolution">Epoch-to-epoch evolution</option>',
+ '<option value="groups">By time group</option></select>',
  '<button id="srb-locate" type="button" class="btn sm">定位此 Run 的 Source / Locate Source</button><p id="srb-source-info" class="srb-caption"></p></div>',
  '<div class="srb-frame"><img id="srb-image" alt="Verified SPHEREx analysis output" loading="lazy">',
  '<p id="srb-empty" hidden></p></div>',
@@ -148,7 +149,7 @@ function drawMissing(message){
 }
 async function refreshRun(){
  const token=++state.request;
- state.manifest=null;state.source='';state.group='gif';state.mode='gif';state.plot='groups';
+ state.manifest=null;state.source='';state.group='gif';state.mode='gif';state.plot='evolution';
  repaintOptions();
  const run=runsFor(state.target,state.band).find(x=>x.run_id===state.run);
  if(!run){
@@ -225,7 +226,9 @@ function render(){
  const groupSelect=$('srb-group');groupSelect.replaceChildren();
  const gifOption=document.createElement('option');gifOption.value='gif';
  gifOption.textContent=p.gif_annotation==='algorithm-candidates'
-  ?tr('播放候選標記 GIF','Play candidate-marked GIF')
+  ?tr('播放演算法候選標記 GIF','Play algorithm-candidate GIF')
+  :p.gif_annotation==='marked-unclassified'
+  ?tr('播放標記 GIF（分類待確認）','Play marked GIF (classification unknown)')
   :tr('播放 Source 標記 GIF','Play source-annotated GIF');
  if(p.blink_url)groupSelect.append(gifOption);
  p.frames.forEach((f,i)=>{
@@ -267,7 +270,9 @@ function render(){
   url=state.group==='gif'?p.blink_url:(pick?.image_url||p.blink_url);
   caption=targetName(state.target)+' · '+state.band+' · '+state.run+
    (state.group==='gif'?' · GIF ('+
-     (p.gif_annotation==='algorithm-candidates'?'candidate labels':'source labels')+')':
+     (p.gif_annotation==='algorithm-candidates'?'algorithm candidate labels':
+      p.gif_annotation==='marked-unclassified'?'marked labels (unclassified)':
+      'source labels')+')':
      ' · '+(pick?.label||'Group'));
   if(pick?.mjd!=null)caption+=' · MJD '+Number(pick.mjd).toFixed(3);
  }
@@ -340,6 +345,8 @@ $('srb-viewer').onclick=()=>{
    '. Algorithm mover/variable flags are candidates, not confirmed objects. '+
    (p.gif_annotation==='algorithm-candidates'?
       'Algorithm candidate labels in GIF are baked-in. ':
+      p.gif_annotation==='marked-unclassified'?
+      'Marked labels in GIF are not independently classified. ':
       'Source-number labels in GIF are baked-in. ')+
    'No pixel-accurate overlays are inferred.'
  });

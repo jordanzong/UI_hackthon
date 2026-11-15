@@ -28,3 +28,8 @@ The SPHEREx Observation Viewer is now a large science-image viewing area. It is 
 - The Viewer `setData` center is the chosen run's known **target reference coordinate**. On opening Viewer, the atlas is focused to RA/Dec and draws its existing genuine target-selection reticle. The new sky-context label explicitly disclaims that a coordinate implies a detection.
 - Moved brightness from horizontal toolbar to a vertical rail on the right of the image. This changes only the rendered image filter, never the photometry data.
 - No modifications to `science-runs/` or `catalogs/` are needed.
+
+## 2026-11-15 Science Results position and 0.2° FOV
+- Science Results is the first section (01), ahead of manual coordinate navigation and sky search.
+- SED default per newly selected run is **Epoch-to-epoch evolution**, while By time group remains selectable.
+- All FOV input validation, zoom and programmatic navigation clamps now use the range **0.2°–180°** (0.2° = 12 arcmin); Gaia/HYG content remains real catalog data, not interpolated SPHEREx detections.

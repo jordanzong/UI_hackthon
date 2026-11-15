@@ -99,6 +99,13 @@ def main():
     assert "atlas-presets-slot" in sky and "preset-staging" in sky
     assert "window.SPHERExNotebookResults=" in browser
     assert "SPHERExViewer.setData" in browser
+    assert "panel.insertBefore(scienceSection,panel.firstElementChild)" in browser
+    assert "plot:'evolution'" in browser
+    assert "state.plot='evolution'" in browser
+    assert 'value="evolution">Epoch-to-epoch evolution' in browser
+    assert "clamp(fov,0.2,180)" in html
+    assert "(deg>=0.2&&deg<=180)" in html
+    assert "0.2°–180°" in html
     css = (ROOT / "spherex-viewer.css").read_text()
     assert 'id="selCenter"' in html and 'class="btn primary" id="selCenter"' in html
     assert 'class="btn" id="selCopy"' in html
