@@ -18,8 +18,8 @@ const TARGETS=[
 ];
 const state={
  target:window.SPHERExNotebookResults?.current?.().target||'Epsilon_Indi_B',
- band:'D1',run:'',manifest:null,index:null,mode:'gif',source:'',
- group:0,plot:'groups',failure:'',loading:false,request:0
+ band:'D1',run:'',manifest:null,index:null,mode:'stack',source:'',
+ group:'overview',plot:'groups',failure:'',loading:false,request:0
 };
 const el=document.createElement('section');
 el.id='science-run-browser';el.setAttribute('aria-label','Analysis Run Browser');
@@ -33,7 +33,7 @@ el.innerHTML=[
  '<select id="srb-version"></select>',
  '<p id="srb-status" class="srb-status" role="status" aria-live="polite"></p>',
  '<div id="srb-media" hidden>',
- '<div class="srb-actions"><button id="srb-gif" class="btn sm" type="button">GIF / Stack</button>',
+ '<div class="srb-actions"><button id="srb-gif" class="btn sm" type="button">Group Stack</button>',
  '<button id="srb-sed" class="btn sm" type="button">SED</button>',
  '<button id="srb-viewer" class="btn sm" type="button">Open Viewer</button></div>',
  '<div id="srb-groups"><label class="srb-label" for="srb-group">Group / Epoch</label>',
@@ -47,8 +47,7 @@ el.innerHTML=[
  '<a id="srb-open" href="#" target="_blank" rel="noopener noreferrer">Open original image</a>',
  '<p id="srb-caption" class="srb-caption"></p>',
  '</div>',
- '<p class="srb-foot">Missing outputs remain unavailable. A marked GIF is a rendered visualization;',
- ' its embedded annotations are not independently clickable sky coordinates.</p>'
+ '<p class="srb-foot">Only published real PNG/FITS-derived results appear. Source markers in static PNGs are baked into the image; positional overlays require separately validated pixel coordinates.</p>'
 ].join('');
 root.prepend(el);
 const $=id=>document.getElementById(id);
@@ -109,7 +108,7 @@ function drawMissing(message){
 }
 async function refreshRun(){
  const token=++state.request;
- state.manifest=null;state.source='';state.group=0;state.mode='gif';state.plot='groups';
+ state.manifest=null;state.source='';state.group='overview';state.mode='stack';state.plot='groups';
  repaintOptions();
  const run=runsFor(state.target,state.band).find(x=>x.run_id===state.run);
  if(!run){
@@ -136,7 +135,8 @@ async function refreshRun(){
     plots:Object.fromEntries(Object.entries(s.plots||{}).map(([k,path])=>[k,resolved(path,url)]))
   }));
   const validated={
-   ...raw,product:{...p,frames,seds,blink_url:resolved(p.blink_url,url)},
+   ...raw,product:{...p,frames,seds,blink_url:null,
+    overview_url:resolved(p.overview_url,url),diagnostic_url:resolved(p.diagnostic_url,url)},
    manifest_url:url,sources:Array.isArray(raw.sources)?raw.sources:[],
    candidates:Array.isArray(raw.candidates)?raw.candidates:[]
   };
@@ -167,27 +167,34 @@ function sourceIds(p){
 function render(){
  const m=state.manifest;
  if(!m){$('srb-media').hidden=true;return;}
- const p=m.product,availableImages=!!p.blink_url||p.frames.some(f=>f.image_url);
+ const p=m.product,availableImages=!!p.overview_url||!!p.diagnostic_url||p.frames.some(f=>f.image_url);
  const ids=sourceIds(p),hasSED=ids.length>0;
  $('srb-media').hidden=false;
- if(!availableImages&&state.mode==='gif'&&hasSED)state.mode='sed';
- if(!hasSED&&state.mode==='sed'&&availableImages)state.mode='gif';
+ if(!availableImages&&state.mode==='stack'&&hasSED)state.mode='sed';
+ if(!hasSED&&state.mode==='sed'&&availableImages)state.mode='stack';
  $('srb-gif').disabled=!availableImages;
  $('srb-sed').disabled=!hasSED;
  $('srb-viewer').disabled=!availableImages;
- $('srb-groups').hidden=state.mode!=='gif'||!p.frames.length;
+ $('srb-groups').hidden=state.mode!=='stack'||!availableImages;
  $('srb-sources').hidden=state.mode!=='sed'||!hasSED;
  const groupSelect=$('srb-group');groupSelect.replaceChildren();
- const gifOption=document.createElement('option');gifOption.value='gif';gifOption.textContent=tr('播放標記 GIF','Play marked GIF');
- if(p.blink_url)groupSelect.append(gifOption);
+ if(p.overview_url){
+  const o=document.createElement('option');o.value='overview';
+  o.textContent=tr('所有 Group／Source 總覽','Overview: all groups / sources');
+  groupSelect.append(o);
+ }
+ if(p.diagnostic_url){
+  const o=document.createElement('option');o.value='diagnostic';
+  o.textContent=tr('時間分組診斷圖','Time grouping diagnostic');groupSelect.append(o);
+ }
  p.frames.forEach((f,i)=>{
   const op=document.createElement('option');op.value=String(i);
   op.textContent=f.label||'Group '+(i+1);
   if(f.mjd!=null)op.textContent+=' · MJD '+Number(f.mjd).toFixed(2);
   groupSelect.append(op);
  });
- if(state.group==='gif'&&!p.blink_url)state.group=0;
- if(typeof state.group==='number'&&state.group>=p.frames.length)state.group=0;
+ const opts=Array.from(groupSelect.options).map(o=>o.value);
+ if(!opts.includes(String(state.group)))state.group=opts.includes('overview')?'overview':(opts[0]||0);
  groupSelect.value=String(state.group);
  const chosen=ids.includes(state.source)?state.source:ids[0]||'';
  state.source=chosen;
@@ -208,10 +215,13 @@ function render(){
   if(candidate?.types?.length)sourceCaption=
    ' · '+tr('演算法候選','Algorithm candidate')+': '+candidate.types.join(', ');
  }else{
-  const pick=p.frames[state.group];
-  url=state.group==='gif'?p.blink_url:(pick?.image_url||p.blink_url);
+  const pick=typeof state.group==='number'?p.frames[state.group]:null;
+  url=state.group==='overview'?p.overview_url:
+      state.group==='diagnostic'?p.diagnostic_url:pick?.image_url||null;
   caption=targetName(state.target)+' · '+state.band+' · '+state.run+
-   (state.group==='gif'?' · GIF':' · '+(pick?.label||'Group'));
+   (state.group==='overview'?' · '+tr('總覽','Overview'):
+    state.group==='diagnostic'?' · '+tr('時間分組診斷','Time grouping diagnostic'):
+    ' · '+(pick?.label||'Group'));
   if(pick?.mjd!=null)caption+=' · MJD '+Number(pick.mjd).toFixed(3);
  }
  const img=$('srb-image'),empty=$('srb-empty'),open=$('srb-open');
@@ -259,19 +269,25 @@ $('srb-target').addEventListener('change',e=>selectTarget(e.target.value));
 $('srb-band').addEventListener('change',e=>selectBand(e.target.value));
 $('srb-version').addEventListener('change',e=>selectRun(e.target.value));
 $('srb-gif').onclick=()=>{
- state.mode='gif';state.group=state.manifest?.product?.blink_url?'gif':0;render();
+ state.mode='stack';
+ const p=state.manifest?.product;
+ if(p?.overview_url)state.group='overview';
+ else if(p?.frames?.length)state.group=0;
+ else if(p?.diagnostic_url)state.group='diagnostic';
+ render();
 };
 $('srb-sed').onclick=()=>{state.mode='sed';render();};
-$('srb-group').onchange=e=>{state.group=e.target.value==='gif'?'gif':Number(e.target.value);render();};
+$('srb-group').onchange=e=>{
+ state.group=/^\d+$/.test(e.target.value)?Number(e.target.value):e.target.value;render();
+};
 $('srb-source').onchange=e=>{state.source=e.target.value;render();};
 $('srb-plot').onchange=e=>{state.plot=e.target.value;render();};
 $('srb-viewer').onclick=()=>{
  const m=state.manifest;if(!m||!window.SPHERExViewer?.setData)return;
  const p=m.product;
  const images=p.frames.filter(f=>!!f.image_url);
- const frames=images.length?images:(p.blink_url?[{
-  frame_id:'marked_gif',label:'Marked GIF composite',image_url:p.blink_url
- }]:[]);
+ const frames=images.length?images:
+  (p.overview_url?[{frame_id:'overview',label:'Stack overview PNG',image_url:p.overview_url}]:[]);
  if(!frames.length)return;
  const t=window.SPHERExNotebookResults?.targets?.find(x=>x.id===state.target);
  window.SPHERExViewer.setData({
@@ -280,7 +296,7 @@ $('srb-viewer').onclick=()=>{
   frames,sources:m.sources,
   notice:'Analysis Run: '+state.run+
    '. Algorithm mover/variable flags are candidates, not confirmed objects. '+
-   'Marked GIF contains baked-in labels; no pixel-accurate overlays are inferred.'
+   'Static PNGs contain baked-in labels; no pixel-accurate overlays are inferred.'
  });
 };
 $('srb-image').addEventListener('error',()=>{
