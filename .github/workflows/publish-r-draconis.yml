@@ -11,6 +11,7 @@ on:
       - feature/science-analysis-runs
     paths:
       - tools/publish_r_draconis.py
+      - tools/build_science_run_manifests.py
       - .github/workflows/publish-r-draconis.yml
 permissions:
   contents: write
