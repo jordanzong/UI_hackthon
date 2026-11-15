@@ -1,0 +1,9 @@
+1.Cutout_with_comments.ipynb: 測試sphereX官方網站的下載功能（serial & parallel）以及製作MEF的功能，結果後來網站炸了。另外還初步的align每一張圖片並製作反白的gif動圖來讓人肉眼觀察是否有快速移動的天體
+
+2.All_Band.ipynb: SphereX網站炸了，所以我不能再從上面query資料，所以我趁凌晨4~6點，使用serial approach去把五個目標，D1~D6 band的資料全部下載到本機端。
+接著我設計出一個函式(Cell B)去將我下載下來的所有資料（或是使用者想要分析的波段的所有資料）進行time grouping，然後將每個time period的所有image疊成一張SNR較高的影像，用來製作gif, 讓研究者可以肉眼觀察是否有移動中的天體或是亮度變化明顯的天體。然後我對這些SNR比較高的image做source detection，找出其中SNR>6的source，並進行跨time period的alignment，作為後續測光的目標。 測光的部分，我使用fits檔裡面的EPSF來對每一個time period，每一張原始的image（不是stacke過後的）上面的source進行擬合，求出他的參考亮度，並將同一個time period下，不同wavelength的source製作成該source在該time period時的spoectral energy distribution.（SphereX的偵測器很特別，他是在感光元件前面多放了一個線性漸變的濾鏡，因此每一個detector上不同區域的pixel偵測到的光也是不同波段的光。而相鄰的幾個pixel，則因為濾光片的wavelength是線性變化的，因此這些pixel的代表wavelength就可以簡化成最中央的pixel對應的wavelength。經過多次觀測後，我們在乎的source可能會落在detector上面的不同位置，因此我們可以從時間相近，但不同次的觀測上面找到該source不同波段的資料）。
+
+
+3.SphereX.ipynb: 基本上跟All_Band.ipynb，差別只在於我簡化了query的部分，改成直接讀取之前query所抓下來到我本機端的資料，然後最後面加上了一個identify moving source跟variable的演算法
+
+4.SphereX_full.ipynb: 我把SphereX.ipynb的東西整合成一個大迴圈，讓他可以跑出五個source ('Barnards_Star', 'Epsilon_Indi_B', 'WISE_0855', 'RW_Aurigae’, 'R_Draconis’)，不同bandpass組合(Ex: D1, D2, D1+D2+D3 or All bandpass)的資料（高SNR image, GIF, Spectral energy distribution and detected moving object & variable）
