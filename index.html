@@ -22,6 +22,12 @@
   --line-soft:rgba(150,175,215,.15);
   --accent:#ffb454;
   --bad:#ff7a6b;
+  --data:#66cdb9;
+  --data-line:rgba(102,205,185,.45);
+  --data-fill:rgba(102,205,185,.14);
+  --data-fill-strong:rgba(102,205,185,.32);
+  --scrim:rgba(5,8,15,.86);
+  --sheet-shadow:#000a;
   --panel:rgba(5,8,15,.84);
   --top:56px;
   --rail:352px;
@@ -219,9 +225,25 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 #sel.selection-inline{border-top:1px solid var(--line-soft);padding-top:15px;margin-top:2px;min-height:30px}
 #sel.selection-inline h2{color:var(--accent)}
 #preset-staging[hidden]{display:none}
+#sheet-handle{display:none}
+@media(max-width:720px){
+  /* Sheet sits below the sky (not over it) so the canvas re-centres on the target. */
+  #main{flex-direction:column}
+  #stage{order:1;flex:1 1 auto;min-height:0}
+  #panel{order:2;position:relative;top:auto;left:auto;right:auto;bottom:auto;max-height:none;flex:0 0 auto;height:48%;
+    border-bottom:0;border-top:1px solid var(--line);box-shadow:0 -10px 30px var(--sheet-shadow)}
+  #panel[data-sheet="full"]{height:86%}
+  #sheet-handle{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none;width:100%;padding:8px 12px 9px;
+    background:transparent;border:0;border-bottom:1px solid var(--line-soft);color:var(--muted);cursor:pointer;
+    font:500 11px/1.2 var(--font)}
+  #sheet-handle span{width:40px;height:4px;border-radius:2px;background:var(--line)}
+  #sheet-handle b{font-weight:500}
+  #pbody{padding-top:14px}
+  #panel:not([data-collapsed="true"])~#stage #bar{display:none}
+}
 </style>
-<link rel="stylesheet" href="./spherex-viewer.css?v=10">
-<link rel="stylesheet" href="./science-run-browser.css?v=10">
+<link rel="stylesheet" href="./spherex-viewer.css?v=11">
+<link rel="stylesheet" href="./science-run-browser.css?v=11">
 <link rel="stylesheet" href="./sky-map-tools.css?v=3">
 <link rel="stylesheet" href="./user-guide.css?v=1">
 </head>
@@ -243,7 +265,8 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
   </header>
 
   <div id="main">
-    <aside id="panel" data-collapsed="false" aria-label="Control panel" data-i18n-aria="panelAria">
+    <aside id="panel" data-collapsed="false" data-sheet="peek" aria-label="Control panel" data-i18n-aria="panelAria">
+      <button type="button" id="sheet-handle" aria-controls="pbody" aria-expanded="false"><span aria-hidden="true"></span><b id="sheet-label">Science Results</b></button>
       <div id="pbody">
         <div class="sec">
           <h2 data-i18n="goto">Go to coordinates</h2>
@@ -266,9 +289,9 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
         <div class="sec"><details open><summary data-i18n="layers">Layers</summary><div class="layers" id="layers"></div></details></div>
         <div class="sec" id="science-catalogs">
           <h2 data-i18n="additionalCatalogs">Automatic catalogs / science data</h2>
-          <p class="catalog-description" data-i18n="gaiaAutoDesc">Gaia DR3 loads automatically at FOV ≤ 12°.</p>
+          <p class="catalog-description" data-i18n="gaiaAutoDesc">Gaia DR3: offline catalogs load near the five science targets; elsewhere use “Query online Gaia” (FOV ≤ 12°).</p>
           <p class="catalog-description" data-i18n="spxAutoDesc">SPHEREx sources load automatically when a verified catalog exists.</p>
-          <button class="btn sm catalog-reload" type="button" id="reloadGaia" data-i18n="reloadGaia">Refresh Gaia</button>
+          <button class="btn sm catalog-reload" type="button" id="reloadGaia" data-i18n="reloadGaia">Query online Gaia</button>
           <p id="catalogStatus" role="status" aria-live="polite"></p>
           <div class="gaia-cache-tools">
             <label for="gaiaCacheTarget" data-i18n="gaiaCacheJump">Gaia CSV: jump to cached field</label>
@@ -715,7 +738,7 @@ zh:{title:'天球星圖',sub:'J2000 · 赤道座標',goto:'前往座標',ra:'赤
  mag:m=>(m<0?'−':'')+Math.abs(m).toFixed(2)+' 等',
  types:{gal:'星系',neb:'星雲',oc:'疏散星團',gc:'球狀星團',ctr:'銀心'},
  layerNames:{cl:'星座連線',cn:'星座名稱',sn:'恆星名稱',grid:'赤道座標格線',ecl:'黃道',mw:'銀河（示意）',dso:'深空天體',hyg:'全天 HYG 真實恆星',gaia:'Gaia DR3 星點',gaiaLabels:'Gaia 星等標籤',spx:'SPHEREx 來源',spxLabels:'Source ID 標籤',spxPassOnly:'僅顯示品質通過',ret:'中心十字'},
- additionalCatalogs:'自動星表 / 科學資料',gaiaAutoDesc:'Gaia DR3：視野縮至 12° 內自動查詢，離線時仍保留內建亮星。',spxAutoDesc:'SPHEREx：依研究目標自動載入已驗證 Source Catalog；無資料時不顯示候選源。',catalogAdvanced:'進階：匯入自訂星表（開發測試）',gaiaCacheJump:'Gaia CSV：前往已快取天區',gaiaCacheGo:'前往',retryHYG:'重試 HYG 分區',reloadGaia:'重新查詢 Gaia',importSources:'匯入 SPHEREx CSV / JSON',importGaia:'匯入 Gaia CSV',
+ additionalCatalogs:'自動星表 / 科學資料',gaiaAutoDesc:'Gaia DR3：五個研究目標附近使用內建離線星表；其他天區可按「查詢線上 Gaia」（FOV ≤ 12°）。',spxAutoDesc:'SPHEREx：依研究目標自動載入已驗證 Source Catalog；無資料時不顯示候選源。',catalogAdvanced:'進階：匯入自訂星表（開發測試）',gaiaCacheJump:'Gaia CSV：前往已快取天區',gaiaCacheGo:'前往',retryHYG:'重試 HYG 分區',reloadGaia:'查詢線上 Gaia',importSources:'匯入 SPHEREx CSV / JSON',importGaia:'匯入 Gaia CSV',
  needBoth:'赤經與赤緯需要一起輸入。',
  badRA:'赤經無法辨識。可用 83.82、5.588h、05:35:17 或 5h 35m 17s。',
  badDec:'赤緯需介於 −90° 與 +90°，例如 -5.39、-05 23 28。',
@@ -731,7 +754,7 @@ en:{title:'Sky Atlas',sub:'J2000 · Equatorial',goto:'Go to coordinates',ra:'Rig
  mag:m=>'mag '+(m<0?'−':'')+Math.abs(m).toFixed(2),
  types:{gal:'Galaxy',neb:'Nebula',oc:'Open cluster',gc:'Globular cluster',ctr:'Galactic center'},
  layerNames:{cl:'Constellation lines',cn:'Constellation names',sn:'Star names',grid:'Equatorial grid',ecl:'Ecliptic',mw:'Milky Way (schematic)',dso:'Deep-sky objects',hyg:'All-sky HYG stars',gaia:'Gaia DR3 stars',gaiaLabels:'Gaia G labels',spx:'SPHEREx sources',spxLabels:'Source ID labels',spxPassOnly:'PASS quality only',ret:'Center crosshair'},
- additionalCatalogs:'Automatic catalogs / science data',gaiaAutoDesc:'Gaia DR3 loads automatically at FOV ≤ 12°. Built-in bright stars remain available offline.',spxAutoDesc:'SPHEREx sources load automatically for the selected science target when a verified catalog exists.',catalogAdvanced:'Advanced: import custom catalogs (developer testing)',gaiaCacheJump:'Gaia CSV: jump to a cached field',gaiaCacheGo:'Go',retryHYG:'Retry HYG tiles',reloadGaia:'Refresh Gaia',importSources:'Import SPHEREx CSV / JSON',importGaia:'Import Gaia CSV',
+ additionalCatalogs:'Automatic catalogs / science data',gaiaAutoDesc:'Gaia DR3: offline catalogs load near the five science targets; elsewhere use “Query online Gaia” (FOV ≤ 12°).',spxAutoDesc:'SPHEREx sources load automatically for the selected science target when a verified catalog exists.',catalogAdvanced:'Advanced: import custom catalogs (developer testing)',gaiaCacheJump:'Gaia CSV: jump to a cached field',gaiaCacheGo:'Go',retryHYG:'Retry HYG tiles',reloadGaia:'Query online Gaia',importSources:'Import SPHEREx CSV / JSON',importGaia:'Import Gaia CSV',
  needBoth:'Enter both RA and Dec.',
  badRA:'RA not recognized. Try 83.82, 5.588h, 05:35:17 or 5h 35m 17s.',
  badDec:'Dec must be between −90° and +90°, e.g. -5.39 or -05 23 28.',
@@ -802,6 +825,9 @@ function availableGaiaStars(){
 
 }
 let gaiaTimer=null,gaiaBusy=false,gaiaNotice='',spxNotice='',manualGaia=false;
+// Public TAP services often block browser CORS requests, so online queries
+// run only after the user asks; offline Gaia CSV and HYG load automatically.
+let onlineGaia=false;
 let gaiaLastFailure=null,gaiaFailureText='';
 const gaiaCache=[];
 const catalogStatus=$('catalogStatus');
@@ -1149,6 +1175,11 @@ function scheduleGaia(){
   const view=gaiaView();
   const cached=gaiaCache.find(c=>isCovered(c,view.ra,view.dec,view.radius,view.mag));
   if(cached){if(gaiaStars!==cached.stars){gaiaStars=cached.stars;catalogNotice();}return;}
+  if(!onlineGaia){
+    clearTimeout(gaiaTimer);gaiaTimer=null;gaiaStars=[];
+    gaiaNotice=lang==='zh'?'此天區沒有離線資料，可按「查詢線上 Gaia」':'no offline data here; use “Query online Gaia”';
+    catalogNotice();return;
+  }
   if(isCovered(gaiaLastFailure,view.ra,view.dec,view.radius,view.mag))return;
   if(gaiaBusy)return;
   clearTimeout(gaiaTimer);
@@ -1217,7 +1248,7 @@ $('gaiaFile').addEventListener('change',async e=>{
   }catch(error){gaiaFailureText='Gaia CSV: '+String(error.message||error);catalogNotice();}
   e.target.value='';
 });
-$('reloadGaia').onclick=()=>{gaiaQueryEpoch++;gaiaBusy=false;clearTimeout(gaiaTimer);manualGaia=false;gaiaLastFailure=null;gaiaFailureText='';gaiaCache.length=0;gaiaStars=[];catalogNotice();scheduleGaia();};
+$('reloadGaia').onclick=()=>{onlineGaia=true;gaiaNotice='';gaiaQueryEpoch++;gaiaBusy=false;clearTimeout(gaiaTimer);manualGaia=false;gaiaLastFailure=null;gaiaFailureText='';gaiaCache.length=0;gaiaStars=[];catalogNotice();scheduleGaia();};
 function drawGaia(){
   if(!L.gaia||V.fov>12)return;
   const faint=gaiaMagLimit(V.fov);
@@ -1601,7 +1632,12 @@ function endPointer(e,allowSelect){
   pts.delete(e.pointerId);
   if(pts.size<2)pinch=null;
   if(pts.size===0){drag=null;cv.classList.remove('grabbing');}
-  else if(pts.size===1&&!drag){/* remaining finger after pinch does nothing */}
+  else if(pts.size===1){
+    // After a pinch, continue panning from where the remaining finger is now;
+    // reusing the pre-pinch anchor made the view jump.
+    const [q]=[...pts.values()];
+    drag={start:q,moved:true,anchor:unproject(q.x,q.y)};
+  }
 }
 cv.addEventListener('pointerup',e=>endPointer(e,true));
 cv.addEventListener('pointercancel',e=>endPointer(e,false));
@@ -1810,7 +1846,9 @@ $('allSkyRetry').onclick=()=>{
   allSkyLayer.retryFailedTiles();requestRender();
 };
 /* ---- start ---- */
-if(window.innerWidth<640){$('panel').dataset.collapsed='true';$('collapse').setAttribute('aria-expanded','false');}
+// Phones: keep the panel visible as a bottom sheet so Science Results are on the first screen.
+$('sheet-handle').onclick=()=>{const p=$('panel'),full=p.dataset.sheet!=='full';p.dataset.sheet=full?'full':'peek';$('sheet-handle').setAttribute('aria-expanded',String(full));};
+new MutationObserver(()=>{$('sheet-label').textContent=lang==='zh'?'科學分析結果（點此展開或收起）':'Science Results (tap to expand or shrink)';}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 applyLang();
 initGaiaLocal(); // Preload tiny manifest; CSVs stay lazy until a field is selected.
 initGaiaWide(); // Separate real 2.1-degree DR3 field previews when available.
@@ -1820,10 +1858,10 @@ resize();
 </script>
 
 <script src="./allsky-stars.js?v=20261115C"></script>
-<script src="./spherex-viewer.js?v=10"></script>
-<script src="./science-run-browser.js?v=10"></script>
-<script src="./sky-map-tools.js?v=10"></script>
-<script src="./user-guide.js?v=1"></script>
+<script src="./spherex-viewer.js?v=11"></script>
+<script src="./science-run-browser.js?v=11"></script>
+<script src="./sky-map-tools.js?v=11"></script>
+<script src="./user-guide.js?v=3"></script>
 
 </body>
 </html>

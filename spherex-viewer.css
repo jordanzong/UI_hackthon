@@ -193,3 +193,24 @@ body.spx-open #zoomkeys{right:18px}
 }
 #spx-viewer #spx-reading-body p:last-child{margin-bottom:0}
 #spx-viewer #spx-status{min-height:20px;font-size:11px}
+/* ---- UX pass: zoom / pan, figure rendering, collapsed notes, clearer launch label ---- */
+#spx-viewer #spx-zoom{position:absolute;inset:0;transform-origin:50% 50%;will-change:transform}
+#spx-viewer #spx-zoom #spx-image{width:100%;height:100%}
+#spx-viewer #spx-imagebox.figure #spx-image{image-rendering:auto}
+#spx-viewer #spx-imagebox.zoomed{cursor:grab}
+#spx-viewer #spx-imagebox.panning{cursor:grabbing}
+#spx-viewer #spx-imagebox{touch-action:none}
+#spx-viewer .spx-zoombar{position:absolute;right:8px;bottom:8px;z-index:2;display:flex;background:var(--scrim)}
+#spx-viewer .spx-zoombar button{min-width:32px;padding:6px 8px;font-size:13px;line-height:1}
+#spx-viewer .spx-zoombar button+button{margin-left:-1px}
+#spx-viewer #spx-diff-hint[hidden]{display:none}
+#spx-viewer #spx-info{border-top:1px solid var(--line-soft);padding-top:9px}
+#spx-viewer #spx-info>summary{font:500 11px/1.3 var(--font);letter-spacing:0;text-transform:none;color:var(--muted)}
+#spx-viewer #spx-info>summary::before{content:none;counter-increment:none}
+#spx-viewer #spx-info ul{margin:8px 0 0;padding-left:16px;color:var(--muted);font:11px/1.6 var(--font);display:flex;flex-direction:column;gap:3px}
+#spx-viewer #spx-info #spx-caveat{margin-top:8px}
+#spx-sky-context{pointer-events:auto;cursor:help}
+@media (max-width:520px){
+  #spx-launch::after{content:attr(data-short);font:600 12px/1 var(--font);letter-spacing:0}
+  #spx-launch[aria-expanded="true"]::after{content:attr(data-short)}
+}

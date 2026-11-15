@@ -134,8 +134,8 @@ function localize(){
  $('atlas-gaia-depth').options[1].textContent=tr('僅亮星','Bright only');
  $('atlas-gaia-depth').options[2].textContent=tr('較多暗星','More faint stars');
  $('atlas-depth-hint').textContent=tr(
-  'Gaia 需連線，僅在 FOV ≤ 12° 時查詢（每次最多 3000 筆）；不是完整全天星表。',
-  'Gaia requires network access and queries only at FOV ≤ 12° (up to 3000 rows); not a complete all-sky catalog.');
+  '五個研究目標附近使用離線 Gaia；其他天區需按「查詢線上 Gaia」（FOV ≤ 12°，最多 3000 筆），不是完整全天星表。',
+  'Offline Gaia near the five targets; elsewhere use “Query online Gaia” (FOV ≤ 12°, up to 3000 rows). Not a complete all-sky catalog.');
 }
 new MutationObserver(localize).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 document.addEventListener('keydown',e=>{

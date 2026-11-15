@@ -11,15 +11,18 @@ function el(tag,attrs={},text){const n=document.createElement(tag);for(const[k,v
 const launch=el('button',{id:'spx-launch',type:'button','aria-expanded':'false','aria-controls':'spx-viewer'},'✦ SPHEREx Viewer');
 const panel=el('aside',{id:'spx-viewer',role:'region','aria-label':'SPHEREx Observation Viewer'});
 panel.innerHTML=[
-'<div class="spx-head"><div><h2>SPHEREx Observation Viewer</h2><p class="spx-sub">Marked GIF Frames · Prev / Blink / Next · Live Sky</p></div><button type="button" id="spx-close" aria-label="Close">×</button></div>',
+'<div class="spx-head"><div><h2 id="spx-title">SPHEREx Observation Viewer</h2><p class="spx-sub" id="spx-subtitle"></p></div><button type="button" id="spx-close" aria-label="Close">×</button></div>',
 '<div class="spx-body">',
-'<div class="spx-visual"><div id="spx-imagebox"><img id="spx-image" alt="SPHEREx published observation preview" draggable="false"><div id="spx-markers"></div><div id="spx-empty">Choose a published analysis run in Science Results, then select Open Viewer.</div></div>',
-'<label class="spx-brightness-rail" for="spx-brightness"><span class="spx-brightness-caption">BRIGHTNESS</span><input id="spx-brightness" type="range" min="1" max="10" value="1" step="0.5" aria-label="Display brightness (visual only)" aria-orientation="vertical"><output id="spx-brightness-value" for="spx-brightness">1×</output><span class="spx-brightness-note">VISUAL ONLY</span></label></div>',
+'<div class="spx-visual"><div id="spx-imagebox"><div id="spx-zoom"><img id="spx-image" alt="SPHEREx published observation preview" draggable="false"><div id="spx-markers"></div></div><div id="spx-empty"></div>',
+'<div class="spx-zoombar"><button type="button" id="spx-zoom-in" aria-label="Zoom in">+</button><button type="button" id="spx-zoom-out" aria-label="Zoom out">−</button><button type="button" id="spx-zoom-fit">Fit</button></div></div>',
+'<label class="spx-brightness-rail" for="spx-brightness"><span class="spx-brightness-caption" id="spx-brightness-caption">BRIGHTNESS</span><input id="spx-brightness" type="range" min="1" max="10" value="1" step="0.5" aria-label="Display brightness (visual only)" aria-orientation="vertical"><output id="spx-brightness-value" for="spx-brightness">1×</output><span class="spx-brightness-note" id="spx-brightness-note">VISUAL ONLY</span></label></div>',
 '<div class="spx-meta"><span id="spx-epoch">Epoch —</span><span id="spx-wave">λ —</span></div>',
-'<div class="spx-controls"><button id="spx-prev" type="button">◀ Prev</button><button id="spx-play" type="button" aria-pressed="false">▶ Blink</button><button id="spx-next" type="button">Next ▶</button><button id="spx-difference" type="button" aria-pressed="false">Difference</button></div>',
+'<div class="spx-controls"><button id="spx-prev" type="button">Previous</button><button id="spx-play" type="button" aria-pressed="false">Blink</button><button id="spx-next" type="button">Next</button><button id="spx-difference" type="button" aria-pressed="false" aria-describedby="spx-diff-hint">Difference</button></div>',
+'<p id="spx-diff-hint" class="spx-note"></p>',
 '<input id="spx-slider" type="range" min="0" max="0" value="0" aria-label="Epoch position">',
-'<label id="spx-toggle-markers"><input id="spx-markers-on" type="checkbox" checked> Show annotated GIF</label>',
+'<label id="spx-toggle-markers"><input id="spx-markers-on" type="checkbox" checked> <span id="spx-markers-label">Show annotated GIF</span></label>',
 '<p id="spx-status" role="status" aria-live="polite"></p>',
+'<details id="spx-info"><summary id="spx-info-summary"></summary><ul id="spx-info-list"></ul></details>',
 '<section id="spx-education" aria-label="Astronomy reading">',
  '<div class="spx-education-heading"><span>EXPLORE ASTRONOMY</span><button id="spx-another-topic" type="button">Another topic</button></div>',
  '<h3 id="spx-reading-title"></h3><div id="spx-reading-body"></div>',
@@ -39,8 +42,33 @@ skyStage?.append(skyContext);
 const headerActions=document.querySelector('#top .top-actions');
 if(headerActions)headerActions.prepend(launch);
 panel.hidden=true;
-const image=$('spx-image'),box=$('spx-imagebox'),markers=$('spx-markers');
+const image=$('spx-image'),box=$('spx-imagebox'),markers=$('spx-markers'),zoomLayer=$('spx-zoom');
 image.style.filter='brightness(1) contrast(1)';
+/* Zoom / pan: image and markers share one transformed layer, so marker
+   positions (computed in untransformed box pixels) stay aligned. */
+const view={z:1,x:0,y:0};
+function applyZoom(){
+ const r=box.getBoundingClientRect();
+ const mx=(view.z-1)*r.width/2,my=(view.z-1)*r.height/2;
+ view.x=Math.max(-mx,Math.min(mx,view.x));view.y=Math.max(-my,Math.min(my,view.y));
+ zoomLayer.style.transform='translate('+view.x+'px,'+view.y+'px) scale('+view.z+')';
+ box.classList.toggle('zoomed',view.z>1.001);
+ $('spx-zoom-fit').disabled=view.z<=1.001;$('spx-zoom-out').disabled=view.z<=1.001;$('spx-zoom-in').disabled=view.z>=8;
+}
+function zoomAt(f,cx,cy){
+ const r=box.getBoundingClientRect();
+ const px=(cx??r.left+r.width/2)-r.left-r.width/2,py=(cy??r.top+r.height/2)-r.top-r.height/2;
+ const z=Math.max(1,Math.min(8,view.z*f)),k=z/view.z;
+ view.x=px-(px-view.x)*k;view.y=py-(py-view.y)*k;view.z=z;applyZoom();
+}
+function resetZoom(){view.z=1;view.x=0;view.y=0;applyZoom();}
+box.addEventListener('wheel',e=>{if(!app.data)return;e.preventDefault();zoomAt(Math.exp(-Math.max(-300,Math.min(300,e.deltaY))*0.002),e.clientX,e.clientY);},{passive:false});
+box.addEventListener('dblclick',e=>{if(e.target.closest('.spx-marker,.spx-zoombar'))return;view.z>1.001?resetZoom():zoomAt(2.5,e.clientX,e.clientY);});
+let pan=null;
+box.addEventListener('pointerdown',e=>{if(view.z<=1.001||e.target.closest('.spx-marker,.spx-zoombar'))return;pan={id:e.pointerId,x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};try{box.setPointerCapture(e.pointerId);}catch(_){}box.classList.add('panning');});
+box.addEventListener('pointermove',e=>{if(!pan||pan.id!==e.pointerId)return;view.x=pan.vx+e.clientX-pan.x;view.y=pan.vy+e.clientY-pan.y;applyZoom();});
+const endPan=e=>{if(pan&&pan.id===e.pointerId){pan=null;box.classList.remove('panning');}};
+box.addEventListener('pointerup',endPan);box.addEventListener('pointercancel',endPan);
 function status(message,error=false){$('spx-status').textContent=message;$('spx-status').classList.toggle('error',error);}
 function current(){
  const d=app.data;
@@ -73,7 +101,7 @@ function normalize(raw,base){
  return {...raw,frames,plain_frames,difference,sources:Array.isArray(raw.sources)?raw.sources:[],
   status:String(raw.status??(frames.length?'ready':'no_data'))};
 }
-function stop(){clearTimeout(app.timer);app.timer=null;app.playing=false;$('spx-play').textContent='▶ Blink';$('spx-play').setAttribute('aria-pressed','false');}
+function stop(){clearTimeout(app.timer);app.timer=null;app.playing=false;$('spx-play').textContent=ja('輪播','Blink');$('spx-play').setAttribute('aria-pressed','false');}
 function focusSkyContext(){
  const center=app.data?.center;
  const ra=Number(center?.ra_deg),dec=Number(center?.dec_deg);
@@ -83,20 +111,22 @@ function focusSkyContext(){
   return false;
  }
  const target=String(app.data?.target_name||app.data?.field_id||'Science target');
- skyContext.textContent=target+' · '+ra.toFixed(5)+'°, '+(dec>=0?'+':'')+dec.toFixed(5)+
-  '° · '+ja('參考座標（非偵測認證）','reference coordinate (not proof of detection)');
+ skyContext.textContent=target+ja('（參考座標）',' (reference position)');
+ skyContext.title=ra.toFixed(5)+'°, '+(dec>=0?'+':'')+dec.toFixed(5)+'°；'+
+  ja('參考座標，不代表偵測證據','reference coordinate, not proof of detection');
  skyContext.hidden=false;
  return !!window.SkyAtlas?.goToCoordinates?.({ra_deg:ra,dec_deg:dec,fov_deg:2});
 }
 function open(yes=true){
  panel.hidden=!yes;document.body.classList.toggle('spx-open',yes);launch.setAttribute('aria-expanded',String(yes));
- launch.textContent=yes?'✕ Hide Viewer':'✦ SPHEREx Viewer';
+ localize();
  if(!yes){stop();skyContext.hidden=true;}
  else{focusSkyContext();showRandomReading();requestAnimationFrame(drawMarkers);}
 }
 function setData(raw,opts={}){
  const d=normalize(raw,opts.baseURL);
- stop();app.data=d;app.index=0;app.diff=false;app.selection=null;app.annotated=true;
+ stop();app.data=d;app.index=0;app.diff=false;app.selection=null;app.annotated=true;resetZoom();
+ box.classList.toggle('figure',d.frame_origin==='marked-gif');
  $('spx-markers-on').checked=true;
  $('spx-markers-on').disabled=!(d.plain_frames.length===d.frames.length&&d.frames.length>0);
  $('spx-brightness').value='1';
@@ -148,6 +178,8 @@ function render(){
  $('spx-next').disabled=(data?.frames?.length||0)<2;
  $('spx-play').disabled=(data?.frames?.length||0)<2;
  $('spx-difference').disabled=!data?.difference;
+ $('spx-diff-hint').textContent=data&&!data.difference?ja('這組資料沒有已驗證的差分影像，所以無法使用「差分」。','No validated difference image for this run, so Difference is unavailable.'):'';
+ $('spx-diff-hint').hidden=!$('spx-diff-hint').textContent;
  $('spx-difference').setAttribute('aria-pressed',String(app.diff));
  $('spx-slider').max=String(Math.max(0,(data?.frames?.length||1)-1));
  $('spx-slider').value=String(app.index);
@@ -168,7 +200,7 @@ function render(){
    image.style.display='none';image.removeAttribute('src');$('spx-empty').hidden=false;
    status(ja('尚無觀測影像','No observation images'));
  }
- $('spx-epoch').textContent=app.diff?'November − May':(fr?.label||'Epoch —')+(num(fr?.mjd)?' · MJD '+fmt(fr.mjd,3):'');
+ $('spx-epoch').textContent=app.diff?'November − May':(fr?.label||ja('時段 —','Epoch —'))+(num(fr?.mjd)?' · MJD '+fmt(fr.mjd,3):'');
  $('spx-wave').textContent=data?.frame_origin==='marked-gif'
   ?(app.annotated?'Marked':'Original')+' GIF · '+(app.index+1)+' / '+(data?.frames?.length||0)
   :num(fr?.wavelength_um)?'λ '+fmt(fr.wavelength_um,5)+' μm':'λ —';
@@ -182,7 +214,7 @@ function play(){
  if(app.playing){stop();return;}
  if((app.data?.frames?.length||0)<2)return;
  app.playing=true;app.diff=false;
- $('spx-play').textContent='❚❚ Pause';$('spx-play').setAttribute('aria-pressed','true');
+ $('spx-play').textContent=ja('暫停','Pause');$('spx-play').setAttribute('aria-pressed','true');
  const tick=()=>{
   if(!app.playing)return;
   const ms=Number(current()?.duration_ms)||800;
@@ -228,6 +260,44 @@ function showRandomReading(){
  }
 }
 
+function localize(){
+ const yes=!panel.hidden;
+ launch.textContent=yes?ja('關閉影像','Close viewer'):ja('觀測影像','Image viewer');
+ launch.dataset.short=yes?ja('關閉','Close'):ja('影像','Viewer');
+ $('spx-title').textContent=ja('SPHEREx 觀測影像','SPHEREx image viewer');
+ $('spx-subtitle').textContent=ja('逐張檢視時間分組影像；滾輪縮放、拖曳平移、雙擊放大。','Step through time-group frames. Scroll to zoom, drag to pan, double-click to zoom.');
+ $('spx-close').setAttribute('aria-label',ja('關閉','Close'));
+ $('spx-empty').textContent=ja('在「科學分析結果」選一組結果，再按「在影像檢視器開啟」。','Choose a published analysis run in Science Results, then select “Open in image viewer”.');
+ $('spx-zoom-fit').textContent=ja('符合','Fit');
+ $('spx-zoom-in').setAttribute('aria-label',ja('放大','Zoom in'));$('spx-zoom-out').setAttribute('aria-label',ja('縮小','Zoom out'));
+ $('spx-brightness-caption').textContent=ja('亮度','BRIGHT');
+ $('spx-brightness-note').textContent=ja('僅顯示','DISPLAY ONLY');
+ $('spx-prev').textContent=ja('上一張','Previous');$('spx-next').textContent=ja('下一張','Next');
+ $('spx-difference').textContent=ja('差分','Difference');
+ $('spx-play').textContent=app.playing?ja('暫停','Pause'):ja('輪播','Blink');
+ $('spx-slider').setAttribute('aria-label',ja('時段位置','Epoch position'));
+ $('spx-markers-label').textContent=ja('顯示標記動畫','Show annotated GIF');
+ $('spx-info-summary').textContent=ja('關於這些影像','About these images');
+ const notes=ja([
+  '影像取自標記 GIF 的每一格；取消勾選「顯示標記動畫」可看無標記的原始影格。',
+  '亮度只改變畫面呈現，不改變測光結果。',
+  '動畫裡的標記是畫在圖上的，不能點選來對應天空座標。',
+  '演算法標出的 mover / variable 只是候選，尚未經科學確認。',
+  '完整的 FITS 分析在後端進行，這裡只顯示預覽圖。'
+ ],[
+  'Frames come from the marked GIF; untick “Show annotated GIF” for the unmarked original frames.',
+  'Brightness only changes the display, never the photometry.',
+  'Labels in the animation are drawn into the image; they are not clickable sky coordinates.',
+  'Algorithm mover / variable flags are candidates, not confirmed objects.',
+  'Full FITS analysis runs on the backend; this shows previews only.'
+ ]);
+ $('spx-info-list').replaceChildren(...notes.map(t=>el('li',{},t)));
+ render();
+}
+new MutationObserver(localize).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+$('spx-zoom-in').onclick=()=>zoomAt(1.6);
+$('spx-zoom-out').onclick=()=>zoomAt(1/1.6);
+$('spx-zoom-fit').onclick=resetZoom;
 launch.onclick=()=>open(panel.hidden);
 $('spx-close').onclick=()=>open(false);
 $('spx-prev').onclick=()=>{stop();changeFrame(app.index-1);};
@@ -248,9 +318,9 @@ window.addEventListener('spherex:select-source',e=>{
    selectSource(match||source,false);
  }
 });
-window.addEventListener('resize',()=>{if(!panel.hidden)drawMarkers();});
+window.addEventListener('resize',()=>{if(!panel.hidden){applyZoom();drawMarkers();}});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)open(false);});
 window.SPHERExViewer={setData,open:()=>open(true),close:()=>open(false),
- getState:()=>({frame:app.index,mode:app.diff?'difference':'frame',frames:app.data?.frames?.length||0,open:!panel.hidden})};
-render();
+ getState:()=>({frame:app.index,mode:app.diff?'difference':'frame',frames:app.data?.frames?.length||0,open:!panel.hidden,zoom:view.z,annotated:app.annotated})};
+localize();applyZoom();
 })();
