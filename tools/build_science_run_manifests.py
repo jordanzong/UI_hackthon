@@ -174,27 +174,38 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif, include_gi
     dest.mkdir(parents=True, exist_ok=True)
     metadata = fits_group_metadata(run_dir / "time_grouped_stacks.fits")
     group_meta = {int(g["group_id"]): g for g in metadata}
-    gifs = sorted(run_dir.glob("group_stacks*.gif"))
-    gifs.sort(key=lambda p: ("sources_epsf" not in p.name,
-                             "marked" not in p.name, p.name))
-    gif_url = None
+    # Ordinary ePSF GIFs are AVAILABLE now. Marker-annotated GIFs are not
+    # inferred from 'sources_epsf': separately marked GIFs are still in progress.
+    candidate_gifs = sorted(run_dir.glob("*.gif"))
+    ordinary = [p for p in candidate_gifs
+                if "marked" not in p.stem.lower() and "marker" not in p.stem.lower()]
+    marked = [p for p in candidate_gifs
+              if "marked" in p.stem.lower() or "marker" in p.stem.lower()]
+    animation_url = None
+    marked_gif_url = None
+    if include_gif:
+        for choices, role in ((ordinary, "animation"), (marked, "marked")):
+            if not choices:
+                continue
+            src = sorted(choices, key=lambda p: (not p.name.startswith("group_stacks"), p.name))[0]
+            if safe_copy(src, dest / "media" / src.name):
+                if role == "animation":
+                    animation_url = "media/" + src.name
+                else:
+                    marked_gif_url = "media/" + src.name
     frame_paths = []
-    if include_gif and gifs:
-        gif = gifs[0]
-        copied = safe_copy(gif, dest / "media" / gif.name)
-        if copied:
-            gif_url = "media/" + copied.name
-            if extract_gif:
-                frame_paths = gif_frames(gif, dest)
-    if not frame_paths:
-        folder = run_dir / "group_stack_frames"
-        if folder.is_dir():
-            for src in sorted(folder.glob("*.png")):
-                if not re.search(r"group[_-]?\d+", src.stem, re.I):
-                    continue
-                dest_name = dest / "media" / "group_frames" / src.name
-                if safe_copy(src, dest_name):
-                    frame_paths.append("media/group_frames/" + src.name)
+    # Existing native group PNGs take priority; no unnecessary GIF-to-PNG conversion.
+    folder = run_dir / "group_stack_frames"
+    if folder.is_dir():
+        for src in sorted(folder.glob("*.png")):
+            if not re.search(r"group[_-]?\d+", src.stem, re.I):
+                continue
+            dest_name = dest / "media" / "group_frames" / src.name
+            if safe_copy(src, dest_name):
+                frame_paths.append("media/group_frames/" + src.name)
+    if not frame_paths and extract_gif and include_gif and (marked or ordinary):
+        chosen = marked[0] if marked else ordinary[0]
+        frame_paths = gif_frames(chosen, dest)
     frames = []
     for i, filename in enumerate(sorted(
             frame_paths, key=lambda p: int(re.search(r"group[_-]?(\d+)", p, re.I).group(1))
@@ -245,16 +256,20 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif, include_gi
         "kind": "analysis-run",
         "label": run_dir.name,
         "frames": frames,
-        "blink_url": gif_url,
+        "blink_url": animation_url,  # backwards compatibility with v1
+        "animation_url": animation_url,
+        "marked_gif_url": marked_gif_url,
+        "marker_gif_status": "available" if marked_gif_url else "pending",
         "overview_url": overview_url,
         "diagnostic_url": diagnostic_url,
         "seds": seds,
         "source_count": len(sources),
         "candidate_count": len(markers),
-        "notice": ("Static group images and SED plots belong to this exact analysis run. "
+        "notice": ("Ordinary GIF and native group/SED images belong to this exact run. "
                    "Candidate mover/variable flags are algorithm outputs, not verified "
                    "astrophysical identifications. PNG annotations are baked in; "
-                   "no pixel-accurate clickable source boxes are assumed.")
+                   "no pixel-accurate clickable source boxes are assumed. "
+                   "Only separately named marked GIF files count as marked.")
     }
     manifest = {
         "schema_version": "spherex-analysis-run/v1",
@@ -282,7 +297,10 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif, include_gi
             "manifest_url": f"{run_dir.name}/manifest.json",
             "group_count": len(frames) or len(metadata),
             "source_count": len(sources), "candidate_count": len(markers),
-            "has_gif": bool(gif_url), "has_frames": bool(frames),
+            "has_gif": bool(animation_url or marked_gif_url),
+            "has_animation": bool(animation_url),
+            "has_marked_gif": bool(marked_gif_url),
+            "has_frames": bool(frames),
             "has_overview": bool(overview_url), "sed_count": len(seds),
             "parameters": manifest["parameters"]}
 
