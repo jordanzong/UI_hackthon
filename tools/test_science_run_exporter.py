@@ -106,6 +106,38 @@ class ScienceRunExportTest(unittest.TestCase):
             self.assertEqual(product["diagnostic_url"], "media/time_grouping_diagnostic.png")
             self.assertFalse(list(base.rglob("*.gif")))
 
+    def test_ordinary_gif_now_marked_gif_later(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "output"
+            run = root / "WISE_0855" / "analysis_runs" / "D3_gap10_spaninf_v1"
+            (run / "sed_plots").mkdir(parents=True)
+            (run / "group_stack_frames").mkdir()
+            (run / "group_stacks_sources_epsf.gif").write_bytes(GIF_1PX)
+            (run / "group_stack_frames" / "group_01_sources_epsf.png").write_bytes(PNG_1PX)
+            (run / "sed_plots" / "source_001_group_sed.png").write_bytes(PNG_1PX)
+            (run / "source_catalog.ecsv").write_text(
+                "source_id ra_deg dec_deg\\n1 133.789 -7.242\\n", encoding="utf-8")
+            dest = Path(tmp) / "site"
+            index = build(root, dest, extract_gif=False)
+            target = next(t for t in index["targets"] if t["target_id"] == "WISE_0855")
+            self.assertEqual(len(target["runs"]), 1)
+            self.assertTrue(target["runs"][0]["has_animation"])
+            self.assertFalse(target["runs"][0]["has_marked_gif"])
+            manifest = json.loads((dest / target["runs"][0]["manifest_url"]).read_text())
+            p = manifest["bands"]["D3"]
+            self.assertEqual(p["animation_url"], "media/group_stacks_sources_epsf.gif")
+            self.assertEqual(p["marker_gif_status"], "pending")
+            self.assertIsNone(p["marked_gif_url"])
+            self.assertEqual(len(p["frames"]), 1)
+            self.assertEqual(len(p["seds"]), 1)
+            (run / "group_stacks_marked.gif").write_bytes(GIF_1PX)
+            build(root, dest, extract_gif=False)
+            manifest = json.loads((dest / target["runs"][0]["manifest_url"]).read_text())
+            p = manifest["bands"]["D3"]
+            self.assertEqual(p["animation_url"], "media/group_stacks_sources_epsf.gif")
+            self.assertEqual(p["marked_gif_url"], "media/group_stacks_marked.gif")
+            self.assertEqual(p["marker_gif_status"], "available")
+
 
 if __name__ == "__main__":
     unittest.main()
