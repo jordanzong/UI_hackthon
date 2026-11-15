@@ -85,6 +85,7 @@ section.innerHTML=[
    '</div>',
    '<div id="nr-plotbox" class="nr-plotbox"><img id="nr-plotimage" alt="Notebook results" loading="lazy">',
     '<p id="nr-empty" hidden></p></div>',
+   '<a id="nr-fullimg" class="nr-fullimg" href="#" target="_blank" rel="noopener noreferrer">View full resolution</a>',
    '<div id="nr-links" class="nr-resource-links"><a id="nr-overview" target="_blank" rel="noopener noreferrer" href="./notebook-results/epsilon-indi-b/stack-overview.png">Stack overview</a>',
     '<a id="nr-diagnostic" target="_blank" rel="noopener noreferrer" href="./notebook-results/epsilon-indi-b/grouping-diagnostic.png">Time grouping</a></div>',
    '<p id="nr-status" class="nr-note" role="status" aria-live="polite"></p>',
@@ -131,6 +132,7 @@ function localize(){
  setText('nr-source-label','Source');setText('nr-plot-label',tr('圖表類型','Plot type'));
  setText('nr-sedtotal',tr('已匹配 55 個 Source，展示其中 3 個','55 matched; 3 shown'));
  setText('nr-open','SCIENCE');
+ setText('nr-fullimg',tr('開啟原尺寸圖表／影像','View original full-size figure'));
  setText('nr-prev','◀');setText('nr-next','▶');
  setText('nr-blink',state.blink?tr('停止 Blink','Stop Blink'):'Blink');
  $('nr-band').options[0].textContent=tr('全部波段／摘要','All bands / summary');
@@ -148,6 +150,7 @@ function selectTarget(id){
  state.target=id;state.band=t.products==='epochs'?'D5+D6':'all';
  state.group=0;state.source=1;state.plot='groups';state.blink=false;
  $('nr-target').value=t.name;$('nr-ra').value=fmt(t.ra,8);$('nr-dec').value=fmt(t.dec,8);
+ setText('nr-status','');
  $('nr-band').value=state.band;$('nr-source').value='1';$('nr-plot').value='groups';$('nr-epoch').value='0';
  render();return true;
 }
@@ -159,9 +162,10 @@ function hasEpochImage(){
  return state.target==='Epsilon_Indi_B'&&['all','D5','D6','D5+D6'].includes(state.band);
 }
 function imageSet(src,alt){
- const im=$('nr-plotimage'),empty=$('nr-empty');
+ const im=$('nr-plotimage'),empty=$('nr-empty'),link=$('nr-fullimg');
+ link.hidden=!src;
  if(!src){im.hidden=true;im.removeAttribute('src');empty.hidden=false;empty.textContent=alt;return;}
- empty.hidden=true;im.hidden=false;im.alt=alt;
+ empty.hidden=true;im.hidden=false;im.alt=alt;link.href=src;
  if(im.getAttribute('src')!==src)im.src=src;
 }
 async function decodeFrames(){
@@ -231,9 +235,10 @@ function render(){
  $('nr-blink').setAttribute('aria-pressed',String(state.blink));
  setText('nr-blink',state.blink?tr('停止 Blink','Stop Blink'):'Blink');
  if(t.products==='sed'){
+  setText('nr-sedtotal',tr('216 次偵測 → 55 個匹配來源','216 detections → 55 matched sources'));
   setText('nr-sednote',tr(
-   'Source '+state.source+'：顯示原 Notebook 的完整波長 SED（圖例 Group 1–12）。選擇單一 D 波段只會更新資料摘要；缺少 ECSV 時不裁切或重新計算原圖。',
-   'Source '+state.source+': original complete-wavelength SED (groups 1–12). A single D-band selection changes the summary only; original graph is not cropped or recalculated without ECSV.'
+   'Source '+state.source+'：顯示原 Notebook 完整波長 SED（圖例 Group 1–12）；已儲存 10,280 筆 ePSF 量測、0 筆例外。選擇 D 波段只更新摘要，缺少 ECSV 時不裁切原圖。',
+   'Source '+state.source+': original complete-wavelength SED (groups 1–12). 10,280 saved ePSF measurements, 0 recorded exceptions. A single D-band selection changes the summary only; original graph is not cropped or recalculated without ECSV.'
   ));
  }
  const linkArea=$('nr-links');linkArea.hidden=t.products!=='epochs';
@@ -301,7 +306,7 @@ $('nr-load').addEventListener('click',async()=>{
   center:{ra_deg:331.04414659,dec_deg:-56.78284420},
   frames:(frames?GROUPS.map((g,i)=>({
    frame_id:'group_'+(i+1),label:'Group '+(i+1)+' · D5+D6 (combined)',
-   mjd:(g.start+g.end)/2,image_url:frames[i],width:600,height:600
+   mjd:(g.start+g.end)/2,image_url:frames[i],width:900,height:900
   })): [{frame_id:'animated',label:'7-group D5+D6 animated GIF',image_url:EPOCH_GIF}]),
   sources:[],
   notice:tr(
