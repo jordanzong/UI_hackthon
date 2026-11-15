@@ -14,6 +14,7 @@ The frontend can display a missing-data state until the team publishes results.
 import argparse
 import csv
 import json
+import math
 import re
 import shlex
 import shutil
@@ -98,7 +99,8 @@ def read_ecsv(path):
                 continue
             row = dict(zip(names, fields))
             ra, dec = float(row["ra_deg"]), float(row["dec_deg"])
-            if not (0 <= ra < 360 and -90 <= dec <= 90):
+            if not (math.isfinite(ra) and math.isfinite(dec) and
+                    0 <= ra < 360 and -90 <= dec <= 90):
                 continue
             source_id = str(row["source_id"]).strip()
             if not source_id:
@@ -107,7 +109,9 @@ def read_ecsv(path):
             for key in ("best_snr", "n_groups_detected"):
                 if row.get(key):
                     try:
-                        item[key] = float(row[key])
+                        value = float(row[key])
+                        if math.isfinite(value):
+                            item[key] = value
                     except ValueError:
                         pass
             result.append(item)
@@ -140,7 +144,8 @@ def read_markers(path):
         for key in ("pm", "pm_err", "pm_sig", "var_chi2", "var_amp",
                     "var_peak_sig", "n_groups", "blend", "ra", "dec"):
             val = marker.get(key)
-            if val is None or isinstance(val, (int, float, bool)):
+            if val is None or isinstance(val, (int, bool)) or (
+                    isinstance(val, float) and math.isfinite(val)):
                 item[key] = val
         selected.append(item)
     return selected
