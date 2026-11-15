@@ -26,7 +26,7 @@ All actual data files live under `catalogs/gaia/`; `manifest.json` records the r
 
 ## How the UI uses these files
 
-1. On a Gaia-enabled view with **FOV ≤ 1°**, the Sky Atlas lazily retrieves `catalogs/gaia/manifest.json` from the same GitHub Pages origin.
+1. At page startup, the Sky Atlas loads the small `catalogs/gaia/manifest.json` from the same GitHub Pages origin. Within the supported **FOV 2°–12°**, it can lazily load nearby cached source CSVs.
 2. When a downloaded target cone intersects the view, it downloads that target's CSV and validates coordinates and magnitude against the saved manifest.
 3. Local Gaia stars are rendered alongside live Gaia stars, deduplicated by `source_id`. They are selectable and searchable.
 4. Online Gaia TAP continues to serve other regions / deeper views. If both live TAP services fail, the downloaded local stars **remain on-screen** near their covered target.
@@ -41,7 +41,7 @@ In your repository's **Actions** tab, choose **Build Gaia DR3 Offline Catalogs**
 ## QA
 
 - Choose `feature/gaia-static-catalogs` in the fork's GitHub Pages deploy settings.
-- Navigate to **WISE 0855**, center RA 133.789483°, Dec −7.242940°, FOV 0.1°.
+- Navigate to **WISE 0855**, center RA 133.789483°, Dec −7.242940°, FOV 2°.
 - Open browser console, inspect `window.SkyAtlas.getGaiaCatalogStatus()`. The `static_target` should read `WISE_0855` and `static_count` should be at most 432.
 - Try Barnard's Star, Epsilon Indi B, RW Aurigae and R Draconis similarly.
 - Verify Gaia DR3 checkbox remains ON, Gaia points can be selected, and CSV file requests return 200.
@@ -50,3 +50,6 @@ In your repository's **Actions** tab, choose **Build Gaia DR3 Offline Catalogs**
 - Verify SCIENCE, image Viewer, SED and Source overlays remain functional.
 
 **Important science limitations:** Gaia G magnitude is optical and does not measure SPHEREx infrared flux. Catalog J2016.0 RA/Dec should not be compared as high-precision epoch-2025 positions for high proper-motion stars without propagating Gaia astrometry. The Barnard's Star cone is explicitly limited by the row cap; treat it as a **bright subset**.
+
+
+**Current map FOV limits:** Users may select **2°–180°** only. Each static catalog contains stars in a **0.2°-radius cone**: at FOV ≥ 2°, this is merely a small portion of the visible sky, not full Gaia coverage. Online TAP attempts are still allowed for FOV ≤ 12° and may fail due to browser CORS/network restrictions.
