@@ -13,18 +13,27 @@ const panel=el('aside',{id:'spx-viewer',role:'region','aria-label':'SPHEREx Obse
 panel.innerHTML=[
 '<div class="spx-head"><div><h2>SPHEREx Observation Viewer</h2><p class="spx-sub">Published Science Runs · Time Groups · SED companion</p></div><button type="button" id="spx-close" aria-label="Close">×</button></div>',
 '<div class="spx-body">',
-'<div id="spx-imagebox"><img id="spx-image" alt="SPHEREx published observation preview" draggable="false"><div id="spx-markers"></div><div id="spx-empty">請在 Science Results 選擇已發布 Run，再按 Open Viewer。</div></div>',
+'<div class="spx-visual"><div id="spx-imagebox"><img id="spx-image" alt="SPHEREx published observation preview" draggable="false"><div id="spx-markers"></div><div id="spx-empty">請在 Science Results 選擇已發布 Run，再按 Open Viewer。</div></div>',
+'<label class="spx-brightness-rail" for="spx-brightness"><span class="spx-brightness-caption">BRIGHTNESS</span><input id="spx-brightness" type="range" min="1" max="10" value="3" step="0.5" aria-label="Display brightness (visual only)" aria-orientation="vertical"><output id="spx-brightness-value" for="spx-brightness">3×</output><span class="spx-brightness-note">VISUAL ONLY</span></label></div>',
 '<div class="spx-meta"><span id="spx-epoch">Epoch —</span><span id="spx-wave">λ —</span></div>',
 '<div class="spx-controls"><button id="spx-prev" type="button">◀ Prev</button><button id="spx-play" type="button" aria-pressed="false">▶ Blink</button><button id="spx-next" type="button">Next ▶</button><button id="spx-difference" type="button" aria-pressed="false">Difference</button></div>',
 '<input id="spx-slider" type="range" min="0" max="0" value="0" aria-label="Epoch position">',
-'<label class="spx-note" for="spx-brightness">Display brightness (visual only) <input id="spx-brightness" type="range" min="1" max="10" value="3" step="0.5" aria-label="Display brightness"></label>',
+'<p class="spx-note">亮度僅影響畫面呈現，不改變原始測光結果 / Brightness is display-only.</p>',
 '<label id="spx-toggle-markers"><input id="spx-markers-on" type="checkbox" checked> Source markers (science-image pixel positions)</label>',
 '<p id="spx-status" role="status" aria-live="polite"></p>',
 '<div id="spx-caveat" hidden></div><div id="spx-source-detail" aria-live="polite">Select a source marker to inspect details.</div>',
 '<p class="spx-note">Real FITS analysis remains on the backend. The viewer displays calibrated image previews and only draws sources where frame-specific pixel coordinates were provided.</p>',
 '</div>'
 ].join('');
-document.body.append(launch,panel);
+// Dock the viewer alongside the live sky canvas instead of covering it.
+const main=document.getElementById('main');
+if(main)main.append(panel);
+else document.body.append(panel);
+document.body.append(launch);
+const skyStage=document.getElementById('stage');
+const skyContext=el('div',{id:'spx-sky-context','aria-live':'polite'});
+skyContext.hidden=true;
+skyStage?.append(skyContext);
 // Place the viewer control inside the reference design's top navigation.
 const headerActions=document.querySelector('#top .top-actions');
 if(headerActions)headerActions.prepend(launch);
@@ -54,10 +63,25 @@ function normalize(raw,base){
   status:String(raw.status??(frames.length?'ready':'no_data'))};
 }
 function stop(){clearInterval(app.timer);app.timer=null;app.playing=false;$('spx-play').textContent='▶ Blink';$('spx-play').setAttribute('aria-pressed','false');}
+function focusSkyContext(){
+ const center=app.data?.center;
+ const ra=Number(center?.ra_deg),dec=Number(center?.dec_deg);
+ if(!center||!Number.isFinite(ra)||ra<0||ra>=360||
+    !Number.isFinite(dec)||dec< -90||dec>90){
+  skyContext.hidden=true;
+  return false;
+ }
+ const target=String(app.data?.target_name||app.data?.field_id||'Science target');
+ skyContext.textContent=target+' · '+ra.toFixed(5)+'°, '+(dec>=0?'+':'')+dec.toFixed(5)+
+  '° · '+ja('參考座標（非偵測認證）','reference coordinate (not proof of detection)');
+ skyContext.hidden=false;
+ return !!window.SkyAtlas?.goToCoordinates?.({ra_deg:ra,dec_deg:dec,fov_deg:2});
+}
 function open(yes=true){
  panel.hidden=!yes;document.body.classList.toggle('spx-open',yes);launch.setAttribute('aria-expanded',String(yes));
  launch.textContent=yes?'✕ Hide Viewer':'✦ SPHEREx Viewer';
- if(!yes)stop();if(yes)requestAnimationFrame(drawMarkers);
+ if(!yes){stop();skyContext.hidden=true;}
+ else{focusSkyContext();requestAnimationFrame(drawMarkers);}
 }
 function setData(raw,opts={}){
  const d=normalize(raw,opts.baseURL);
@@ -150,7 +174,11 @@ $('spx-play').onclick=play;
 $('spx-difference').onclick=()=>{stop();app.diff=!app.diff;render();};
 $('spx-slider').oninput=e=>{stop();changeFrame(Number(e.target.value));};
 $('spx-markers-on').onchange=e=>{app.markers=e.target.checked;drawMarkers();};
-$('spx-brightness').oninput=e=>{image.style.filter='brightness('+Number(e.target.value)+') contrast(1.1)';};
+$('spx-brightness').oninput=e=>{
+ const brightness=Number(e.target.value);
+ image.style.filter='brightness('+brightness+') contrast(1.1)';
+ $('spx-brightness-value').textContent=brightness+'×';
+};
 window.addEventListener('spherex:select-source',e=>{
  const source=e.detail?.source;if(source){
    const match=app.data?.sources?.find(s=>markerId(s)===markerId(source));

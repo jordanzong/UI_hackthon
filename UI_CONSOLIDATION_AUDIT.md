@@ -20,3 +20,11 @@ The SPHEREx Observation Viewer is now a large science-image viewing area. It is 
 
 ## Data safety
 `tools/test_ui_consolidation.py` validates all published manifests and referenced media exist, checks 36 current runs and zero R Draconis runs, ensures obsolete deployed assets/scripts are gone, and confirms genuine Gaia/HYG manifests remain in the repository. Compare Git trees before and after to verify the actual scientific assets' SHA values are identical.
+
+## 2026-11-15 Viewer + live sky split
+
+- Updated selected-object action buttons to use the same Mission Control primary/secondary button classes as Go / Read View Center.
+- Docked the Viewer beside the actual sky canvas rather than covering it. For desktop the sky and published FITS-stack preview are side by side; for narrow mobile screens they share the page vertically.
+- The Viewer `setData` center is the chosen run's known **target reference coordinate**. On opening Viewer, the atlas is focused to RA/Dec and draws its existing genuine target-selection reticle. The new sky-context label explicitly disclaims that a coordinate implies a detection.
+- Moved brightness from horizontal toolbar to a vertical rail on the right of the image. This changes only the rendered image filter, never the photometry data.
+- No modifications to `science-runs/` or `catalogs/` are needed.

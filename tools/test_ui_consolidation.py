@@ -99,6 +99,16 @@ def main():
     assert "atlas-presets-slot" in sky and "preset-staging" in sky
     assert "window.SPHERExNotebookResults=" in browser
     assert "SPHERExViewer.setData" in browser
+    css = (ROOT / "spherex-viewer.css").read_text()
+    assert 'id="selCenter"' in html and 'class="btn primary" id="selCenter"' in html
+    assert 'class="btn" id="selCopy"' in html
+    assert 'class="spx-visual"' in viewer
+    assert 'spx-brightness-rail' in viewer and 'id="spx-brightness-value"' in viewer
+    assert 'spx-brightness-rail input[type=range]' in css
+    assert 'body.spx-open #main' in css and 'body.spx-open #stage' in css
+    assert 'main.append(panel)' in viewer and 'focusSkyContext()' in viewer
+    assert 'SkyAtlas?.goToCoordinates?' in viewer
+    assert 'target_name:targetName(state.target)' in browser
     for bad in ("spx-import-img", "spx-import-json", "spx-file-img", "spx-file-json",
                 "spx-manifest-url", "spx-demo", "importImages", "loadFromUrl",
                 "SPHEREx_DemoManifest"):

@@ -91,3 +91,66 @@ body.spx-open #zoomkeys{right:calc(min(1040px,100vw - var(--rail) - 28px) + 24px
  #spx-viewer .spx-body{padding:9px;gap:9px}
  #spx-viewer #spx-imagebox{height:50dvh;min-height:220px;max-height:none;aspect-ratio:auto}
 }
+
+/* Split sky / science layout. The live atlas remains interactive and its
+ * ResizeObserver resizes the canvas when Viewer opens or closes. */
+body.spx-open #main{display:flex;min-height:0}
+#main #spx-viewer{
+ position:relative;inset:auto;z-index:7;flex:0 0 auto;
+ width:clamp(390px,calc((100vw - var(--rail)) * .56),790px);
+ max-width:none;max-height:100%;height:100%;min-height:0;
+ margin:0;border-top:0;border-bottom:0;border-right:0;
+ box-shadow:-12px 0 30px #0008;
+}
+body.spx-open #stage{flex:1 1 0;min-width:0}
+body.spx-open #zoomkeys{right:18px}
+#spx-sky-context{
+ position:absolute;top:12px;left:12px;z-index:5;pointer-events:none;
+ max-width:calc(100% - 65px);padding:8px 11px;
+ color:var(--accent);background:rgba(6,11,23,.89);
+ border-left:2px solid var(--accent);
+ font:500 10px/1.55 var(--mono);overflow-wrap:anywhere;
+}
+#spx-sky-context[hidden]{display:none}
+#spx-viewer .spx-visual{display:flex;align-items:stretch;gap:8px;width:100%;min-width:0}
+#spx-viewer .spx-visual #spx-imagebox{
+ flex:1 1 auto;min-width:0;height:clamp(270px,57dvh,760px);min-height:270px;
+}
+#spx-viewer .spx-brightness-rail{
+ flex:0 0 56px;min-width:0;align-self:stretch;display:flex;flex-direction:column;
+ justify-content:center;align-items:center;gap:10px;
+ padding:10px 4px;border:1px solid var(--line-soft);
+ background:rgba(150,175,215,.045);color:var(--muted);
+}
+#spx-viewer .spx-brightness-caption{font:600 9px/1.1 var(--mono);letter-spacing:.05em}
+#spx-viewer .spx-brightness-note{
+ font:8px/1.4 var(--mono);text-align:center;max-width:42px;
+}
+#spx-viewer .spx-brightness-rail input[type=range]{
+ flex:1 1 auto;min-height:145px;max-height:330px;width:20px;
+ writing-mode:vertical-lr;direction:rtl;
+ cursor:pointer;accent-color:var(--accent);margin:0;
+}
+#spx-viewer #spx-brightness-value{
+ font:500 11px/1.2 var(--mono);color:var(--accent);font-variant-numeric:tabular-nums;
+}
+@media(max-width:1250px){
+ body.spx-open #panel{display:none}
+ #main #spx-viewer{width:55vw;flex:0 0 55vw}
+}
+@media(max-width:720px){
+ body.spx-open #main{display:flex;flex-direction:column}
+ body.spx-open #panel{display:none}
+ body.spx-open #stage{flex:0 0 34dvh;height:34dvh;width:100%;min-height:170px}
+ #main #spx-viewer{
+   flex:1 1 auto;min-height:0;width:100%;height:auto;max-height:none;
+   border-left:0;border-top:1px solid var(--line);
+   box-shadow:0 -8px 22px #0008;
+ }
+ #spx-viewer .spx-body{padding:9px 10px 12px;gap:8px}
+ #spx-viewer .spx-visual #spx-imagebox{height:clamp(180px,32dvh,400px);min-height:180px}
+ #spx-viewer .spx-brightness-rail{flex-basis:48px;gap:6px}
+ #spx-viewer .spx-brightness-rail input[type=range]{min-height:100px;max-height:170px}
+ #spx-sky-context{left:8px;top:8px;font-size:9px;padding:5px 7px}
+ body.spx-open #zoomkeys{right:12px}
+}

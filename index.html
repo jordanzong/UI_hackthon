@@ -194,8 +194,11 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 #science-catalogs .catalog-advanced .catalog-tools #importSources{grid-column:auto}
 #sel h2{margin:0;font:500 10.5px/1.2 var(--font);letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
 #sel .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-#sel .btns button{min-width:0;font:600 11px/1.25 var(--font);letter-spacing:.1em;text-transform:uppercase;background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:0;padding:10px 7px;cursor:pointer}
-#sel .btns button:hover{background:var(--fg);color:var(--on)}
+#sel .sel-actions .btn{width:100%;min-width:0;white-space:normal;text-indent:0;letter-spacing:.08em;padding:12px 8px}
+#sel .sel-actions .btn.primary{background:var(--accent);color:var(--on);border-color:var(--accent)}
+#sel .sel-actions .btn.primary:hover{background:transparent;color:var(--accent)}
+#sel .sel-actions .btn:not(.primary){background:transparent;color:var(--fg);border-color:var(--line)}
+#sel .sel-actions .btn:not(.primary):hover{background:var(--fg);color:var(--on)}
 #pbody button:focus-visible{outline:1px solid var(--accent);outline-offset:3px}
 #bar .val{font-variant-numeric:tabular-nums}
 #top .top-actions{align-items:center}
@@ -217,7 +220,7 @@ input[aria-invalid="true"]{border-bottom-color:var(--bad);box-shadow:0 1px 0 0 v
 #sel.selection-inline h2{color:var(--accent)}
 #preset-staging[hidden]{display:none}
 </style>
-<link rel="stylesheet" href="./spherex-viewer.css?v=3">
+<link rel="stylesheet" href="./spherex-viewer.css?v=4">
 <link rel="stylesheet" href="./science-run-browser.css?v=3">
 <link rel="stylesheet" href="./sky-map-tools.css?v=3">
 </head>
@@ -1524,7 +1527,7 @@ function renderSel(){
    +'<dt>'+tr('dL')+'</dt><dd>'+(gl.l*R2D).toFixed(3)+'°</dd>'
    +'<dt>'+tr('dB')+'</dt><dd>'+(gl.b*R2D>=0?'+':'−')+Math.abs(gl.b*R2D).toFixed(3)+'°</dd>'
    +'<dt>'+tr('dSep')+'</dt><dd>'+fmtAng(sepC)+'</dd></dl>'
-   +'<div class="row" style="margin-top:8px"><button type="button" id="selCenter">'+tr('selCenter')+'</button><button type="button" id="selCopy">'+tr('selCopy')+'</button></div>'
+   +'<div class="btns sel-actions"><button type="button" class="btn primary" id="selCenter">'+tr('selCenter')+'</button><button type="button" class="btn" id="selCopy">'+tr('selCopy')+'</button></div>'
    +'<p class="fine" id="copyMsg"></p>';
   $('selCenter').onclick=()=>flyTo(sel.ra,sel.dec,V.fov);
   $('selCopy').onclick=()=>{
@@ -1815,8 +1818,8 @@ resize();
 </script>
 
 <script src="./allsky-stars.js?v=20261115C"></script>
-<script src="./spherex-viewer.js?v=3"></script>
-<script src="./science-run-browser.js?v=3"></script>
+<script src="./spherex-viewer.js?v=4"></script>
+<script src="./science-run-browser.js?v=4"></script>
 <script src="./sky-map-tools.js?v=3"></script>
 
 </body>

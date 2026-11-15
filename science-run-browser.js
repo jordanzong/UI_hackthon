@@ -333,11 +333,15 @@ $('srb-viewer').onclick=()=>{
  const t=window.SPHERExNotebookResults?.targets?.find(x=>x.id===state.target);
  window.SPHERExViewer.setData({
   field_id:state.target+'_'+state.run,status:'ready',
+  target_name:targetName(state.target),
   center:t?{ra_deg:t.ra_deg,dec_deg:t.dec_deg}:undefined,
   frames,sources:m.sources,
   notice:'Analysis Run: '+state.run+
    '. Algorithm mover/variable flags are candidates, not confirmed objects. '+
-   'Marked GIF contains baked-in labels; no pixel-accurate overlays are inferred.'
+   (p.gif_annotation==='algorithm-candidates'?
+      'Algorithm candidate labels in GIF are baked-in. ':
+      'Source-number labels in GIF are baked-in. ')+
+   'No pixel-accurate overlays are inferred.'
  });
 };
 $('srb-image').addEventListener('error',()=>{
