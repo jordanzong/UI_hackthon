@@ -27,7 +27,25 @@ The source `catalogs/allsky/tiles/r04_d08.json` **exists** in the repository wit
 
 A 2.1° radius cone may cover most of a FOV=2° view near its original science target, depending on aspect ratio and view center. It is **not** Gaia all-sky or guaranteed complete coverage when the view is off-center. At FOV=50°, the background is HYG bright stars only (V≤6.5), not full Gaia. Gaia astrometry is J2016.0; the HYG visual catalog is J2000, and they are deliberately separate source collections.
 
-The Gaia download workflow can fail or return capped results. **Do not claim the wide Gaia CSV exists until `catalogs/gaia-wide/manifest.json` and the target files are committed.** A missing wide cache does not break the original HYG, narrow Gaia CSVs or science viewer.
+## Verified wide-field CSV acquisition (completed)
+
+The second GitHub Actions run was successful:
+https://github.com/jordanzong/UI_hackthon/actions/runs/43703811090
+
+Actual files are in `catalogs/gaia-wide/`:
+
+| Target | Real Gaia DR3 rows | Coverage status |
+|---|---:|---|
+| WISE 0855 | 10,000 | Hit TOP 10,000 limit |
+| Barnard's Star | 10,000 | Hit TOP 10,000 limit |
+| Epsilon Indi B | 6,334 | Within query limit |
+| RW Aurigae | 10,000 | Hit TOP 10,000 limit |
+| R Draconis | 6,062 | Within query limit |
+| **Total** | **42,396** | Five cone fields |
+
+The query uses `radius=2.1°`, `phot_g_mean_mag < 15.5`, `TOP 10000` per target and Gaia DR3 J2016.0 coordinates. The three capped fields are **partial** even though all returned rows were validated. The exporter does not create synthetic stars. The older 4,998-row narrow caches remain available independently.
+
+The first Actions run actually downloaded all five CSVs but its push failed because the branch changed concurrently. The workflow now rebases its data commit before pushing; the second run committed all CSVs successfully.
 
 ## Manual verification after GitHub Pages deployment
 
