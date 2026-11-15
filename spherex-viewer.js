@@ -6,23 +6,24 @@
 const $=id=>document.getElementById(id), num=x=>x!==null&&x!==undefined&&x!==''&&Number.isFinite(Number(x));
 const fmt=(x,n=3)=>num(x)?Number(x).toFixed(n):'—';
 const ja=(tw,en)=>(document.documentElement.lang||'zh').startsWith('zh')?tw:en;
-const app={data:null,index:0,diff:false,playing:false,timer:null,selection:null,markers:true};
+const app={data:null,index:0,diff:false,playing:false,timer:null,selection:null,annotated:true};
 function el(tag,attrs={},text){const n=document.createElement(tag);for(const[k,v]of Object.entries(attrs))n.setAttribute(k,String(v));if(text!==undefined)n.textContent=text;return n;}
 const launch=el('button',{id:'spx-launch',type:'button','aria-expanded':'false','aria-controls':'spx-viewer'},'✦ SPHEREx Viewer');
 const panel=el('aside',{id:'spx-viewer',role:'region','aria-label':'SPHEREx Observation Viewer'});
 panel.innerHTML=[
 '<div class="spx-head"><div><h2>SPHEREx Observation Viewer</h2><p class="spx-sub">Marked GIF Frames · Prev / Blink / Next · Live Sky</p></div><button type="button" id="spx-close" aria-label="Close">×</button></div>',
 '<div class="spx-body">',
-'<div class="spx-visual"><div id="spx-imagebox"><img id="spx-image" alt="SPHEREx published observation preview" draggable="false"><div id="spx-markers"></div><div id="spx-empty">請在 Science Results 選擇已發布 Run，再按 Open Viewer。</div></div>',
-'<label class="spx-brightness-rail" for="spx-brightness"><span class="spx-brightness-caption">BRIGHTNESS</span><input id="spx-brightness" type="range" min="1" max="10" value="3" step="0.5" aria-label="Display brightness (visual only)" aria-orientation="vertical"><output id="spx-brightness-value" for="spx-brightness">3×</output><span class="spx-brightness-note">VISUAL ONLY</span></label></div>',
+'<div class="spx-visual"><div id="spx-imagebox"><img id="spx-image" alt="SPHEREx published observation preview" draggable="false"><div id="spx-markers"></div><div id="spx-empty">Choose a published analysis run in Science Results, then select Open Viewer.</div></div>',
+'<label class="spx-brightness-rail" for="spx-brightness"><span class="spx-brightness-caption">BRIGHTNESS</span><input id="spx-brightness" type="range" min="1" max="10" value="1" step="0.5" aria-label="Display brightness (visual only)" aria-orientation="vertical"><output id="spx-brightness-value" for="spx-brightness">1×</output><span class="spx-brightness-note">VISUAL ONLY</span></label></div>',
 '<div class="spx-meta"><span id="spx-epoch">Epoch —</span><span id="spx-wave">λ —</span></div>',
 '<div class="spx-controls"><button id="spx-prev" type="button">◀ Prev</button><button id="spx-play" type="button" aria-pressed="false">▶ Blink</button><button id="spx-next" type="button">Next ▶</button><button id="spx-difference" type="button" aria-pressed="false">Difference</button></div>',
 '<input id="spx-slider" type="range" min="0" max="0" value="0" aria-label="Epoch position">',
-'<p class="spx-note">亮度僅影響畫面呈現，不改變原始測光結果 / Brightness is display-only.</p>',
-'<label id="spx-toggle-markers"><input id="spx-markers-on" type="checkbox" checked> Source markers (science-image pixel positions)</label>',
+'<label id="spx-toggle-markers"><input id="spx-markers-on" type="checkbox" checked> Show annotated GIF</label>',
 '<p id="spx-status" role="status" aria-live="polite"></p>',
-'<div id="spx-caveat" hidden></div><div id="spx-source-detail" aria-live="polite">Select a source marker to inspect details.</div>',
-'<p class="spx-note">Real FITS analysis remains on the backend. The viewer displays calibrated image previews and only draws sources where frame-specific pixel coordinates were provided.</p>',
+'<section id="spx-education" aria-label="Astronomy reading">',
+ '<div class="spx-education-heading"><span>EXPLORE ASTRONOMY</span><button id="spx-another-topic" type="button">Another topic</button></div>',
+ '<h3 id="spx-reading-title"></h3><div id="spx-reading-body"></div>',
+ '</section>',
 '</div>'
 ].join('');
 // Dock the viewer alongside the live sky canvas instead of covering it.
@@ -39,9 +40,14 @@ const headerActions=document.querySelector('#top .top-actions');
 if(headerActions)headerActions.prepend(launch);
 panel.hidden=true;
 const image=$('spx-image'),box=$('spx-imagebox'),markers=$('spx-markers');
-image.style.filter='brightness(3) contrast(1.1)';
+image.style.filter='brightness(1) contrast(1)';
 function status(message,error=false){$('spx-status').textContent=message;$('spx-status').classList.toggle('error',error);}
-function current(){return app.data?.frames?.[app.index]||null;}
+function current(){
+ const d=app.data;
+ if(!app.annotated && d?.plain_frames?.length===d?.frames?.length)
+  return d.plain_frames[app.index]||null;
+ return d?.frames?.[app.index]||null;
+}
 function frameImage(){return app.diff?app.data?.difference:current();}
 function resolveImage(url,base){
  if(typeof url!=='string'||!url.trim())return '';
@@ -57,9 +63,14 @@ function normalize(raw,base){
    image_url:resolveImage(f.image_url??f.url,base),
    width:num(f.width)?Number(f.width):null,height:num(f.height)?Number(f.height):null
  })).filter(f=>f.image_url);
+ const plain_frames=(Array.isArray(raw.plain_frames)?raw.plain_frames:[]).map((f,i)=>({
+   ...f,frame_id:String(f.frame_id??('plain_'+(i+1))),
+   label:String(f.label??('Epoch '+(i+1))),
+   image_url:resolveImage(f.image_url??f.url,base)
+ })).filter(f=>f.image_url);
  const d=raw.difference||raw.diff;
  const difference=d&&(d.image_url||d.url)?{...d,image_url:resolveImage(d.image_url??d.url,base)}:null;
- return {...raw,frames,difference,sources:Array.isArray(raw.sources)?raw.sources:[],
+ return {...raw,frames,plain_frames,difference,sources:Array.isArray(raw.sources)?raw.sources:[],
   status:String(raw.status??(frames.length?'ready':'no_data'))};
 }
 function stop(){clearTimeout(app.timer);app.timer=null;app.playing=false;$('spx-play').textContent='▶ Blink';$('spx-play').setAttribute('aria-pressed','false');}
@@ -81,11 +92,16 @@ function open(yes=true){
  panel.hidden=!yes;document.body.classList.toggle('spx-open',yes);launch.setAttribute('aria-expanded',String(yes));
  launch.textContent=yes?'✕ Hide Viewer':'✦ SPHEREx Viewer';
  if(!yes){stop();skyContext.hidden=true;}
- else{focusSkyContext();requestAnimationFrame(drawMarkers);}
+ else{focusSkyContext();showRandomReading();requestAnimationFrame(drawMarkers);}
 }
 function setData(raw,opts={}){
  const d=normalize(raw,opts.baseURL);
- stop();app.data=d;app.index=0;app.diff=false;app.selection=null;
+ stop();app.data=d;app.index=0;app.diff=false;app.selection=null;app.annotated=true;
+ $('spx-markers-on').checked=true;
+ $('spx-markers-on').disabled=!(d.plain_frames.length===d.frames.length&&d.frames.length>0);
+ $('spx-brightness').value='1';
+ $('spx-brightness-value').textContent='1×';
+ image.style.filter='brightness(1) contrast(1)';
  if(d.sources.length&&window.SPHERExCatalog?.setSources)window.SPHERExCatalog.setSources(d.sources);
  render();if(opts.open!==false)open(true);
  return {frames:d.frames.length,sources:d.sources.length};
@@ -99,7 +115,7 @@ function framePos(source,frame){
 }
 function drawMarkers(){
  markers.replaceChildren();
- const fr=current();if(!app.markers||app.diff||!fr||!image.complete||!image.naturalWidth||!app.data?.sources?.length)return;
+ const fr=current();if(app.data?.frame_origin==='marked-gif'||app.diff||!fr||!image.complete||!image.naturalWidth||!app.data?.sources?.length)return;
  const rect=box.getBoundingClientRect(),iw=image.naturalWidth,ih=image.naturalHeight;
  const scale=Math.min(rect.width/iw,rect.height/ih),ox=(rect.width-iw*scale)/2,oy=(rect.height-ih*scale)/2;
  const w=fr.width||iw,h=fr.height||ih;
@@ -122,7 +138,7 @@ function selectSource(s,fromViewer=false){
     'Quality: '+String(s.quality_status||'unknown')];
  if(num(s.flux_mjy))lines.push('Flux: '+fmt(s.flux_mjy,4)+' mJy');
  if(num(s.flux_error_mjy))lines.push('Flux uncertainty: '+fmt(s.flux_error_mjy,4)+' mJy');
- $('spx-source-detail').textContent=lines.join('\n');
+ // Source-specific metadata is available in the Science Results catalog.
  drawMarkers();
  if(fromViewer&&num(ra)&&num(dec))window.SkyAtlas?.focusSource?.(s);
 }
@@ -154,13 +170,9 @@ function render(){
  }
  $('spx-epoch').textContent=app.diff?'November − May':(fr?.label||'Epoch —')+(num(fr?.mjd)?' · MJD '+fmt(fr.mjd,3):'');
  $('spx-wave').textContent=data?.frame_origin==='marked-gif'
-  ?'Marked GIF · '+(app.index+1)+' / '+(data?.frames?.length||0)
+  ?(app.annotated?'Marked':'Original')+' GIF · '+(app.index+1)+' / '+(data?.frames?.length||0)
   :num(fr?.wavelength_um)?'λ '+fmt(fr.wavelength_um,5)+' μm':'λ —';
- const note=data?.notice||(data?.status==='coverage_unavailable'?ja('目標座標不在共同有效遮罩；空白不代表未偵測','Target outside common valid mask; blank does not mean undetected'):'');
- $('spx-caveat').hidden=!note;$('spx-caveat').textContent=note;
- if(!app.selection)$('spx-source-detail').textContent=data?.sources?.length?
-    ja('點選影像標記查看來源；需提供每張影像的 frame_positions','Click markers; frame_positions required for each image'):
-    ja('此資料沒有可投影的 Source 像素座標；不推測標記位置。','No validated per-frame source pixel coordinates; markers are not inferred.');
+
 }
 function changeFrame(i){
  const n=app.data?.frames?.length||0;if(!n)return;
@@ -182,6 +194,40 @@ function play(){
  };
  tick();
 }
+
+const ASTRONOMY_ARTICLES=[
+ {
+  title:'Variable Stars',
+  paragraphs:[
+   "Variable stars are astronomical objects whose luminosity changes over time. Their brightness variations can be intrinsic—caused by physical changes within the star—or extrinsic, caused by our viewing geometry.",
+   "Intrinsic variables include pulsating stars, whose radii expand and contract; eruptive stars, which eject material from their surfaces; cataclysmic variables, often close binary systems where a white dwarf accretes matter from a companion; and X-ray variables in compact, high-density systems that produce strong high-energy emission.",
+   "In a cataclysmic binary, accumulated matter can ignite a nova on a white dwarf's surface. Under particular conditions, white-dwarf evolution can also lead to a Type Ia supernova. Massive stars can produce other kinds of supernovae at the end of their lives.",
+   "Extrinsic variables change apparent brightness because of their orientation to Earth. Eclipsing binaries dim when one component crosses in front of the other. Rotating stars with nonuniform surface brightness may also show periodic changes as spots rotate into and out of view."
+  ]
+ },
+ {
+  title:'Fast-Moving Objects',
+  paragraphs:[
+   "Fast-moving objects include astronomical bodies with exceptionally high velocities relative to the Galactic Center or with large apparent motion across the sky.",
+   "Some stars travel extremely quickly because they orbit close to the supermassive black hole at the center of the Milky Way. S4714 is an example: its reported peak speed is approximately 24,000 km/s, or about 8% of the speed of light.",
+   "Other stars look as though they move rapidly because they are nearby rather than because they have extreme physical speeds. This angular displacement is called proper motion. Barnard's Star, near our Solar System, is a well-known high-proper-motion example."
+  ]
+ }
+];
+let lastArticle=-1;
+function showRandomReading(){
+ let next=Math.floor(Math.random()*ASTRONOMY_ARTICLES.length);
+ if(ASTRONOMY_ARTICLES.length>1&&next===lastArticle)
+  next=(next+1)%ASTRONOMY_ARTICLES.length;
+ lastArticle=next;
+ const article=ASTRONOMY_ARTICLES[next],body=$('spx-reading-body');
+ $('spx-reading-title').textContent=article.title;
+ body.replaceChildren();
+ for(const paragraph of article.paragraphs){
+  const p=document.createElement('p');p.textContent=paragraph;body.append(p);
+ }
+}
+
 launch.onclick=()=>open(panel.hidden);
 $('spx-close').onclick=()=>open(false);
 $('spx-prev').onclick=()=>{stop();changeFrame(app.index-1);};
@@ -189,10 +235,11 @@ $('spx-next').onclick=()=>{stop();changeFrame(app.index+1);};
 $('spx-play').onclick=play;
 $('spx-difference').onclick=()=>{stop();app.diff=!app.diff;render();};
 $('spx-slider').oninput=e=>{stop();changeFrame(Number(e.target.value));};
-$('spx-markers-on').onchange=e=>{app.markers=e.target.checked;drawMarkers();};
+$('spx-markers-on').onchange=e=>{app.annotated=e.target.checked;render();};
+$('spx-another-topic').onclick=showRandomReading;
 $('spx-brightness').oninput=e=>{
  const brightness=Number(e.target.value);
- image.style.filter='brightness('+brightness+') contrast(1.1)';
+ image.style.filter='brightness('+brightness+') contrast(1)';
  $('spx-brightness-value').textContent=brightness+'×';
 };
 window.addEventListener('spherex:select-source',e=>{
