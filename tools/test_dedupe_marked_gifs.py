@@ -48,16 +48,17 @@ class DedupeTests(unittest.TestCase):
     def test_reject_frame_count_difference_without_delete(self):
         make_gif(self.old, frames=2)
         make_gif(self.new, frames=3)
-        with self.assertRaisesRegex(ValueError, "geometry mismatch"):
+        with self.assertRaisesRegex(ValueError, "frame count mismatch"):
             dedupe(self.root, targets=("WISE_0855",), runs_per_target=1, apply=True)
         self.assertTrue(self.old.exists())
 
-    def test_reject_dimension_difference_without_delete(self):
+    def test_allows_annotation_canvas_resize_with_same_frames(self):
         make_gif(self.old, size=(4, 4))
-        make_gif(self.new, size=(5, 5))
-        with self.assertRaisesRegex(ValueError, "geometry mismatch"):
-            dedupe(self.root, targets=("WISE_0855",), runs_per_target=1, apply=True)
-        self.assertTrue(self.old.exists())
+        make_gif(self.new, size=(6, 3))
+        self.assertEqual(
+            dedupe(self.root, targets=("WISE_0855",), runs_per_target=1, apply=True), 1)
+        self.assertFalse(self.old.exists())
+        self.assertTrue(self.new.exists())
 
     def test_reject_missing_marked_without_delete(self):
         make_gif(self.old)

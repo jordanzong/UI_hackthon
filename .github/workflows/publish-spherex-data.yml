@@ -7,12 +7,8 @@ on:
         description: "Publicly accessible Drive ZIP file ID (output.zip)"
         required: true
         default: "1_4-H9L10rs1BJkH77zLIZmRZfnlKBKBX"
-  push:
-    branches:
-      - feature/science-analysis-runs
-    paths:
-      - "tools/build_science_run_manifests.py"
-      - ".github/workflows/publish-spherex-data.yml"
+  # Full science export is manual-only: never overwrite published marked GIFs
+  # with the previous ZIP after unrelated exporter changes.
 
 permissions:
   contents: write

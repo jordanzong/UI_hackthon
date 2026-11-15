@@ -2,7 +2,8 @@
 """Only delete redundant, unreferenced source-number GIFs after verification.
 
 A marked GIF was created from the corresponding original. Validate the
-animation dimensions and exact frame counts first, for all published runs.
+the exact frame counts and full decoding of both GIFs for all published runs.
+Marked GIFs may have a larger canvas to show annotations and legends.
 Do not alter any science measurements, SED plots, group frames or manifests.
 """
 import argparse
@@ -63,10 +64,14 @@ def dedupe(root, *, targets=TARGETS, runs_per_target=9, apply=False):
             marked_geometry = verify_gif(marked)
             if original.is_file():
                 original_geometry = verify_gif(original)
-                if original_geometry != marked_geometry:
+                if original_geometry[1] != marked_geometry[1]:
                     raise ValueError(
-                        f"Original / marked geometry mismatch: {tid}/{run['run_id']}; "
+                        f"Original / marked frame count mismatch: {tid}/{run['run_id']}; "
                         f"{original_geometry} != {marked_geometry}")
+                if original_geometry[0] != marked_geometry[0]:
+                    print(f"Canvas change OK: {tid}/{run['run_id']} "
+                          f"{original_geometry[0]} -> {marked_geometry[0]} "
+                          "(annotation layout); frame counts verified")
                 to_delete.append(original)
     if len(counts) != len(targets):
         raise ValueError("Incomplete target inventory: " + repr(counts))

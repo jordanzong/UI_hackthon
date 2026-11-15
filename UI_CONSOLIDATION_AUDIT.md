@@ -37,6 +37,8 @@ The SPHEREx Observation Viewer is now a large science-image viewing area. It is 
 ## 2026-11-15 Follow-up: remove duplicate Target search and GIF copies
 
 - Removed the redundant target search input and its handlers from 01 Science Results; retained target dropdown, RA/Dec and the independent atlas object search.
-- Every published Run already uses `media/group_stacks_marked.gif` as its animated view. `tools/dedupe_marked_gifs.py` verifies source/marked dimensions and animation frame counts across all 36 published Runs before deleting only the old unmarked GIFs.
-- Any mismatch causes an all-or-nothing failure, leaving the originals intact.
+- Every published Run already uses `media/group_stacks_marked.gif` as its animated view. `tools/dedupe_marked_gifs.py` verifies matching animation frame counts and complete decoding (marked layouts may have different canvas dimensions) across all 36 published Runs before deleting only the old unmarked GIFs.
+- Any frame-count mismatch or unreadable GIF causes an all-or-nothing failure, leaving the originals intact.
 - New importer prefers `group_stacks_movers_variables.gif` from the scientific pipeline and publishes it using the canonical marked filename without additionally publishing a duplicate original.
+
+- The older ZIP-based full data importer is manual-only to prevent accidental replacement of the newly published marked animations by stale ZIPs.
