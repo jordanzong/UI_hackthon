@@ -287,7 +287,70 @@
       ],
       "viewer_frame_source": "group_stacks_marked.gif",
       "diagnostic_url": "media/time_grouping_diagnostic.png",
-      "stack_url": "media/group_stacks_sources_epsf.png"
+      "stack_url": "media/group_stacks_sources_epsf.png",
+      "unmarked_blink_url": "media/group_stacks_plain.gif",
+      "plain_viewer_frames": [
+        {
+          "frame_id": "group_1",
+          "label": "Group 1",
+          "image_url": "media/viewer_plain_frames/plain_001.webp",
+          "duration_ms": 900,
+          "mjd": 60796.037625,
+          "start_mjd": 60789.855522,
+          "end_mjd": 60802.219728,
+          "stack_inputs": 47
+        },
+        {
+          "frame_id": "group_2",
+          "label": "Group 2",
+          "image_url": "media/viewer_plain_frames/plain_002.webp",
+          "duration_ms": 900,
+          "mjd": 60815.131202,
+          "start_mjd": 60815.131202,
+          "end_mjd": 60815.131202,
+          "stack_inputs": 1
+        },
+        {
+          "frame_id": "group_3",
+          "label": "Group 3",
+          "image_url": "media/viewer_plain_frames/plain_003.webp",
+          "duration_ms": 900,
+          "mjd": 60834.420612,
+          "start_mjd": 60832.651412,
+          "end_mjd": 60836.189812,
+          "stack_inputs": 16
+        },
+        {
+          "frame_id": "group_4",
+          "label": "Group 4",
+          "image_url": "media/viewer_plain_frames/plain_004.webp",
+          "duration_ms": 900,
+          "mjd": 60969.4108405,
+          "start_mjd": 60946.964111,
+          "end_mjd": 60991.85757,
+          "stack_inputs": 77
+        },
+        {
+          "frame_id": "group_5",
+          "label": "Group 5",
+          "image_url": "media/viewer_plain_frames/plain_005.webp",
+          "duration_ms": 900,
+          "mjd": 61156.48087,
+          "start_mjd": 61148.84479,
+          "end_mjd": 61164.11695,
+          "stack_inputs": 39
+        },
+        {
+          "frame_id": "group_6",
+          "label": "Group 6",
+          "image_url": "media/viewer_plain_frames/plain_006.webp",
+          "duration_ms": 900,
+          "mjd": 61310.352491,
+          "start_mjd": 61305.226906,
+          "end_mjd": 61315.478076,
+          "stack_inputs": 60
+        }
+      ]
     }
   },
   "sources": [

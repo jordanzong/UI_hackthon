@@ -270,7 +270,50 @@
       ],
       "viewer_frame_source": "group_stacks_marked.gif",
       "diagnostic_url": "media/time_grouping_diagnostic.png",
-      "stack_url": "media/group_stacks_sources_epsf.png"
+      "stack_url": "media/group_stacks_sources_epsf.png",
+      "unmarked_blink_url": "media/group_stacks_plain.gif",
+      "plain_viewer_frames": [
+        {
+          "frame_id": "group_1",
+          "label": "Group 1",
+          "image_url": "media/viewer_plain_frames/plain_001.webp",
+          "duration_ms": 900,
+          "mjd": 60832.476125500005,
+          "start_mjd": 60832.473887,
+          "end_mjd": 60832.478364,
+          "stack_inputs": 4
+        },
+        {
+          "frame_id": "group_2",
+          "label": "Group 2",
+          "image_url": "media/viewer_plain_frames/plain_002.webp",
+          "duration_ms": 900,
+          "mjd": 60869.574206000005,
+          "start_mjd": 60860.540193,
+          "end_mjd": 60878.608219,
+          "stack_inputs": 17
+        },
+        {
+          "frame_id": "group_3",
+          "label": "Group 3",
+          "image_url": "media/viewer_plain_frames/plain_003.webp",
+          "duration_ms": 900,
+          "mjd": 60958.003672499995,
+          "start_mjd": 60916.370508,
+          "end_mjd": 60999.636837,
+          "stack_inputs": 170
+        },
+        {
+          "frame_id": "group_4",
+          "label": "Group 4",
+          "image_url": "media/viewer_plain_frames/plain_004.webp",
+          "duration_ms": 900,
+          "mjd": 61267.973205999995,
+          "start_mjd": 61227.484528,
+          "end_mjd": 61308.461884,
+          "stack_inputs": 387
+        }
+      ]
     }
   },
   "sources": [
