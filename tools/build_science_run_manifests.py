@@ -52,6 +52,28 @@ def safe_copy(source, destination):
     return destination
 
 
+def publish_sed_plot(source, destination):
+    """Compress a genuine SED PNG for static delivery; never alter photometry."""
+    if not source.is_file():
+        return None
+    if source.stat().st_size > MAX_ASSET_BYTES:
+        print("SKIP oversized SED:", source)
+        return None
+    try:
+        from PIL import Image
+    except ImportError:
+        return safe_copy(source, destination)
+    try:
+        webp_path = destination.with_suffix(".webp")
+        webp_path.parent.mkdir(parents=True, exist_ok=True)
+        with Image.open(source) as image:
+            image.convert("RGB").save(webp_path, "WEBP", quality=85, method=4)
+        return webp_path
+    except (OSError, ValueError) as exc:
+        print("WEBP conversion unavailable, keeping PNG:", source, exc)
+        return safe_copy(source, destination)
+
+
 def read_ecsv(path):
     """Read basic numeric source catalogs without mandatory astropy dependency."""
     if not path.is_file():
@@ -175,8 +197,9 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif):
     metadata = fits_group_metadata(run_dir / "time_grouped_stacks.fits")
     group_meta = {int(g["group_id"]): g for g in metadata}
     gifs = sorted(run_dir.glob("group_stacks*.gif"))
-    gifs.sort(key=lambda p: ("sources_epsf" not in p.name,
-                             "marked" not in p.name, p.name))
+    # The classifier-marked GIF must win over older source-number-only GIFs.
+    gifs.sort(key=lambda p: (0 if "marked" in p.stem else
+                             1 if "sources_epsf" in p.stem else 2, p.name))
     gif_url = None
     frame_paths = []
     if gifs:
@@ -221,8 +244,9 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif):
             sid = str(int(match_sed.group(1)))
             plot_type = "groups" if match_sed.group(2).lower() == "group_sed" else "evolution"
             out = dest / "media" / "sed_plots" / img.name
-            if safe_copy(img, out):
-                plots.setdefault(sid, {})[plot_type] = "media/sed_plots/" + img.name
+            published = publish_sed_plot(img, out)
+            if published:
+                plots.setdefault(sid, {})[plot_type] = "media/sed_plots/" + published.name
     seds = [{"source_id": sid, "plots": types}
             for sid, types in sorted(plots.items(), key=lambda x: int(x[0]))]
 
@@ -231,6 +255,10 @@ def export_run(run_dir, dest, target_id, band_id, match, extract_gif):
         "label": run_dir.name,
         "frames": frames,
         "blink_url": gif_url,
+        "gif_annotation": ("algorithm-candidates" if gif_url and
+                           "marked" in gif_url else
+                           "source-numbers" if gif_url else "none"),
+        "sed_photometry_scope": "all-six-bands",
         "seds": seds,
         "source_count": len(sources),
         "candidate_count": len(markers),

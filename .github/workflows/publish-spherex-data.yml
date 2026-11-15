@@ -1,0 +1,86 @@
+name: Publish Real SPHEREx Science Runs
+
+on:
+  workflow_dispatch:
+    inputs:
+      drive_file_id:
+        description: "Publicly accessible Drive ZIP file ID (output.zip)"
+        required: true
+        default: "1e0cN8dgP3J7ONuub_wMk5FFi2rGRo_go"
+  push:
+    branches:
+      - feature/science-analysis-runs
+    paths:
+      - "tools/build_science_run_manifests.py"
+      - ".github/workflows/publish-spherex-data.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-spherex-science
+  cancel-in-progress: false
+
+jobs:
+  publish-science:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Check out current branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install scientific export dependencies
+        run: python3 -m pip install --upgrade "Pillow>=10" "astropy>=6" "gdown>=5"
+      - name: Download real analysis archive from shared Google Drive
+        env:
+          DRIVE_FILE_ID: ${{ inputs.drive_file_id || '1e0cN8dgP3J7ONuub_wMk5FFi2rGRo_go' }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/spherex-science
+          gdown --id "$DRIVE_FILE_ID" -O /tmp/spherex-science/output.zip
+          test -s /tmp/spherex-science/output.zip
+      - name: Safely extract and verify analysis_runs
+        run: |
+          python3 - <<'PY'
+          import pathlib, zipfile
+          archive=pathlib.Path('/tmp/spherex-science/output.zip')
+          output=pathlib.Path('/tmp/spherex-science/unpacked').resolve()
+          with zipfile.ZipFile(archive) as z:
+              files=[i for i in z.infolist() if not i.is_dir()
+                     and '__MACOSX' not in i.filename and '.DS_Store' not in i.filename]
+              for item in files:
+                  dest=(output/item.filename).resolve()
+                  if not dest.is_relative_to(output):
+                      raise ValueError('Archive path traversal: '+item.filename)
+              z.extractall(output, members=[i for i in z.infolist() if '__MACOSX' not in i.filename])
+          runs=list(output.glob('**/analysis_runs/D*_gap*_span*_v*/source_catalog.ecsv'))
+          if len(runs)<1:
+              raise ValueError('No genuine SPHEREx analysis_runs source catalogs in ZIP')
+          print('Found',len(runs),'science runs')
+          PY
+      - name: Generate per-run manifests, real GIF, Group frames and compressed SED assets
+        run: |
+          python3 tools/build_science_run_manifests.py \
+            --input-root /tmp/spherex-science/unpacked/output \
+            --output-dir ./science-runs \
+            --no-gif-frames
+          python3 - <<'PY'
+          import json, pathlib
+          d=json.loads(pathlib.Path('science-runs/index.json').read_text())
+          count=sum(len(t['runs']) for t in d['targets'])
+          if count<1: raise ValueError('No published runs')
+          print('Ready for publication:',count,'science runs')
+          PY
+      - name: Commit only generated web science products to this branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add science-runs/
+          if git diff --cached --quiet; then
+            echo 'Science products unchanged'
+          else
+            git commit -m 'data: publish verified SPHEREx analysis products from Drive'
+            git push origin HEAD:feature/science-analysis-runs
+          fi

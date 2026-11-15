@@ -19,7 +19,7 @@ const TARGETS=[
 const state={
  target:window.SPHERExNotebookResults?.current?.().target||'Epsilon_Indi_B',
  band:'D1',run:'',manifest:null,index:null,mode:'gif',source:'',
- group:0,plot:'groups',failure:'',loading:false,request:0
+ group:'gif',plot:'groups',failure:'',loading:false,request:0
 };
 const el=document.createElement('section');
 el.id='science-run-browser';el.setAttribute('aria-label','Analysis Run Browser');
@@ -109,7 +109,7 @@ function drawMissing(message){
 }
 async function refreshRun(){
  const token=++state.request;
- state.manifest=null;state.source='';state.group=0;state.mode='gif';state.plot='groups';
+ state.manifest=null;state.source='';state.group='gif';state.mode='gif';state.plot='groups';
  repaintOptions();
  const run=runsFor(state.target,state.band).find(x=>x.run_id===state.run);
  if(!run){
@@ -178,7 +178,10 @@ function render(){
  $('srb-groups').hidden=state.mode!=='gif'||!p.frames.length;
  $('srb-sources').hidden=state.mode!=='sed'||!hasSED;
  const groupSelect=$('srb-group');groupSelect.replaceChildren();
- const gifOption=document.createElement('option');gifOption.value='gif';gifOption.textContent=tr('播放標記 GIF','Play marked GIF');
+ const gifOption=document.createElement('option');gifOption.value='gif';
+ gifOption.textContent=p.gif_annotation==='algorithm-candidates'
+  ?tr('播放候選標記 GIF','Play candidate-marked GIF')
+  :tr('播放 Source 標記 GIF','Play source-annotated GIF');
  if(p.blink_url)groupSelect.append(gifOption);
  p.frames.forEach((f,i)=>{
   const op=document.createElement('option');op.value=String(i);
@@ -204,14 +207,17 @@ function render(){
    const first=Object.values(source.plots).find(Boolean);
    url=first||null;
   }
-  caption='Source '+state.source+' · '+state.band+' · '+state.run;
+  caption='Source '+state.source+' · '+state.band+' · '+state.run+
+   ' · '+tr('時間分組使用選定波段；SED 取自六波段測光','Run grouping uses selected bands; SED uses six-band photometry');
   if(candidate?.types?.length)sourceCaption=
    ' · '+tr('演算法候選','Algorithm candidate')+': '+candidate.types.join(', ');
  }else{
   const pick=p.frames[state.group];
   url=state.group==='gif'?p.blink_url:(pick?.image_url||p.blink_url);
   caption=targetName(state.target)+' · '+state.band+' · '+state.run+
-   (state.group==='gif'?' · GIF':' · '+(pick?.label||'Group'));
+   (state.group==='gif'?' · GIF ('+
+     (p.gif_annotation==='algorithm-candidates'?'candidate labels':'source labels')+')':
+     ' · '+(pick?.label||'Group'));
   if(pick?.mjd!=null)caption+=' · MJD '+Number(pick.mjd).toFixed(3);
  }
  const img=$('srb-image'),empty=$('srb-empty'),open=$('srb-open');
@@ -284,6 +290,9 @@ $('srb-viewer').onclick=()=>{
  });
 };
 $('srb-image').addEventListener('error',()=>{
+ const image=$('srb-image'),missing=$('srb-empty');
+ image.hidden=true;missing.hidden=false;
+ missing.textContent=tr('此圖片尚未成功發布或無法讀取。','This image is not yet published or could not be loaded.');
  status(tr('圖片載入失敗，請檢查 GitHub Pages 檔案位置。','Image failed. Check deployed GitHub Pages paths.'));
 });
 const legacy=$('nr-target');

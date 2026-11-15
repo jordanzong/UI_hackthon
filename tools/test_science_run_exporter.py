@@ -26,6 +26,7 @@ class ScienceRunExportTest(unittest.TestCase):
             (run / "markers.json").write_text(
                 json.dumps([{"source_id": 1, "types": ["mover"], "pm": 6.7,
                              "pm_sig": 5.9, "n_groups": 4}]))
+            (run / "group_stacks_sources_epsf.gif").write_bytes(GIF_1PX)
             (run / "group_stacks_marked.gif").write_bytes(GIF_1PX)
             (run / "sed_plots").mkdir()
             (run / "sed_plots" / "source_001_group_sed.png").write_bytes(PNG_1PX)
@@ -48,11 +49,16 @@ class ScienceRunExportTest(unittest.TestCase):
                              "algorithm_candidate_unverified")
             self.assertEqual(manifest["bands"]["D1"]["blink_url"],
                              "media/group_stacks_marked.gif")
+            self.assertEqual(manifest["bands"]["D1"]["gif_annotation"],
+                             "algorithm-candidates")
+            self.assertEqual(manifest["bands"]["D1"]["sed_photometry_scope"],
+                             "all-six-bands")
             plots = manifest["bands"]["D1"]["seds"][0]["plots"]
             self.assertIn("groups", plots)
             self.assertIn("evolution", plots)
-            self.assertTrue((out / "barnards-star" / "D1_gap10_spaninf_v1" /
-                             "media" / "sed_plots" / "source_001_group_sed.png").is_file())
+            sed_dir = out / "barnards-star" / "D1_gap10_spaninf_v1" / "media" / "sed_plots"
+            self.assertTrue((sed_dir / "source_001_group_sed.webp").is_file() or
+                            (sed_dir / "source_001_group_sed.png").is_file())
             self.assertEqual(next(t for t in index["targets"]
                                   if t["target_id"] == "WISE_0855")["runs"], [])
 
