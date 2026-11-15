@@ -25,6 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: feature/allsky-stability-density
+          fetch-depth: 0
 
       - name: Download and validate wide-field Gaia DR3
         id: build
@@ -38,6 +39,7 @@ jobs:
           git add catalogs/gaia-wide
           if ! git diff --cached --quiet; then
             git commit -m "data(gaia): cache verified 2.1 degree Gaia DR3 fields"
+            git pull --rebase origin feature/allsky-stability-density
             git push
           else
             echo "No new wide-field catalogs"
