@@ -40,7 +40,7 @@ class TestMarkedUpdate(unittest.TestCase):
         with zipfile.ZipFile(self.archive, "w") as z:
             root = "output/WISE_0855/analysis_runs/D1_gap10_spaninf_v1/"
             if include_gif:
-                z.writestr(root + "group_stacks_marked.gif", GIF)
+                z.writestr(root + "group_stacks_movers_variables.gif", GIF)
             z.writestr(root + "source_catalog.ecsv", f"source_id ra_deg dec_deg\n{source} 1.2 3.4\n")
             z.writestr(root + "markers.json", '[{"source_id":1,"types":["mover"]}]')
 
