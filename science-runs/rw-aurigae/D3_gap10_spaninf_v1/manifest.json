@@ -328,7 +328,42 @@
       ],
       "source_count": 40,
       "candidate_count": 0,
-      "notice": "Updated real marked GIF for this exact target/run. Algorithm labels are unverified candidates; source/photometry coordinates unchanged."
+      "notice": "Updated real marked GIF for this exact target/run. Algorithm labels are unverified candidates; source/photometry coordinates unchanged.",
+      "viewer_frames": [
+        {
+          "frame_id": "group_1",
+          "label": "Group 1",
+          "image_url": "media/viewer_marked_frames/group_001.webp",
+          "duration_ms": 900,
+          "mjd": 60933.954767,
+          "start_mjd": 60929.677476,
+          "end_mjd": 60938.232058,
+          "stack_inputs": 19
+        },
+        {
+          "frame_id": "group_2",
+          "label": "Group 2",
+          "image_url": "media/viewer_marked_frames/group_002.webp",
+          "duration_ms": 900,
+          "mjd": 61096.641489500005,
+          "start_mjd": 61091.719616,
+          "end_mjd": 61101.563363,
+          "stack_inputs": 19
+        },
+        {
+          "frame_id": "group_3",
+          "label": "Group 3",
+          "image_url": "media/viewer_marked_frames/group_003.webp",
+          "duration_ms": 900,
+          "mjd": 61298.096744,
+          "start_mjd": 61296.297591,
+          "end_mjd": 61299.895897,
+          "stack_inputs": 18
+        }
+      ],
+      "viewer_frame_source": "group_stacks_marked.gif",
+      "diagnostic_url": "media/time_grouping_diagnostic.png",
+      "stack_url": "media/group_stacks_sources_epsf.png"
     }
   },
   "sources": [
